@@ -19,7 +19,6 @@
 #include <boost/format.hpp>
 
 #include "naive_matrix_multiplication.hpp"
-#include "matrix_multiplication_kernel.hpp"
 #include "matrix_multiplication_component.hpp"
 
 //std::vector<double> A;

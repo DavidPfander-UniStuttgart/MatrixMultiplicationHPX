@@ -5,6 +5,8 @@
  *      Author: pfandedd
  */
 
+#pragma once
+
 #include <cinttypes>
 
 template<typename T>

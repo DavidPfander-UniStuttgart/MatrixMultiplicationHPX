@@ -5,48 +5,60 @@
  *      Author: pfandedd
  */
 
+#pragma once
+
 #include <cinttypes>
 #include <hpx/include/components.hpp>
+
+#include "matrix_multiplication_kernel.hpp"
 
 extern uint64_t small_block_size;
 extern uint64_t verbose;
 
+class test {
+  void blubb();
+};
+
+void test::blubb() {
+
+}
+
 struct matrixMultiply_server: hpx::components::component_base<
-        matrixMultiply_server> {
+    matrixMultiply_server> {
 
-    size_t N;
-    std::vector<double> A;
-    std::vector<double> B;
+  size_t N;
+  std::vector<double> A;
+  std::vector<double> B;
 
-    // TODO: why does this get called?
-    matrixMultiply_server();
+  // TODO: why does this get called?
+  matrixMultiply_server() :
+      N(0) {
 
-    matrixMultiply_server(size_t N, std::vector<double> &A,
-            std::vector<double> &B) :
-            N(N), A(A), B(B) {
+  }
+
+  matrixMultiply_server(size_t N, std::vector<double> &A,
+      std::vector<double> &B) :
+      N(N), A(A), B(B) {
+  }
+
+  std::vector<double> matrixMultiply(std::uint64_t x, std::uint64_t y,
+      size_t blockSize);
+
+  HPX_DEFINE_COMPONENT_ACTION(matrixMultiply_server, matrixMultiply,
+      matrixMultiply_action);
+
+};
+
+std::vector<double> matrixMultiply_server::matrixMultiply(std::uint64_t x, std::uint64_t y,
+    size_t blockSize) {
+  std::vector<double> C(blockSize * blockSize);
+  if (blockSize <= small_block_size) {
+    kernel::matrix_multiply_kernel(A, B, C, N, x, y, blockSize);
+  } else {
+    if (verbose >= 1) {
+      std::cout << "handling large matrix, more work... (blocksize == "
+          << blockSize << ")" << std::endl;
     }
-
-    template<typename T>
-    void matrixMultiply(std::uint64_t x, std::uint64_t y, size_t blockSize);
-
-//    // This will define the action type 'some_member_action' which
-//    // represents the member function 'some_member_function' of the
-//    // object type 'some_component'.
-//    HPX_DEFINE_COMPONENT_ACTION(matrixMultiply_server, matrixMultiply<double>,
-//            matrixMultiply_action);
-
-    template<typename T>
-    std::vector<double> matrixMultiply(std::uint64_t x, std::uint64_t y,
-            size_t blockSize) {
-        std::vector<T> C(blockSize * blockSize);
-        if (blockSize <= small_block_size) {
-            return matrix_multiply_kernel(A, B, C, N, x, y, blockSize);
-        } else {
-            if (verbose >= 1) {
-                std::cout
-                        << "handling large matrix, more work... (blocksize == "
-                        << blockSize << ")" << std::endl;
-            }
 //            // We restrict ourselves to execute the matrixMultiply function locally.
 //            hpx::naming::id_type const locality_id = hpx::find_here();
 //
@@ -70,18 +82,18 @@ struct matrixMultiply_server: hpx::components::component_base<
 //            extract_submatrix(C, C_small, x, y + n_new, n_new);
 //            C_small = f4.get();
 //            extract_submatrix(C, C_small, x + n_new, y + n_new, n_new);
-        }
-    }
-};
+  }
+  return C;
+}
 
-//HPX_REGISTER_COMPONENT(hpx::components::component<matrixMultiply_server>,
-//        matrixMultiply_server_component);
 
-//HPX_REGISTER_ACTION_DECLARATION(matrixMultiply_server::matrixMultiply_action);
+HPX_REGISTER_COMPONENT(hpx::components::component<matrixMultiply_server>,
+    matrixMultiply_server);
 
-//
-//HPX_REGISTER_ACTION(matrixMultiply_server::matrixMultiply_action);
-//
+HPX_REGISTER_ACTION_DECLARATION(matrixMultiply_server::matrixMultiply_action);
+
+HPX_REGISTER_ACTION(matrixMultiply_server::matrixMultiply_action);
+
 //// Define a client side representation type for the component type
 //// 'some_component' defined in the previous section.
 ////
