@@ -23,7 +23,7 @@
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.1916872494" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1607953881" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/hpx}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/hpx/build/}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/hpx/build}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.dialect.std.1297374366" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.dialect.flags.190445271" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=c++14" valueType="string"/>
@@ -37,19 +37,12 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.618023839" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.2145924840" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug">
 								<option id="gnu.cpp.link.option.libs.457208442" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_chrono"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_date_time"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_filesystem"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_program_options"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_regex"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_system"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_thread"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_atomic"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_context"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_random"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="hwloc"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="hpx"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="hpx_init"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="hpx_iostreams"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_program_options"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_system"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_thread"/>
 								</option>
 								<option id="gnu.cpp.link.option.paths.329515979" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/hpx/build/lib}&quot;"/>
@@ -87,18 +80,35 @@
 							<targetPlatform id="cdt.managedbuild.target.gnu.platform.exe.release.1992574973" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.release"/>
 							<builder buildPath="${workspace_loc:/MatrixMultiplicationHPX}/Release" id="cdt.managedbuild.target.gnu.builder.exe.release.1926814519" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.exe.release"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.2070260749" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
-							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1659339092" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release">
+							<tool command="g++-6" id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1659339092" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release">
 								<option id="gnu.cpp.compiler.exe.release.option.optimization.level.23826272" name="Optimization Level" superClass="gnu.cpp.compiler.exe.release.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.release.option.debugging.level.60924388" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.include.paths.2025403070" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/hpx}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/hpx/build}&quot;"/>
+								</option>
+								<option id="gnu.cpp.compiler.option.dialect.std.498508539" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.891472276" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=c++14" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.89190881" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
-							<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.release.319074587" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.release">
+							<tool command="gcc-6" id="cdt.managedbuild.tool.gnu.c.compiler.exe.release.319074587" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.release">
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.exe.release.option.optimization.level.341760156" name="Optimization Level" superClass="gnu.c.compiler.exe.release.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option id="gnu.c.compiler.exe.release.option.debugging.level.1531569954" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.2057932184" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.release.221754521" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.release"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.1841688015" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.release">
+								<option id="gnu.cpp.link.option.libs.1041431679" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="hpx"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="hpx_init"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="hpx_iostreams"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_program_options"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_system"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="boost_thread"/>
+								</option>
+								<option id="gnu.cpp.link.option.paths.1302866676" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/hpx/build/lib}&quot;"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1035743811" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -141,4 +151,5 @@
 			<resource resourceType="PROJECT" workspacePath="/MatrixMultiplicationHPX"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>
