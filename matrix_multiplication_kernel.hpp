@@ -25,7 +25,7 @@ void extract_submatrix(std::vector<T> &C, std::vector<T> &C_small, size_t x,
 			}
 		}
 	} catch (const std::out_of_range &oor) {
-		std::cout << "in extract_submatrix:" << oor.what() << std::endl;
+		std::cout << "in extract_submatrix: " << oor.what() << std::endl;
 	}
 }
 
@@ -37,6 +37,7 @@ void matrix_multiply_kernel(std::vector<T> &A, std::vector<T> &B,
 //                << ", blocksize = " << blockSize << std::endl;
 //    }
 
+
 	try {
 		for (uint64_t i = 0; i < blockSize; i++) {
 			for (uint64_t j = 0; j < blockSize; j++) {
@@ -47,7 +48,7 @@ void matrix_multiply_kernel(std::vector<T> &A, std::vector<T> &B,
 			}
 		}
 	} catch (const std::out_of_range &oor) {
-		std::cout << "in matrix_multiply_kernel:" << oor.what() << std::endl;
+		std::cout << "in matrix_multiply_kernel: \"" << oor.what() << "\"" << std::endl;
 	}
 }
 

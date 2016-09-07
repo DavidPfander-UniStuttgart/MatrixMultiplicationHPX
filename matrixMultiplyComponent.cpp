@@ -78,7 +78,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
 		hpx::util::high_resolution_timer t;
 
 		// Wait for mat() to return the value
-		matrixMultiply_client multiplier = matrixMultiply_client::create(
+		matrixMultiply_client multiplier = hpx::new_<matrixMultiply_client>(
 				hpx::find_here(), n, A, B);
 		hpx::future<std::vector<double>> f = multiplier.matrixMultiplyClient(0,
 				0, n);
@@ -124,7 +124,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
 		}
 	}
 
-	return 	hpx::finalize(); // Handles HPX shutdown
+	return hpx::finalize(); // Handles HPX shutdown
 }
 
 int main(int argc, char* argv[]) {

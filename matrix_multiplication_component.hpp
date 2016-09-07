@@ -50,6 +50,10 @@ struct matrixMultiply_client: hpx::components::client_base<
 	using base_type = hpx::components::client_base<
 	matrixMultiply_client, matrixMultiply_server>;
 
+	matrixMultiply_client(const hpx::naming::id_type& id): base_type(id) {
+
+	}
+
 	matrixMultiply_client(hpx::future<hpx::id_type> && id) :
 			base_type(std::move(id)) {
 	}
