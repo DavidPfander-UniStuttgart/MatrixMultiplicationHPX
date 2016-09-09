@@ -27,33 +27,19 @@ std::vector<double> matrixMultiply_server::matrixMultiply(std::uint64_t x,
 		uint64_t submatrix_count = 4;
 		uint64_t n_new = blockSize / 2;
 
-//		hpx::future<hpx::id_type> id_future = hpx::new_<matrixMultiply_server>(hpx::find_here(), N, A, B);
-//		hpx::components::client<matrixMultiply_server> cl = id_future.get();
-
-		//TODO: major problem: how to use the same policy information on every node?
 		std::vector<hpx::id_type> node_ids = hpx::find_all_localities();
-		hpx::components::default_distribution_policy policy;
-		// TODO: is that required? -> constructor is proteced
-		policy(node_ids);
 
-		std::vector<matrixMultiply_client> sub_multipliers =
-				hpx::new_<matrixMultiply_client[]>(policy, submatrix_count, N,
-						A, B).get();
-
-		// offsets for submatrices
-//		std::vector<std::tuple<size_t, size_t>> offsets = { { x, y }, { x
-//				+ n_new, y }, { x, y + n_new }, { x + n_new, y + n_new } };
+		std::vector<hpx::components::client<matrixMultiply_server>> sub_multipliers =
+				hpx::new_<hpx::components::client<matrixMultiply_server>[]>(
+						hpx::components::default_layout(node_ids), submatrix_count, N, A, B).get();
 
 		std::vector<std::tuple<size_t, size_t>> offsets = { { 0, 0 }, { 0
 				+ n_new, 0 }, { 0, 0 + n_new }, { 0 + n_new, 0 + n_new } };
 
 		std::vector<hpx::future<void>> g;
 		for (size_t i = 0; i < submatrix_count; i++) {
-			hpx::future<std::vector<double>> f =
-					sub_multipliers[i].matrixMultiplyClient(
-							x + std::get<0>(offsets[i]),
-							y + std::get<1>(offsets[i]), n_new);
-
+			hpx::future<std::vector<double>> f = hpx::async<matrixMultiply_server::matrixMultiply_action>(sub_multipliers[i].get_id(), x + std::get<0>(offsets[i]),
+					y + std::get<1>(offsets[i]), n_new);
 			g.push_back(
 					f.then(
 							hpx::util::unwrapped(
@@ -67,6 +53,8 @@ std::vector<double> matrixMultiply_server::matrixMultiply(std::uint64_t x,
 //			std::vector<double> C_small = result_proxies[i].get();
 //			kernel::extract_submatrix(C, C_small, std::get<0>(offsets_restore[i]), std::get<1>(offsets_restore[i]), n_new);
 //		}
+
+//TODO: try it with dataflow
 
 // wait for the matrix C to become ready
 		hpx::wait_all(g);
