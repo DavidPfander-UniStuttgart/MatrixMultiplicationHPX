@@ -6,6 +6,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <hpx/hpx_init.hpp>
+#include <hpx/lcos/when_all.hpp>
 #include <hpx/include/actions.hpp>
 #include <hpx/include/async.hpp>
 #include <hpx/include/util.hpp>
@@ -18,8 +19,9 @@
 
 #include <boost/format.hpp>
 
-#include "naive_matrix_multiplication.hpp"
-#include "matrix_multiplication_component.hpp"
+#include "matrix_multiply_naive.hpp"
+#include "matrix_multiply_node.hpp"
+#include "matrix_multiply_distributed.hpp"
 
 //std::vector<double> A;
 //std::vector<double> B;
@@ -36,6 +38,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
 	small_block_size = vm["small-block-size"].as<std::uint64_t>();
 	verbose = vm["verbose"].as<uint64_t>();
 	check = vm["check"].as<bool>();
+	std::string algorithm = vm["algorithm"].as<std::string>();
 
 	std::vector<double> A;
 	std::vector<double> B;
@@ -73,24 +76,45 @@ int hpx_main(boost::program_options::variables_map& vm) {
 
 //    C.resize(n * n);
 
-	{
-		// Keep track of the time required to execute.
-		hpx::util::high_resolution_timer t;
+// Keep track of the time required to execute.
+	hpx::util::high_resolution_timer t;
 
-		// Wait for mat() to return the value
-		matrixMultiply_client multiplier = hpx::new_<matrixMultiply_client>(
-				hpx::find_here(), n, A, B);
-		hpx::future<std::vector<double>> f = multiplier.matrixMultiplyClient(0,
-				0, n);
+	if (algorithm.compare("single") == 0) {
+		hpx::cout << "using parallel single node algorithm" << std::endl << hpx::flush;
+		hpx::components::client<matrix_multiply_node> multiplier = hpx::new_<
+				hpx::components::client<matrix_multiply_node>>(hpx::find_here(),
+				n, A, B);
+		hpx::future<std::vector<double>> f = hpx::async<
+				matrix_multiply_node::matrix_multiply_action>(
+				multiplier.get_id(), 0, 0, n);
 		C = f.get();
+	} else if (algorithm.compare("static") == 0) {
+		hpx::cout << "using static distributed algorithm" << std::endl << hpx::flush;
+		std::vector<hpx::components::client<matrix_multiply_distributed>> multipliers = hpx::new_<
+				hpx::components::client<matrix_multiply_distributed>[]>(hpx::default_layout, hpx::get_num_localities().get(),
+				n, A, B).get();
+		std::vector<hpx::future<std::vector<double>>> fs(hpx::get_num_localities().get());
+		// TODO: private constructor to avoid illegal copy (if reference in next statement is removed)?
 
-		char const* fmt = "matrixMultiply(n = %1%)\nelapsed time: %2% [s]\n";
-		std::cout << (boost::format(fmt) % n % t.elapsed());
+//		hpx::future<std::vector<double>> f = hpx::async<
+//				matrix_multiply_distributed::matrix_multiply_action>(
+//				multipliers[0].get_id(), 0, 0, n);
+//		f.get();
+		for (hpx::components::client<matrix_multiply_distributed> &multiplier: multipliers) {
+			hpx::future<std::vector<double>> f = hpx::async<
+					matrix_multiply_distributed::matrix_multiply_action>(
+					multiplier.get_id(), 0, 0, n);
+			f.get();
+//			fs.push_back(std::move(f));
+		}
+//		hpx::when_all(fs);
 	}
+
+	char const* fmt = "matrixMultiply(n = %1%)\nelapsed time: %2% [s]\n";
+	std::cout << (boost::format(fmt) % n % t.elapsed());
 
 	if (verbose >= 2) {
 		std::cout << "matrix C:" << std::endl;
-		C.resize(n * n);
 		print_matrix(n, C);
 	}
 
@@ -106,7 +130,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
 		}
 
 		// compare solutions
-		bool ok = std::equal(C.begin(), C.end(), Cref.begin(),
+		bool ok = std::equal(C.begin(), C.end(), Cref.begin(), Cref.end(),
 				[](double first, double second) {
 //							std::cout << "first: " << first << " second: " << second << std::endl;
 					if (std::abs(first - second) < 1E-10) {
@@ -143,7 +167,10 @@ int main(int argc, char* argv[]) {
 			"set to 1 for status information, set to 2 to additionally print the matrices")(
 			"check",
 			boost::program_options::value<bool>()->default_value(false),
-			"check result against a naive and slow matrix-multiplication implementation");
+			"check result against a naive and slow matrix-multiplication implementation")(
+			"algorithm",
+			boost::program_options::value<std::string>()->default_value(
+					"single"), "select algorithm: single, static");
 
 	// Initialize and run HPX
 	return hpx::init(desc_commandline, argc, argv);
