@@ -15,4 +15,4 @@ env.AppendUnique(CPPFLAGS='-std=c++14')
 
 sources = env.Glob("*.cpp")
 objects = [env.Object(s) for s in sources]
-env.Program('matrixMultiplicationComponent', objects)
+env.Program('matrix_multiply', objects)
