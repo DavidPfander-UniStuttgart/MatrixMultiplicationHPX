@@ -11,7 +11,7 @@ env.AppendUnique(CPPPATH=env['HPX_CPPPATH'])
 env.AppendUnique(CPPPATH=env['BOOST_CPPPATH'])
 env.AppendUnique(LIBS=['hpx', 'hpx_init', 'hpx_iostreams', 'boost_program_options', 'boost_system', 'boost_thread'])
 env.PrependUnique(LIBPATH=[env['HPX_LIBPATH'], env['BOOST_LIBPATH']])
-env.AppendUnique(CPPFLAGS='-std=c++14')
+env.AppendUnique(CPPFLAGS=['-std=c++14', '-Wall', '-Wextra', '-Wno-deprecated', '-Wno-unused-parameter', '-Wno-attributes'])
 
 sources = env.Glob("*.cpp")
 objects = [env.Object(s) for s in sources]

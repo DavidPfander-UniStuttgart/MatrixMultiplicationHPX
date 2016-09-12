@@ -16,12 +16,14 @@
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
+#include <cassert>
 
 #include <boost/format.hpp>
 
 #include "matrix_multiply_naive.hpp"
 #include "matrix_multiply_node.hpp"
 #include "matrix_multiply_distributed.hpp"
+#include "matrix_multiply_static.hpp"
 
 //std::vector<double> A;
 //std::vector<double> B;
@@ -89,25 +91,8 @@ int hpx_main(boost::program_options::variables_map& vm) {
 				multiplier.get_id(), 0, 0, n);
 		C = f.get();
 	} else if (algorithm.compare("static") == 0) {
-		hpx::cout << "using static distributed algorithm" << std::endl << hpx::flush;
-		std::vector<hpx::components::client<matrix_multiply_distributed>> multipliers = hpx::new_<
-				hpx::components::client<matrix_multiply_distributed>[]>(hpx::default_layout, hpx::get_num_localities().get(),
-				n, A, B).get();
-		std::vector<hpx::future<std::vector<double>>> fs(hpx::get_num_localities().get());
-		// TODO: private constructor to avoid illegal copy (if reference in next statement is removed)?
-
-//		hpx::future<std::vector<double>> f = hpx::async<
-//				matrix_multiply_distributed::matrix_multiply_action>(
-//				multipliers[0].get_id(), 0, 0, n);
-//		f.get();
-		for (hpx::components::client<matrix_multiply_distributed> &multiplier: multipliers) {
-			hpx::future<std::vector<double>> f = hpx::async<
-					matrix_multiply_distributed::matrix_multiply_action>(
-					multiplier.get_id(), 0, 0, n);
-			f.get();
-//			fs.push_back(std::move(f));
-		}
-//		hpx::when_all(fs);
+	  matrix_multiply_static m;
+	  C = m.matrix_multiply(n, A, B);
 	}
 
 	char const* fmt = "matrixMultiply(n = %1%)\nelapsed time: %2% [s]\n";

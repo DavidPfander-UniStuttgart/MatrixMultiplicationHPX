@@ -55,8 +55,8 @@ std::vector<double> matrix_multiply_node::matrix_multiply(std::uint64_t x,
 						hpx::components::default_layout(node_ids),
 						submatrix_count, N, A, B).get();
 
-		std::vector<std::tuple<size_t, size_t>> offsets = { { 0, 0 }, { 0
-				+ n_new, 0 }, { 0, 0 + n_new }, { 0 + n_new, 0 + n_new } };
+		std::vector<std::tuple<size_t, size_t>> offsets =
+		  {{ 0, 0 }, {0 + n_new, 0}, {0, 0 + n_new}, {0 + n_new, 0 + n_new}};
 
 		std::vector<hpx::future<void>> g;
 		for (size_t i = 0; i < submatrix_count; i++) {
