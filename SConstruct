@@ -1,18 +1,19 @@
 import os
 
 vars = Variables("custom.py")
-vars.Add("HPX_LIBPATH", "path to the HPX libraries", '/home/pfandedd/git/hpx/build/lib')
-vars.Add("HPX_CPPPATH", "path to the HPX includes", ['/home/pfandedd/git/hpx/', '/home/pfandedd/git/hpx/build'])
-vars.Add("BOOST_CPPPATH", "path to the boost header files (can be empty)", '')
-vars.Add("BOOST_LIBPATH", "path to the boost libs (can be empty)", '')
+vars.Add("PKG_CONFIG_PATH_RELEASE", "path to the pkg-config for configuring hpx, used for release builds", '')
+vars.Add("PKG_CONFIG_PATH_DEBUG", "path to the pkg-config for configuring hpx, used for debug builds", '')
 
-env = Environment(variables=vars, ENV=os.environ)
-env.AppendUnique(CPPPATH=env['HPX_CPPPATH'])
-env.AppendUnique(CPPPATH=env['BOOST_CPPPATH'])
-env.AppendUnique(LIBS=['hpx', 'hpx_init', 'hpx_iostreams', 'boost_program_options', 'boost_system', 'boost_thread'])
-env.PrependUnique(LIBPATH=[env['HPX_LIBPATH'], env['BOOST_LIBPATH']])
-env.AppendUnique(CPPFLAGS=['-std=c++14', '-Wall', '-Wextra', '-Wno-deprecated', '-Wno-unused-parameter', '-Wno-attributes'])
+env_release = Environment(variables=vars, ENV=os.environ)
+env_debug = env_release.Clone()
 
-sources = env.Glob("*.cpp")
-objects = [env.Object(s) for s in sources]
-env.Program('matrix_multiply', objects)
+env_release['ENV']['PKG_CONFIG_PATH']= env_release['PKG_CONFIG_PATH_RELEASE']
+env_release.ParseConfig('pkg-config --cflags --libs hpx_application')
+env_release.AppendUnique(LIBS=['hpx_iostreams'])
+
+env_debug['ENV']['PKG_CONFIG_PATH']= env_debug['PKG_CONFIG_PATH_DEBUG']
+env_debug.ParseConfig('pkg-config --cflags --libs hpx_application_debug')
+env_debug.AppendUnique(LIBS=['hpx_iostreamsd'])
+
+SConscript('SConscript', variant_dir='release', exports={'env':env_release})
+SConscript('SConscript', variant_dir='debug', exports={'env':env_debug})
