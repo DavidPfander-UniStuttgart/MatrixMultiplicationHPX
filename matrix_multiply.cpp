@@ -6,7 +6,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <hpx/hpx_init.hpp>
-#include <hpx/lcos/when_all.hpp>
 #include <hpx/include/actions.hpp>
 #include <hpx/include/async.hpp>
 #include <hpx/include/util.hpp>
@@ -21,25 +20,23 @@
 #include <boost/format.hpp>
 
 #include "matrix_multiply_naive.hpp"
-#include "matrix_multiply_node.hpp"
-#include "matrix_multiply_distributed.hpp"
+#include "matrix_multiply_recursive.hpp"
+#include "matrix_multiply_multiplier.hpp"
 #include "matrix_multiply_static.hpp"
+#include "matrix_multiply_util.hpp"
 
 //std::vector<double> A;
 //std::vector<double> B;
 //std::vector<double> C;
 // initialized via program_options defaults
-uint64_t verbose;
-uint64_t small_block_size;
-bool check;
 
 int hpx_main(boost::program_options::variables_map& vm) {
 
 	// extract command line argument
 	std::uint64_t n = vm["n-value"].as<std::uint64_t>();
-	small_block_size = vm["small-block-size"].as<std::uint64_t>();
-	verbose = vm["verbose"].as<uint64_t>();
-	check = vm["check"].as<bool>();
+	size_t small_block_size = vm["small-block-size"].as<std::uint64_t>();
+	uint64_t verbose = vm["verbose"].as<uint64_t>();
+	bool check = vm["check"].as<bool>();
 	std::string algorithm = vm["algorithm"].as<std::string>();
 
 	std::vector<double> A;
@@ -83,20 +80,23 @@ int hpx_main(boost::program_options::variables_map& vm) {
 
 	if (algorithm.compare("single") == 0) {
 		hpx::cout << "using parallel single node algorithm" << std::endl << hpx::flush;
-		hpx::components::client<matrix_multiply_node> multiplier = hpx::new_<
-				hpx::components::client<matrix_multiply_node>>(hpx::find_here(),
-				n, A, B);
-		hpx::future<std::vector<double>> f = hpx::async<
-				matrix_multiply_node::matrix_multiply_action>(
-				multiplier.get_id(), 0, 0, n);
+		hpx::components::client<matrix_multiply_multiplier> multiplier = hpx::new_<
+		  hpx::components::client<matrix_multiply_multiplier>>(hpx::find_here(),
+								       n, A, B, verbose);
+		uint32_t comp_locality = hpx::naming::get_locality_id_from_id(multiplier.get_id());
+		multiplier.register_as("/multiplier#" + std::to_string(comp_locality));
+		hpx::components::client<matrix_multiply_recursive> recursive = hpx::new_<
+		  hpx::components::client<matrix_multiply_recursive>>(hpx::find_here(), small_block_size, verbose);
+		auto f = hpx::async<
+		  matrix_multiply_recursive::distribute_recursively_action>(recursive.get_id(), 0, 0, n);
 		C = f.get();
 	} else if (algorithm.compare("static") == 0) {
-	  matrix_multiply_static m;
-	  C = m.matrix_multiply(n, A, B);
+	  matrix_multiply_static m(n, A, B, small_block_size, verbose);
+	  C = m.matrix_multiply();
 	}
 
-	char const* fmt = "matrixMultiply(n = %1%)\nelapsed time: %2% [s]\n";
-	std::cout << (boost::format(fmt) % n % t.elapsed());
+	char const* fmt = "matrixMultiply(n = %1%)\nelapsed time: %2% [s]";
+	std::cout << (boost::format(fmt) % n % t.elapsed()) << std::endl;
 
 	if (verbose >= 2) {
 		std::cout << "matrix C:" << std::endl;
@@ -106,8 +106,8 @@ int hpx_main(boost::program_options::variables_map& vm) {
 	if (check) {
 		hpx::util::high_resolution_timer t2;
 		std::vector<double> Cref = naiveMatrixMultiply(n, A, B);
-		char const* fmt = "naive matMult took %1% [s]\n";
-		std::cout << (boost::format(fmt) % t2.elapsed());
+		char const* fmt = "naive matMult took %1% [s]";
+		std::cout << (boost::format(fmt) % t2.elapsed()) << std::endl;
 
 		if (verbose >= 2) {
 			std::cout << "matrix Cref:" << std::endl;
