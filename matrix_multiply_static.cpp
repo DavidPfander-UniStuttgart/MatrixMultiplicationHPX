@@ -84,7 +84,7 @@ std::vector<double> matrix_multiply_static::matrix_multiply() {
     
     hpx::future<std::vector<double>> f = hpx::async<
       matrix_multiply_recursive::distribute_recursively_action>(recursive.get_id(), w.x, w.y, w.N);
-    f.wait();
+    // f.wait();
     hpx::future<void> g = f.then(hpx::util::unwrapped(
     				  [=](std::vector<double> submatrix)
     				  {

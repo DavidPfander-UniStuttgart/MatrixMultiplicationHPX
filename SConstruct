@@ -17,5 +17,5 @@ env_debug.ParseConfig('pkg-config --cflags --libs hpx_application_debug')
 env_debug.AppendUnique(LIBS=['hpx_iostreamsd'])
 env_debug.AppendUnique(CPPFLAGS=['-O0', '-g'])
 
-# SConscript('SConscript', variant_dir='release', exports={'env':env_release})
+SConscript('SConscript', variant_dir='release', exports={'env':env_release})
 SConscript('SConscript', variant_dir='debug', exports={'env':env_debug})

@@ -4,13 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-struct matrix_multiply_work {
-  size_t x;
-  size_t y;
-  size_t N;
-  matrix_multiply_work(size_t x, size_t y, size_t N): x(x), y(y), N(N) {
-  }
-};
+#include "matrix_multiply_work.hpp"
 
 // uses round-robin distribution scheme, granularity of distribution is determined by the number of nodes
 class matrix_multiply_static {
