@@ -59,7 +59,7 @@ bool matrix_multiply_static_improved::fulfills_constraints(
 		double relative_work_difference = (static_cast<double>(max_work
 				- min_work) / static_cast<double>(min_work));
 		std::cout << "+++ relative_work_difference: "
-				<< relative_work_difference << std::endl;
+			  << relative_work_difference << " bound: " << max_relative_work_difference << std::endl;
 		if (relative_work_difference < max_relative_work_difference) {
 			return true;
 		}
@@ -83,55 +83,93 @@ std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::
 
 		// give some work from the max element to the min element
 		uint64_t max_work = total_work[0];
-		size_t max_index = 0;
+		// is a vector, as there could be multiple indices with max work value
+		// test every of them, as some might be invalid due to no existing work packages to distribute 
+		std::vector<size_t> max_indices = {0};
 		uint64_t min_work = total_work[0];
 		size_t min_index = 0;
 
 		for (size_t i = 1; i < num_localities; i++) {
 			if (total_work[i] > max_work) {
 				max_work = total_work[i];
-				max_index = i;
+				max_indices.clear();
+				max_indices.push_back(i);
+			} else if (total_work[i] == max_work) {
+			  max_indices.push_back(i);
 			}
+			
 			if (total_work[i] < min_work) {
 				min_work = total_work[i];
 				min_index = i;
 			}
 		}
 
-		// will always succeed, do not have to skip first iteration
-		size_t work_to_balance_index = all_work[max_index].size();
-		uint64_t smallest_work_difference = max_work - min_work;
-		for (size_t j = 0; j < all_work[max_index].size(); j++) {
-			matrix_multiply_work &w = all_work[max_index][j];
-			if (w.N <= 1) {
-				continue;
-			}
-			// split work package between both locations
-			uint64_t split_size = (w.N * w.N) / 2;
-			uint64_t work_difference = (max_work - split_size)
-					- (min_work + split_size);
-			if (work_difference < smallest_work_difference) {
-				smallest_work_difference = work_difference;
-				work_to_balance_index = j;
-			}
+		std::cout << "max_work: " << max_work << std::endl;
+		std::cout << "min_work: " << min_work << std::endl;
+
+		bool found = false;
+		size_t valid_max_index = 0;
+		size_t valid_work_to_balance_index = 0;
+
+		// std::cout << "max_indices: ";
+		// for (size_t i = 0; i < max_indices.size(); i++) {
+		//   if (i > 0) {
+		//     std::cout << ", ";
+		//   }
+		//   std::cout << max_indices[i];
+		// }
+		// std::cout << std::endl;
+		
+		for (size_t max_index: max_indices) {
+		
+		  // will always succeed, do not have to skip first iteration
+		  size_t work_to_balance_index = all_work[max_index].size();
+		  uint64_t smallest_work_difference = max_work - min_work;
+		  for (size_t j = 0; j < all_work[max_index].size(); j++) {
+		    matrix_multiply_work &w = all_work[max_index][j];
+		    if (w.N <= this->min_work_size) {
+		      continue;
+		    }
+		    // split work package between both locations
+		    uint64_t split_size = (w.N * w.N) / 2;
+		    // std::cout << "smallest_work_difference: " << smallest_work_difference << std::endl;
+		    // std::cout << "split_size: " << split_size << std::endl;
+		    int64_t work_difference = std::abs(static_cast<int64_t>(max_work - split_size)
+						       - static_cast<int64_t>(min_work + split_size));
+		    // std::cout << "work_difference: " << work_difference << std::endl;
+		    if (static_cast<uint64_t>(work_difference) <= smallest_work_difference) {
+		      smallest_work_difference = work_difference;
+		      work_to_balance_index = j;
+		    }
+		  }
+
+		  // work found -> apply
+		  if (work_to_balance_index != all_work[max_index].size()) {
+		    found = true;
+		    valid_max_index = max_index;
+		    valid_work_to_balance_index = work_to_balance_index;
+		    break;
+		  }
 		}
 
-		// no work found
-		if (work_to_balance_index == all_work[max_index].size()) {
-			break;
+		if (!found) {
+		  if (verbose >= 1) {
+		    std::cout << "aborted due to no valid work package to distribute found" << std::endl;
+		  }
+		  break;
 		}
 
-		matrix_multiply_work w = all_work[max_index][work_to_balance_index];
-		all_work[max_index].erase(
-				all_work[max_index].begin() + work_to_balance_index);
+		matrix_multiply_work w = all_work[valid_max_index][valid_work_to_balance_index];
+		all_work[valid_max_index].erase(
+				all_work[valid_max_index].begin() + valid_work_to_balance_index);
 
 		size_t n_new = w.N / 2;
 		std::vector<std::tuple<size_t, size_t>> offsets = { { 0, 0 }, { 0
 				+ n_new, 0 }, { 0, 0 + n_new }, { 0 + n_new, 0 + n_new } };
 
-		all_work[max_index].emplace_back(w.x + std::get<0>(offsets[0]),
+		all_work[valid_max_index].emplace_back(w.x + std::get<0>(offsets[0]),
 				w.y + std::get<1>(offsets[0]), n_new);
-		all_work[max_index].emplace_back(w.x + std::get<0>(offsets[1]),
+		all_work[valid_max_index].emplace_back(w.x + std::get<0>(offsets[1]),
 				w.y + std::get<1>(offsets[1]), n_new);
 
 		all_work[min_index].emplace_back(w.x + std::get<0>(offsets[2]),
@@ -139,7 +177,7 @@ std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::
 		all_work[min_index].emplace_back(w.x + std::get<0>(offsets[3]),
 				w.y + std::get<1>(offsets[3]), n_new);
 
-		total_work[max_index] -= 2 * n_new * n_new;
+		total_work[valid_max_index] -= 2 * n_new * n_new;
 		total_work[min_index] += 2 * n_new * n_new;
 	}
 
@@ -169,9 +207,6 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 
 	std::vector<hpx::components::client<matrix_multiply_recursive>> recursives;
 
-	std::vector<std::vector<matrix_multiply_work>> test1 =
-			this->create_schedule(5);
-
 	std::vector<std::vector<matrix_multiply_work>> all_work =
 			this->create_schedule(num_localities);
 
@@ -180,22 +215,22 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 	}
 
 	for (size_t i = 0; i < all_work.size(); i++) {
-		// transmit the work to the processing locality
-		for (matrix_multiply_work &w : all_work[i]) {
-			hpx::components::client<matrix_multiply_recursive> recursive =
-					hpx::new_<hpx::components::client<matrix_multiply_recursive>>(
-							hpx::find_here(), small_block_size, verbose);
-			hpx::future<std::vector<double>> f = hpx::async<
-					matrix_multiply_recursive::distribute_recursively_action>(
-					recursive.get_id(), w.x, w.y, w.N);
-			hpx::future<void> g = f.then(
-					hpx::util::unwrapped([=](std::vector<double> submatrix)
-					{
-						this->insert_submatrix(submatrix, w);
-					}));
-			futures.push_back(std::move(g));
-			recursives.push_back(std::move(recursive));
-		}
+	  // transmit the work to the processing locality
+	  for (matrix_multiply_work &w : all_work[i]) {
+	    hpx::components::client<matrix_multiply_recursive> recursive =
+	      hpx::new_<hpx::components::client<matrix_multiply_recursive>>(
+									    all_ids[i], small_block_size, verbose);
+	    hpx::future<std::vector<double>> f = hpx::async<
+	      matrix_multiply_recursive::distribute_recursively_action>(
+									recursive.get_id(), w.x, w.y, w.N);
+	    hpx::future<void> g = f.then(
+					 hpx::util::unwrapped([=](std::vector<double> submatrix)
+							      {
+								this->insert_submatrix(submatrix, w);
+							      }));
+	    futures.push_back(std::move(g));
+	    recursives.push_back(std::move(recursive));
+	  }
 	}
 
 	hpx::wait_all(futures);
