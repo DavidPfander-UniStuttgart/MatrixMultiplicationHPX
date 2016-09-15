@@ -13,12 +13,24 @@
 #include "matrix_multiply_kernel.hpp"
 
 HPX_REGISTER_COMPONENT(hpx::components::component<matrix_multiply_multiplier>,
-		       matrix_multiply_multiplier);
+		matrix_multiply_multiplier);
 
 HPX_REGISTER_ACTION(matrix_multiply_multiplier::calculate_submatrix_action);
 
-std::vector<double> matrix_multiply_multiplier::calculate_submatrix(std::uint64_t x, std::uint64_t y, size_t blockSize) {
-  std::vector<double> C(blockSize * blockSize);
-  kernel::matrix_multiply_kernel(A, B, C, N, x, y, blockSize);
-  return C;
+std::vector<double> matrix_multiply_multiplier::calculate_submatrix(
+		std::uint64_t x, std::uint64_t y, size_t block_result) {
+	std::vector<double> C(block_result * block_result, 0.0); // initialize to zero
+	if (!transposed) {
+		kernel::matrix_multiply_kernel(A, B, C, N, x, y, block_result);
+	} else {
+		// no blocking?
+		if (block_input == 0) {
+			kernel::matrix_multiply_kernel_transposed(A, B, C, N, x, y,
+					block_result);
+		} else {
+			kernel::matrix_multiply_kernel_transposed_blocked(A, B, C, N, x, y,
+					block_result, block_input);
+		}
+	}
+	return C;
 }

@@ -194,7 +194,7 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 // one multiplier per node, to avoid additional copies of A and B
 	std::vector<hpx::components::client<matrix_multiply_multiplier>> multipliers =
 			hpx::new_<hpx::components::client<matrix_multiply_multiplier>[]>(
-					policy, num_localities, N, A, B, verbose).get();
+					policy, num_localities, N, A, B, transposed, block_input, verbose).get();
 
 // colocated
 	for (hpx::components::client<matrix_multiply_multiplier> &multiplier : multipliers) {
