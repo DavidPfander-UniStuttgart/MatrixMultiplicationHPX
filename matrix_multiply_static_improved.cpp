@@ -10,6 +10,22 @@
 #include "matrix_multiply_recursive.hpp"
 #include "matrix_multiply_multiplier.hpp"
 
+void matrix_multiply_static_improved::print_schedule(
+		std::vector<std::vector<matrix_multiply_work>> &all_work) {
+	std::cout << "-----work-distribution:-----" << std::endl;
+	for (size_t i = 0; i < all_work.size(); i++) {
+		std::vector<matrix_multiply_work> &locality_work = all_work[i];
+		std::cout << "locality: " << i << " = ";
+		for (size_t j = 0; j < locality_work.size(); j++) {
+			if (j > 0) {
+				std::cout << ", ";
+			}
+			std::cout << "[" << locality_work[j].N << "]";
+		}
+		std::cout << std::endl;
+	}
+}
+
 void matrix_multiply_static_improved::insert_submatrix(
 		const std::vector<double> &submatrix, const matrix_multiply_work &w) {
 	for (size_t i = 0; i < w.N; i++) {
@@ -34,12 +50,19 @@ bool matrix_multiply_static_improved::fulfills_constraints(
 		}
 	}
 
+	std::cout << "+++ work_difference: " << (max_work - min_work) << std::endl;
+
 	if (max_work - min_work < max_work_difference) {
 		return true;
 	}
-	if (static_cast<double>(max_work - min_work) / static_cast<double>(min_work)
-			< max_relative_work_difference) {
-		return true;
+	if (min_work > 0 && max_work > 0) {
+		double relative_work_difference = (static_cast<double>(max_work
+				- min_work) / static_cast<double>(min_work));
+		std::cout << "+++ relative_work_difference: "
+				<< relative_work_difference << std::endl;
+		if (relative_work_difference < max_relative_work_difference) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -56,22 +79,8 @@ std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::
 	all_work[0].emplace_back(0, 0, N);
 	total_work[0] = N * N;
 
-	size_t temp = 0;
-
 	while (!this->fulfills_constraints(total_work)) {
 
-		std::cout << "-----work-distribution:-----" << std::endl;
-		for (size_t i = 0; i < all_work.size(); i++) {
-			std::vector<matrix_multiply_work> &locality_work = all_work[i];
-			std::cout << "locality: " << i << " = ";
-			for (size_t j = 0; j < locality_work.size(); j++) {
-				if (j > 0) {
-					std::cout << ", ";
-				}
-				std::cout << "[" << locality_work[j].N << "]";
-			}
-			std::cout << std::endl;
-		}
 		// give some work from the max element to the min element
 		uint64_t max_work = total_work[0];
 		size_t max_index = 0;
@@ -90,10 +99,13 @@ std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::
 		}
 
 		// will always succeed, do not have to skip first iteration
-		size_t work_to_balance_index = 0;
+		size_t work_to_balance_index = all_work[max_index].size();
 		uint64_t smallest_work_difference = max_work - min_work;
 		for (size_t j = 0; j < all_work[max_index].size(); j++) {
 			matrix_multiply_work &w = all_work[max_index][j];
+			if (w.N <= 1) {
+				continue;
+			}
 			// split work package between both locations
 			uint64_t split_size = (w.N * w.N) / 2;
 			uint64_t work_difference = (max_work - split_size)
@@ -102,6 +114,11 @@ std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::
 				smallest_work_difference = work_difference;
 				work_to_balance_index = j;
 			}
+		}
+
+		// no work found
+		if (work_to_balance_index == all_work[max_index].size()) {
+			break;
 		}
 
 		matrix_multiply_work w = all_work[max_index][work_to_balance_index];
@@ -122,10 +139,10 @@ std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::
 		all_work[min_index].emplace_back(w.x + std::get<0>(offsets[3]),
 				w.y + std::get<1>(offsets[3]), n_new);
 
-		temp += 1;
-		if (temp > 5)
-			break;
+		total_work[max_index] -= 2 * n_new * n_new;
+		total_work[min_index] += 2 * n_new * n_new;
 	}
+
 	return all_work;
 }
 
@@ -153,10 +170,14 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 	std::vector<hpx::components::client<matrix_multiply_recursive>> recursives;
 
 	std::vector<std::vector<matrix_multiply_work>> test1 =
-			this->create_schedule(4);
+			this->create_schedule(5);
 
 	std::vector<std::vector<matrix_multiply_work>> all_work =
 			this->create_schedule(num_localities);
+
+	if (verbose >= 1) {
+		this->print_schedule(all_work);
+	}
 
 	for (size_t i = 0; i < all_work.size(); i++) {
 		// transmit the work to the processing locality

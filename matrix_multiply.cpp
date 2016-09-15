@@ -180,7 +180,7 @@ int main(int argc, char* argv[]) {
 					10000),
 			"for pseudodynamic scheduling, maximum tolerated load inbalance in matrix components assigned")(
 			"max-relative-work-difference",
-			boost::program_options::value<double>()->default_value(5.0),
+			boost::program_options::value<double>()->default_value(0.05),
 			"for pseudodynamic scheduling, maximum relative tolerated load inbalance in matrix components assigned, in percent");
 
 	// Initialize and run HPX
