@@ -50,7 +50,7 @@ bool matrix_multiply_static_improved::fulfills_constraints(
 		}
 	}
 
-	std::cout << "+++ work_difference: " << (max_work - min_work) << std::endl;
+	// std::cout << "+++ work_difference: " << (max_work - min_work) << std::endl;
 
 	if (max_work - min_work < max_work_difference) {
 		return true;
@@ -58,8 +58,8 @@ bool matrix_multiply_static_improved::fulfills_constraints(
 	if (min_work > 0 && max_work > 0) {
 		double relative_work_difference = (static_cast<double>(max_work
 				- min_work) / static_cast<double>(min_work));
-		std::cout << "+++ relative_work_difference: "
-			  << relative_work_difference << " bound: " << max_relative_work_difference << std::endl;
+		// std::cout << "+++ relative_work_difference: "
+		// 	  << relative_work_difference << " bound: " << max_relative_work_difference << std::endl;
 		if (relative_work_difference < max_relative_work_difference) {
 			return true;
 		}
@@ -104,8 +104,8 @@ std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::
 			}
 		}
 
-		std::cout << "max_work: " << max_work << std::endl;
-		std::cout << "min_work: " << min_work << std::endl;
+		// std::cout << "max_work: " << max_work << std::endl;
+		// std::cout << "min_work: " << min_work << std::endl;
 
 		bool found = false;
 		size_t valid_max_index = 0;
