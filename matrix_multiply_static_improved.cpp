@@ -189,14 +189,32 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 			<< hpx::flush;
 	size_t num_localities = hpx::get_num_localities().get();
 	std::vector<hpx::id_type> all_ids = hpx::find_all_localities();
+
+	size_t compute_localities = num_localities;
+	if (all_ids.size() > 1) {
+	  std::cout << "info: root node is not used for computation" << std::endl;
+	  compute_localities = num_localities - 1;
+	  hpx::id_type root_locality = hpx::find_root_locality();
+	  for(auto it = all_ids.begin(); it < all_ids.end(); it++) {
+	    if (*it == root_locality) {
+	      all_ids.erase(it);
+	      break;
+	    }
+	  }
+	  for (hpx::id_type &id: all_ids) {
+	    std::cout << "computing on id: " << id << std::endl;
+	  }
+	}
+	
 	hpx::default_distribution_policy policy = hpx::default_layout(all_ids);
 
-// one multiplier per node, to avoid additional copies of A and B
+
+	// one multiplier per node, to avoid additional copies of A and B	
 	std::vector<hpx::components::client<matrix_multiply_multiplier>> multipliers =
 			hpx::new_<hpx::components::client<matrix_multiply_multiplier>[]>(
-					policy, num_localities, N, A, B, transposed, block_input, verbose).get();
+					policy, compute_localities, N, A, B, transposed, block_input, verbose).get();
 
-// colocated
+
 	for (hpx::components::client<matrix_multiply_multiplier> &multiplier : multipliers) {
 		uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
 				multiplier.get_id());
@@ -208,7 +226,7 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 	std::vector<hpx::components::client<matrix_multiply_recursive>> recursives;
 
 	std::vector<std::vector<matrix_multiply_work>> all_work =
-			this->create_schedule(num_localities);
+			this->create_schedule(compute_localities);
 
 	if (verbose >= 1) {
 		this->print_schedule(all_work);

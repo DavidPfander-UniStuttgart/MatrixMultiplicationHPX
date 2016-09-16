@@ -30,9 +30,10 @@ struct matrix_multiply_multiplier: hpx::components::component_base<
 	matrix_multiply_multiplier(size_t N, std::vector<double> A,
 			std::vector<double> B, bool transposed, uint64_t block_input,
 			uint64_t verbose) :
-			N(N), A(A), B(B), transposed(transposed), block_input(block_input), verbose(
-					verbose) {
-	}
+	  N(N), A(std::move(A)), B(std::move(B)),
+	  transposed(transposed), block_input(block_input), verbose(verbose)
+  {
+  }
 
 	std::vector<double> calculate_submatrix(std::uint64_t x, std::uint64_t y,
 			size_t block_result);

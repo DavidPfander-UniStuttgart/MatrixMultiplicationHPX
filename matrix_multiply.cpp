@@ -36,6 +36,8 @@ bool transposed;
 // initialized via program_options defaults
 
 double duration;
+// to skip printing and checking on all other nodes
+bool is_root_node;
 
 int hpx_main(boost::program_options::variables_map& vm) {
 
@@ -47,6 +49,8 @@ int hpx_main(boost::program_options::variables_map& vm) {
 	check = vm["check"].as<bool>();
 	transposed = vm["transposed"].as<bool>();
 	uint64_t block_input = vm["block-input"].as<uint64_t>();
+	
+	is_root_node = hpx::find_here() == hpx::find_root_locality();
 
 	// create matrices A, B
 	std::default_random_engine generator;
@@ -179,55 +183,57 @@ int main(int argc, char* argv[]) {
 			boost::program_options::value<bool>()->default_value(true),
 			"use a transposed matrix for B")("block-input",
 			boost::program_options::value<uint64_t>()->default_value(0),
-			"blocked application of the input matrices, set to 0 to disable");
+			"blocked application of the input matrices, set to 0 to disable");	
 
 	// Initialize and run HPX
 	int return_value = hpx::init(desc_commandline, argc, argv);
 
-	//TODO: add multiple iterations
-	double flops = 2 * static_cast<double>(N) * static_cast<double>(N)
-			* static_cast<double>(N);
-	double gflop = flops / 1E9;
-	std::cout << (gflop / duration) << " Gflops" << std::endl;
+	if (is_root_node) {
+	
+	  //TODO: add multiple iterations
+	  double flops = 2 * static_cast<double>(N) * static_cast<double>(N)
+	    * static_cast<double>(N);
+	  double gflop = flops / 1E9;
+	  std::cout << (gflop / duration) << " Gflops" << std::endl;
 
-	// hpx should now be shut down, can now use CPU for (fast) checking
+	  // hpx should now be shut down, can now use CPU for (fast) checking
 
-	if (check) {
-		hpx::util::high_resolution_timer t2;
-		std::vector<double> Cref;
-		if (!transposed) {
-			Cref = naive_matrix_multiply(N, A, B);
-		} else {
-			Cref = naive_matrix_multiply_transposed(N, A, B);
-		}
-		char const* fmt = "naive matMult took %1% [s]";
-		double duration_reference = t2.elapsed();
-		std::cout << (boost::format(fmt) % duration_reference) << std::endl;
-		std::cout << (gflop / duration_reference) << " Gflops (reference implementation)" << std::endl;
+	  if (check) {
+	    hpx::util::high_resolution_timer t2;
+	    std::vector<double> Cref;
+	    if (!transposed) {
+	      Cref = naive_matrix_multiply(N, A, B);
+	    } else {
+	      Cref = naive_matrix_multiply_transposed(N, A, B);
+	    }
+	    char const* fmt = "naive matMult took %1% [s]";
+	    double duration_reference = t2.elapsed();
+	    std::cout << (boost::format(fmt) % duration_reference) << std::endl;
+	    std::cout << (gflop / duration_reference) << " Gflops (reference implementation)" << std::endl;
 
-		if (verbose >= 2) {
-			std::cout << "matrix Cref:" << std::endl;
-			print_matrix(N, Cref);
-		}
+	    if (verbose >= 2) {
+	      std::cout << "matrix Cref:" << std::endl;
+	      print_matrix(N, Cref);
+	    }
 
-		// compare solutions
-		bool ok = std::equal(C.begin(), C.end(), Cref.begin(), Cref.end(),
-				[](double first, double second) {
-					//							std::cout << "first: " << first << " second: " << second << std::endl;
-					if (std::abs(first - second) < 1E-10) {
-						//								std::cout << "true" << std::endl;
-						return true;
-					} else {
-						//								std::cout << "false" << std::endl;
-						return false;
-					}
-				});
-		if (ok) {
-			std::cout << "check passed" << std::endl;
-		} else {
-			std::cout << "error: check failed!" << std::endl;
-		}
+	    // compare solutions
+	    bool ok = std::equal(C.begin(), C.end(), Cref.begin(), Cref.end(),
+				 [](double first, double second) {
+				   //							std::cout << "first: " << first << " second: " << second << std::endl;
+				   if (std::abs(first - second) < 1E-10) {
+				     //								std::cout << "true" << std::endl;
+				     return true;
+				   } else {
+				     //								std::cout << "false" << std::endl;
+				     return false;
+				   }
+				 });
+	    if (ok) {
+	      std::cout << "check passed" << std::endl;
+	    } else {
+	      std::cout << "error: check failed!" << std::endl;
+	    }
+	  }
 	}
-
 	return return_value;
 }
