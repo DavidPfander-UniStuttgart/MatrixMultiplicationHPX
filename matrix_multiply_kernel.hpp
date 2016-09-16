@@ -66,7 +66,7 @@ void matrix_multiply_kernel_transposed_blocked(std::vector<T> &A,
 		for (size_t i = 0; i < block_result; i++) {
 			for (size_t j = 0; j < block_result; j++) {
 				T result_component = 0.0;
-				for (size_t k = k_block; k < k_block + block_input; k++) {
+				for (size_t k = k_block; k < std::min(k_block + block_input, N); k++) {
 					result_component += A[(x + i) * N + k] * B[(y + j) * N + k];
 				}
 				// assumes matrix was zero-initialized

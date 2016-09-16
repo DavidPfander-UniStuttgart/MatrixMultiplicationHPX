@@ -238,6 +238,12 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 	    hpx::components::client<matrix_multiply_recursive> recursive =
 	      hpx::new_<hpx::components::client<matrix_multiply_recursive>>(
 									    all_ids[i], small_block_size, verbose);
+
+		uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
+				recursive.get_id());
+		recursive.register_as("/recursive#" + std::to_string(comp_locality));
+		std::cout << "registered: " << "/recursive#" << std::to_string(comp_locality) << std::endl;
+
 	    hpx::future<std::vector<double>> f = hpx::async<
 	      matrix_multiply_recursive::distribute_recursively_action>(
 									recursive.get_id(), w.x, w.y, w.N);

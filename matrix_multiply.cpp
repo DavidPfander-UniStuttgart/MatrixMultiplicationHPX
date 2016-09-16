@@ -110,12 +110,16 @@ int hpx_main(boost::program_options::variables_map& vm) {
 				hpx::new_<hpx::components::client<matrix_multiply_multiplier>>(
 						hpx::find_here(), N, A, B, transposed, block_input,
 						verbose);
-		uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
+		uint32_t comp_locality_multiplier = hpx::naming::get_locality_id_from_id(
 				multiplier.get_id());
-		multiplier.register_as("/multiplier#" + std::to_string(comp_locality));
+		multiplier.register_as("/multiplier#" + std::to_string(comp_locality_multiplier));
 		hpx::components::client<matrix_multiply_recursive> recursive =
 				hpx::new_<hpx::components::client<matrix_multiply_recursive>>(
 						hpx::find_here(), small_block_size, verbose);
+		uint32_t comp_locality_recursive = hpx::naming::get_locality_id_from_id(
+				recursive.get_id());
+		recursive.register_as("/recursive#" + std::to_string(comp_locality_recursive));
+
 		auto f = hpx::async<
 				matrix_multiply_recursive::distribute_recursively_action>(
 				recursive.get_id(), 0, 0, N);
