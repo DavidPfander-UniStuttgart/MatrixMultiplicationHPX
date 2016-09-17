@@ -29,6 +29,10 @@ struct matrix_multiply_recursive: hpx::components::component_base<
     small_block_size(small_block_size), verbose(verbose) {
   }
   
+  ~matrix_multiply_recursive(){
+	  hpx::cout << "Oh noes, I'm getting deleted!" << std::endl << hpx::flush;
+  }
+
   std::vector<double> distribute_recursively(std::uint64_t x, std::uint64_t y,
 					     size_t blockSize);
   

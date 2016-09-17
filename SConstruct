@@ -19,8 +19,8 @@ env_release.AppendUnique(CPPFLAGS=['-O3'])
 
 env_debug['ENV']['PKG_CONFIG_PATH']= env_debug['PKG_CONFIG_PATH_DEBUG']
 env_debug.ParseConfig('pkg-config --cflags --libs hpx_application_debug')
-env_debug.AppendUnique(LIBS=['hpx_iostreamsd'])
-env_debug.AppendUnique(CPPFLAGS=['-O0', '-g'])
+env_debug.AppendUnique(LIBS=['hpx_iostreamsd', 'asan'])
+env_debug.AppendUnique(CPPFLAGS=['-O0', '-g', '-fsanitize=address', '-fno-omit-frame-pointer'])
 
 SConscript('SConscript', variant_dir='release', exports={'env':env_release})
 SConscript('SConscript', variant_dir='debug', exports={'env':env_debug})

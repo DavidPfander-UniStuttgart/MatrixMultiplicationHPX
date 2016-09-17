@@ -75,7 +75,7 @@ std::vector<double> matrix_multiply_static::matrix_multiply() {
 	for (hpx::components::client<matrix_multiply_multiplier> &multiplier : multipliers) {
 		uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
 				multiplier.get_id());
-		multiplier.register_as("/multiplier#" + std::to_string(comp_locality));
+		multiplier.register_as("/multiplier#" + std::to_string(comp_locality), false);
 	}
 
 	// now place a recursive matrix splitter on every locality and give it a reference to its multiplier
@@ -86,7 +86,7 @@ std::vector<double> matrix_multiply_static::matrix_multiply() {
 	for (hpx::components::client<matrix_multiply_recursive> &recursive : recursives) {
 		uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
 				recursive.get_id());
-		recursive.register_as("/recursive#" + std::to_string(comp_locality));
+		recursive.register_as("/recursive#" + std::to_string(comp_locality), false);
 	}
 
 	std::vector<hpx::future<void>> futures;

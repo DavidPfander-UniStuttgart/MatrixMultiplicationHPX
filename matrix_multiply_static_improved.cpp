@@ -218,7 +218,7 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 	for (hpx::components::client<matrix_multiply_multiplier> &multiplier : multipliers) {
 		uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
 				multiplier.get_id());
-		multiplier.register_as("/multiplier#" + std::to_string(comp_locality));
+		multiplier.register_as("/multiplier#" + std::to_string(comp_locality), false);
 	}
 
 	std::vector<hpx::future<void>> futures;
@@ -241,17 +241,18 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 
 		uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
 				recursive.get_id());
-		recursive.register_as("/recursive#" + std::to_string(comp_locality));
-		std::cout << "registered: " << "/recursive#" << std::to_string(comp_locality) << std::endl;
+		recursive.register_as("/recursive#" + std::to_string(comp_locality), false);
 
 	    hpx::future<std::vector<double>> f = hpx::async<
 	      matrix_multiply_recursive::distribute_recursively_action>(
 									recursive.get_id(), w.x, w.y, w.N);
+//	    f.wait();
 	    hpx::future<void> g = f.then(
 					 hpx::util::unwrapped([=](std::vector<double> submatrix)
 							      {
 								this->insert_submatrix(submatrix, w);
 							      }));
+//	    g.wait();
 	    futures.push_back(std::move(g));
 	    recursives.push_back(std::move(recursive));
 	  }

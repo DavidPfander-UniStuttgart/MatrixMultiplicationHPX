@@ -39,6 +39,7 @@ void matrix_multiply_recursive::extract_submatrix(std::vector<double> &C,
 
 std::vector<double> matrix_multiply_recursive::distribute_recursively(
 		std::uint64_t x, std::uint64_t y, size_t blockSize) {
+
 	if (verbose >= 1) {
 		hpx::cout << hpx::find_here() << " work on x: " << x << ", y: " << y
 				<< " blockSize: " << blockSize << std::endl << hpx::flush;
@@ -72,16 +73,6 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
 		uint32_t comp_locality = hpx::get_locality_id();
 		hpx::components::client<matrix_multiply_recursive> self;
 		self.connect_to("/recursive#" + std::to_string(comp_locality));
-		if (self.is_ready()) {
-			std::cout << "is ready" << std::endl;
-		} else {
-			std::cout << "NOPE" << std::endl;
-		}
-		std::cout << "before connection: " << std::endl;
-
-		std::cout << "connected: " << "/recursive#" << std::to_string(comp_locality) << std::endl;
-		hpx::id_type self_id = self.get_id();
-		std::cout << "have id" << std::endl;
 
 		std::vector<std::tuple<size_t, size_t>> offsets = { { 0, 0 }, { 0
 				+ n_new, 0 }, { 0, 0 + n_new }, { 0 + n_new, 0 + n_new } };
@@ -89,12 +80,10 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
 		std::vector<double> C(blockSize * blockSize);
 		std::vector<hpx::future<void>> g;
 		for (size_t i = 0; i < submatrix_count; i++) {
-			std::cout << "before submitting async" << std::endl;
 			hpx::future<std::vector<double>> f = hpx::async<
 					matrix_multiply_recursive::distribute_recursively_action>(
 					self.get_id(), x + std::get<0>(offsets[i]),
 					y + std::get<1>(offsets[i]), n_new);
-			std::cout << "submitted async" << std::endl;
 			g.push_back(
 					f.then(
 							hpx::util::unwrapped(
