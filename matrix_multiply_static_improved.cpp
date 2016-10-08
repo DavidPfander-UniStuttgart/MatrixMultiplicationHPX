@@ -216,9 +216,10 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 
     // one multiplier per node, to avoid additional copies of A and B
 
-	std::vector<hpx::components::client<matrix_multiply_multiplier>> multipliers =
-			hpx::new_<hpx::components::client<matrix_multiply_multiplier>[]>(
-					policy, compute_localities, N, A, B, transposed, block_input, verbose).get();
+    std::vector<hpx::components::client<matrix_multiply_multiplier>> multipliers =
+            hpx::new_<hpx::components::client<matrix_multiply_multiplier>[]>(
+                    policy, compute_localities, N, A, B, transposed,
+                    block_input, verbose).get();
 
     for (hpx::components::client<matrix_multiply_multiplier> &multiplier : multipliers) {
         uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
@@ -238,33 +239,38 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
         this->print_schedule(all_work);
     }
 
-    for (size_t i = 0; i < all_work.size(); i++) {
-        // transmit the work to the processing locality
-        for (matrix_multiply_work &w : all_work[i]) {
-            hpx::components::client<matrix_multiply_recursive> recursive =
-                    hpx::new_<hpx::components::client<matrix_multiply_recursive>>(
-                            all_ids[i], small_block_size, verbose);
+    for (size_t repeat = 0; repeat < repetitions; repeat++) {
+        for (size_t i = 0; i < all_work.size(); i++) {
+            // transmit the work to the processing locality
+            for (matrix_multiply_work &w : all_work[i]) {
+                hpx::components::client<matrix_multiply_recursive> recursive =
+                        hpx::new_<
+                                hpx::components::client<
+                                        matrix_multiply_recursive>>(all_ids[i],
+                                small_block_size, verbose);
 
-            uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
-                    recursive.get_id());
-            recursive.register_as("/recursive#" + std::to_string(comp_locality),
-                    false);
+                uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
+                        recursive.get_id());
+                recursive.register_as(
+                        "/recursive#" + std::to_string(comp_locality), false);
 
-            hpx::future<std::vector<double>> f = hpx::async<
-                    matrix_multiply_recursive::distribute_recursively_action>(
-                    recursive.get_id(), w.x, w.y, w.N);
+                hpx::future<std::vector<double>> f =
+                        hpx::async<
+                                matrix_multiply_recursive::distribute_recursively_action>(
+                                recursive.get_id(), w.x, w.y, w.N);
 //	    f.wait();
-            hpx::future<void> g = f.then(
-                    hpx::util::unwrapped([=](std::vector<double> submatrix)
-                    {
-                        this->insert_submatrix(submatrix, w);
-                    }));
+                hpx::future<void> g = f.then(
+                        hpx::util::unwrapped([=](std::vector<double> submatrix)
+                        {
+                            this->insert_submatrix(submatrix, w);
+                        }));
 //	    g.wait();
-            futures.push_back(std::move(g));
-            recursives.push_back(std::move(recursive));
+                futures.push_back(std::move(g));
+                recursives.push_back(std::move(recursive));
+            }
         }
-    }
 
-    hpx::wait_all(futures);
+        hpx::wait_all(futures);
+    }
     return C;
 }

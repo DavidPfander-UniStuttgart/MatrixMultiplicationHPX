@@ -22,7 +22,6 @@
 #include "matrix_multiply_naive.hpp"
 #include "matrix_multiply_recursive.hpp"
 #include "matrix_multiply_multiplier.hpp"
-#include "matrix_multiply_static.hpp"
 #include "matrix_multiply_static_improved.hpp"
 #include "matrix_multiply_util.hpp"
 
@@ -105,55 +104,50 @@ int hpx_main(boost::program_options::variables_map& vm) {
     // Keep track of the time required to execute.
     hpx::util::high_resolution_timer t;
 
-    for (size_t repeat = 0; repeat < repetitions; repeat++) {
-        if (algorithm.compare("single") == 0) {
-            hpx::cout << "using parallel single node algorithm" << std::endl
-                    << hpx::flush;
-            hpx::components::client<matrix_multiply_multiplier> multiplier =
-                    hpx::new_<
-                            hpx::components::client<matrix_multiply_multiplier>>(
-                            hpx::find_here(), N, A, B, transposed, block_input,
-                            verbose);
-            uint32_t comp_locality_multiplier =
-                    hpx::naming::get_locality_id_from_id(multiplier.get_id());
-            multiplier.register_as(
-                    "/multiplier#" + std::to_string(comp_locality_multiplier),
-                    false);
-            hpx::components::client<matrix_multiply_recursive> recursive =
-                    hpx::new_<hpx::components::client<matrix_multiply_recursive>>(
-                            hpx::find_here(), small_block_size, verbose);
-            uint32_t comp_locality_recursive =
-                    hpx::naming::get_locality_id_from_id(recursive.get_id());
-            recursive.register_as(
-                    "/recursive#" + std::to_string(comp_locality_recursive),
-                    false);
-
+    if (algorithm.compare("single") == 0) {
+        hpx::cout << "using parallel single node algorithm" << std::endl
+                << hpx::flush;
+        hpx::components::client<matrix_multiply_multiplier> multiplier =
+                hpx::new_<hpx::components::client<matrix_multiply_multiplier>>(
+                        hpx::find_here(), N, A, B, transposed, block_input,
+                        verbose);
+        uint32_t comp_locality_multiplier =
+                hpx::naming::get_locality_id_from_id(multiplier.get_id());
+        multiplier.register_as(
+                "/multiplier#" + std::to_string(comp_locality_multiplier),
+                false);
+        hpx::components::client<matrix_multiply_recursive> recursive =
+                hpx::new_<hpx::components::client<matrix_multiply_recursive>>(
+                        hpx::find_here(), small_block_size, verbose);
+        uint32_t comp_locality_recursive = hpx::naming::get_locality_id_from_id(
+                recursive.get_id());
+        recursive.register_as(
+                "/recursive#" + std::to_string(comp_locality_recursive), false);
+        for (size_t repeat = 0; repeat < repetitions; repeat++) {
             auto f = hpx::async<
                     matrix_multiply_recursive::distribute_recursively_action>(
                     recursive.get_id(), 0, 0, N);
             C = f.get();
-        } else if (algorithm.compare("static") == 0) {
-            matrix_multiply_static m(N, A, B, transposed, block_input,
-                    small_block_size, verbose);
-            C = m.matrix_multiply();
-        } else if (algorithm.compare("pseudodynamic") == 0) {
-            std::uint64_t min_work_size =
-                    vm["min-work-size"].as<std::uint64_t>();
-            std::uint64_t max_work_difference = vm["max-work-difference"].as<
-                    std::uint64_t>();
-            double max_relative_work_difference =
-                    vm["max-relative-work-difference"].as<double>();
-
-            matrix_multiply_static_improved m(N, A, B, transposed, block_input,
-                    small_block_size, min_work_size, max_work_difference,
-                    max_relative_work_difference, verbose);
-            C = m.matrix_multiply();
         }
+    } else if (algorithm.compare("pseudodynamic") == 0) {
+        std::uint64_t min_work_size = vm["min-work-size"].as<std::uint64_t>();
+        std::uint64_t max_work_difference = vm["max-work-difference"].as<
+                std::uint64_t>();
+        double max_relative_work_difference =
+                vm["max-relative-work-difference"].as<double>();
+
+        matrix_multiply_static_improved m(N, A, B, transposed, block_input,
+                small_block_size, min_work_size, max_work_difference,
+                max_relative_work_difference, repetitions, verbose);
+        C = m.matrix_multiply();
     }
 
     duration = t.elapsed();
-    std::cout << "[N = " << N << "] total time: " << duration << "s" << std::endl;
-    std::cout << "[N = " << N << "] average time per run: " << (duration / repetitions)<< "s (repetitions = " << repetitions << ")" << std::endl;
+    std::cout << "[N = " << N << "] total time: " << duration << "s"
+            << std::endl;
+    std::cout << "[N = " << N << "] average time per run: "
+            << (duration / repetitions) << "s (repetitions = " << repetitions
+            << ")" << std::endl;
 
     if (verbose >= 2) {
         std::cout << "matrix C:" << std::endl;
@@ -164,7 +158,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
 }
 
 int main(int argc, char* argv[]) {
-    // Configure application-specific options
+// Configure application-specific options
     boost::program_options::options_description desc_commandline(
             "Usage: " HPX_APPLICATION_STRING " [options]");
 
@@ -202,7 +196,7 @@ int main(int argc, char* argv[]) {
             boost::program_options::value<uint64_t>()->default_value(0),
             "blocked application of the input matrices, set to 0 to disable");
 
-    // Initialize and run HPX
+// Initialize and run HPX
     int return_value = hpx::init(desc_commandline, argc, argv);
 
     if (is_root_node) {
@@ -210,13 +204,17 @@ int main(int argc, char* argv[]) {
         double flops = 2 * static_cast<double>(N) * static_cast<double>(N)
                 * static_cast<double>(N);
         double gflop = flops / 1E9;
-        std::cout << (repetitions * gflop / duration) << "Gflops (average across repetitions)" << std::endl;
+        std::cout << "[N = " << N << "] performance: "
+                << (repetitions * gflop / duration)
+                << "Gflops (average across repetitions)" << std::endl;
 
         // hpx should now be shut down, can now use CPU for (fast) checking
 
         if (check) {
             if (repetitions > 1) {
-                std::cout << "info: repetitions > 1: checking only last iteration" << std::endl;
+                std::cout
+                        << "info: repetitions > 1: checking only last iteration"
+                        << std::endl;
             }
             hpx::util::high_resolution_timer t2;
             std::vector<double> Cref;
@@ -228,7 +226,8 @@ int main(int argc, char* argv[]) {
             char const* fmt = "naive matMult took %1% [s]";
             double duration_reference = t2.elapsed();
             std::cout << (boost::format(fmt) % duration_reference) << std::endl;
-            std::cout << (gflop / duration_reference)
+            std::cout << "[N = " << N << "] performance reference: "
+                    << (gflop / duration_reference)
                     << " Gflops (reference implementation)" << std::endl;
 
             if (verbose >= 2) {
