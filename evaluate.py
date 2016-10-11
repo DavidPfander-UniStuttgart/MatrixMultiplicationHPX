@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def run(n, repetition, transposed, blockInput):
     cmd = 'release/matrix_multiply --n-value=' + str(n) + ' --repetitions=' + str(repetition) + \
-        ' --small-block-size=128 --verbose=0 --check=True --algorithm=pseudodynamic --hpx:cores=' + \
+        ' --small-block-size=128 --verbose=0 --check=false --algorithm=pseudodynamic --hpx:cores=' + \
         str(cores) + ' --hpx:thread=' + str(threads) + ' --max-work-difference=0 --transposed=' + \
         str(transposed) + ' --block-input=' + str(blockInput)
     # cmd = r'bash test.sh'
@@ -39,8 +39,8 @@ else:
 
 n_list = [512, 1024, 2048, 4096, 8192]
 repetition_list = [10, 10, 5, 2, 1]
-cores = 8
-threads = 8
+cores = 16
+threads = 16
 
 performance_blocked_list = []
 

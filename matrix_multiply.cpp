@@ -23,6 +23,7 @@
 #include "matrix_multiply_recursive.hpp"
 #include "matrix_multiply_multiplier.hpp"
 #include "matrix_multiply_static_improved.hpp"
+#include "matrix_multiply_algorithm.hpp"
 #include "matrix_multiply_util.hpp"
 
 std::vector<double> A;
@@ -62,7 +63,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
     std::generate(A.begin(), A.end(), myRand);
 
     if (verbose >= 2) {
-        std::cout << "matrix A:" << std::endl;
+        hpx::cout << "matrix A:" << std::endl << hpx::flush;
         print_matrix(N, A);
     }
 
@@ -91,7 +92,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
     }
 
     if (verbose >= 2) {
-        std::cout << "matrix B:" << std::endl;
+        hpx::cout << "matrix B:" << std::endl << hpx::flush;
         if (!transposed) {
             print_matrix(N, B);
         } else {
@@ -140,17 +141,21 @@ int hpx_main(boost::program_options::variables_map& vm) {
                 small_block_size, min_work_size, max_work_difference,
                 max_relative_work_difference, repetitions, verbose);
         C = m.matrix_multiply();
+    } else if (algorithm.compare("algorithm") == 0) {
+        matrix_multiply_algorithm m(N, A, B, transposed, block_input,
+                small_block_size, repetitions, verbose);
+        C = m.matrix_multiply();
     }
 
     duration = t.elapsed();
-    std::cout << "[N = " << N << "] total time: " << duration << "s"
-            << std::endl;
-    std::cout << "[N = " << N << "] average time per run: "
+    hpx::cout << "[N = " << N << "] total time: " << duration << "s"
+            << std::endl << hpx::flush;
+    hpx::cout << "[N = " << N << "] average time per run: "
             << (duration / repetitions) << "s (repetitions = " << repetitions
-            << ")" << std::endl;
+            << ")" << std::endl << hpx::flush;
 
     if (verbose >= 2) {
-        std::cout << "matrix C:" << std::endl;
+        hpx::cout << "matrix C:" << std::endl << hpx::flush;
         print_matrix(N, C);
     }
 
@@ -232,6 +237,15 @@ int main(int argc, char* argv[]) {
 
             if (verbose >= 2) {
                 std::cout << "matrix Cref:" << std::endl;
+                // not in hpx context, can't use print_matrix
+                for (size_t i = 0; i < N; i++) {
+                    for (size_t j = 0; j < N; j++) {
+                        if (j > 0)
+                            std::cout << ", ";
+                        std::cout << Cref[i * N + j];
+                    }
+                    std::cout << std::endl;
+                }
                 print_matrix(N, Cref);
             }
 
