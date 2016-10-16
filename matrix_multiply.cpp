@@ -147,8 +147,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
                 small_block_size, repetitions, verbose);
         C = m.matrix_multiply();
     } else if (algorithm.compare("looped") == 0) {
-        looped::matrix_multiply_looped m(N, A, B, transposed, block_input,
-                small_block_size, repetitions, verbose);
+        looped::matrix_multiply_looped m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
         C = m.matrix_multiply();
     }
 
