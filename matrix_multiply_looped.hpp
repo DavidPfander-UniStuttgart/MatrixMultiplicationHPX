@@ -126,6 +126,30 @@ private:
 //                    std::vector<const hpx::parallel::parallel_execution_policy>>> blocking_configuration;
 };
 
+//struct compute_kernel_struct {
+//    std::vector<double> A;
+//    std::vector<double> B;
+//    std::vector<double> C;
+//    size_t N;
+//
+//    compute_kernel_struct(std::vector<double> A, std::vector<double> B,
+//            std::vector<double> C, size_t N) :
+//            A(A), B(B), C(C), N(N) {
+//
+//    }
+//
+//    void compute(const std::vector<size_t> &cur_index) {
+//
+//        size_t x = cur_index[0];
+//        size_t y = cur_index[1];
+//        size_t k = cur_index[2];
+//        //                    hpx::cout << "x: " << x << " y: " << y << " k: " << k << std::endl << hpx::flush;
+//        C[x * N + y] += A[x * N + k] * B[y * N + k];
+//    }
+//    ;
+//};
+
+//struct action_wrapper {
 template<typename T, typename F>
 void iterate_indices(blocking_pseudo_execution_policy<T> policy,
         std::vector<T> min, std::vector<T> max, F f) {
@@ -133,46 +157,47 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
         throw;
     }
     size_t dim = min.size();
-//    std::pair<std::vector<T>, const hpx::parallel::parallel_execution_policy> cur_policy =
+    //    std::pair<std::vector<T>, const hpx::parallel::parallel_execution_policy> cur_policy =
     std::vector<T> block = policy.pop();
-//    std::vector<T> block = std::get<0>(cur_policy);
-//    const hpx::parallel::parallel_execution_policy execution = std::get<1>(
-//            cur_policy);
+    //    std::vector<T> block = std::get<0>(cur_policy);
+    //    const hpx::parallel::parallel_execution_policy execution = std::get<1>(
+    //            cur_policy);
 
     size_t inner_index_count = 1;
     for (size_t d = 0; d < dim; d++) {
         inner_index_count *= (max[d] - min[d]) / block[d];
     }
 
-//    hpx::cout << "inner_index_count: " << inner_index_count << std::endl
-//            << hpx::flush;
+    //    hpx::cout << "inner_index_count: " << inner_index_count << std::endl
+    //            << hpx::flush;
     dim_index_iterator<T> dim_iter(min, max, block);
     if (policy.is_last_blocking_step()) {
-//        hpx::cout << "final step" << std::endl << hpx::flush;
-//        const std::vector<size_t> &cur_index = *dim_iter;
-////        dim_iter++;
-//        hpx::cout << "inner index ";
-//        for (size_t d = 0; d < dim; d++) {
-//            if (d > 0) {
-//                hpx::cout << ", ";
-//            }
-//            hpx::cout << cur_index[d];
-//        }
-//        hpx::cout << std::endl << "---------------" << std::endl << hpx::flush;
-//        size_t x = cur_index[0];
-//        size_t y = cur_index[1];
-//        size_t k = cur_index[2];
-//        hpx::cout << "x: " << x << " y: " << y << " k: " << k << std::endl
-//                << hpx::flush;
-//        C[x * N + y] += A[x * N + k] * B[y * N + k];
-//        hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter,
-//                inner_index_count, [](const std::vector<size_t> &t){
-//                    size_t x = t[0];
-//                    size_t y = t[1];
-//                    size_t k = t[2];
-//                    hpx::cout << "x: " << x << " y: " << y << " k: " << k << std::endl
-//                    << hpx::flush;
-//        });
+        //        hpx::cout << "final step" << std::endl << hpx::flush;
+        //        const std::vector<size_t> &cur_index = *dim_iter;
+        ////        dim_iter++;
+        //        hpx::cout << "inner index ";
+        //        for (size_t d = 0; d < dim; d++) {
+        //            if (d > 0) {
+        //                hpx::cout << ", ";
+        //            }
+        //            hpx::cout << cur_index[d];
+        //        }
+        //        hpx::cout << std::endl << "---------------" << std::endl << hpx::flush;
+        //        size_t x = cur_index[0];
+        //        size_t y = cur_index[1];
+        //        size_t k = cur_index[2];
+        //        hpx::cout << "x: " << x << " y: " << y << " k: " << k << std::endl
+        //                << hpx::flush;
+        //        C[x * N + y] += A[x * N + k] * B[y * N + k];
+        //        hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter,
+        //                inner_index_count, [](const std::vector<size_t> &t){
+        //                    size_t x = t[0];
+        //                    size_t y = t[1];
+        //                    size_t k = t[2];
+        //                    hpx::cout << "x: " << x << " y: " << y << " k: " << k << std::endl
+        //                    << hpx::flush;
+        //        });
+//            auto t = std::bind(&F::compute, this, std::placeholders::_1);
         hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter,
                 inner_index_count, f);
     } else {
@@ -180,14 +205,14 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
         hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter,
                 inner_index_count,
                 [dim, policy, &block, f](const std::vector<size_t> &cur_index) {
-//                    hpx::cout << "block index ";
-//                    for (size_t d = 0; d < dim; d++) {
-//                        if (d > 0) {
-//                            hpx::cout << ", ";
-//                        }
-//                        hpx::cout << cur_index[d];
-//                    }
-//                    hpx::cout << std::endl << hpx::flush;
+                    //                    hpx::cout << "block index ";
+                    //                    for (size_t d = 0; d < dim; d++) {
+                    //                        if (d > 0) {
+                    //                            hpx::cout << ", ";
+                    //                        }
+                    //                        hpx::cout << cur_index[d];
+                    //                    }
+                    //                    hpx::cout << std::endl << hpx::flush;
 
                     // iterate within block
                     std::vector<T> recursive_min(dim);
@@ -199,39 +224,13 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
                         recursive_max[d] = cur_index[d] + block[d];
                     }
                     // do recursive blocking
-                    iterate_indices<T>(policy,
+                    iterate_indices(policy,
                             recursive_min, recursive_max, f);
                 });
     }
-
-//    hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter_blocked,
-//            blocked_index_count,
-//            [dim, &block, &f](const std::vector<size_t> &cur_blocked_index) {
-//
-//                hpx::cout << "blocked index: (";
-//                for (size_t d = 0; d < dim; d++) {
-//                    if (d > 0) {
-//                        hpx::cout << ", ";
-//                    }
-//                    hpx::cout << cur_blocked_index[d];
-//                }
-//                hpx::cout << ")" << std::endl << hpx::flush;
-//
-//                // iterate within block
-//                std::vector<T> inner_min(dim);
-//                for (size_t d = 0; d < dim; d++) {
-//                    inner_min[d] = cur_blocked_index[d] * block[d];
-//                }
-//                std::vector<T> inner_max(dim);
-//                for (size_t d = 0; d < dim; d++) {
-//                    inner_max[d] = cur_blocked_index[d] * block[d] + block[d];
-//                }
-//                size_t inner_index_count = std::inner_product(inner_max.begin(), inner_max.end(), inner_min.begin(),
-//                        1.0, std::multiplies<size_t>(), std::minus<size_t>());
-//                dim_index_iterator<T> dim_iter(inner_min, inner_max);
-//                hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter, inner_index_count, f);
-//            });
 }
+//
+//};
 
 class matrix_multiply_looped {
 
@@ -275,13 +274,16 @@ public:
         blocking_pseudo_execution_policy<size_t> policy(3);
         policy.add_blocking(block);
 
-        iterate_indices<size_t>(policy, min, max,
+//        compute_kernel_struct compute_kernel(A, B, C, N);
+//
+//        action_wrapper<size_t, compute_kernel_struct> wrap;
+        iterate_indices(policy, min, max,
                 [this, &C](const std::vector<size_t> &cur_index) {
 
                     size_t x = cur_index[0];
                     size_t y = cur_index[1];
                     size_t k = cur_index[2];
-//                    hpx::cout << "x: " << x << " y: " << y << " k: " << k << std::endl << hpx::flush;
+                    //                    hpx::cout << "x: " << x << " y: " << y << " k: " << k << std::endl << hpx::flush;
                     C[x * N + y] += A[x * N + k] * B[y * N + k];
                 });
         return C;

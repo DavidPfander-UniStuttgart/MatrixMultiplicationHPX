@@ -25,6 +25,7 @@
 #include "matrix_multiply_static_improved.hpp"
 #include "matrix_multiply_algorithm.hpp"
 #include "matrix_multiply_looped.hpp"
+#include "matrix_multiply_par.hpp"
 #include "matrix_multiply_util.hpp"
 
 std::vector<double> A;
@@ -148,6 +149,9 @@ int hpx_main(boost::program_options::variables_map& vm) {
         C = m.matrix_multiply();
     } else if (algorithm.compare("looped") == 0) {
         looped::matrix_multiply_looped m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
+        C = m.matrix_multiply();
+    } else if (algorithm.compare("par") == 0) {
+        par::matrix_multiply_par m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
         C = m.matrix_multiply();
     }
 
