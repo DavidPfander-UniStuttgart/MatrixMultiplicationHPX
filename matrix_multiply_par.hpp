@@ -36,7 +36,7 @@ private:
 //            std::forward_iterator_tag, const std::vector<T>&> base_type;
 
     size_t dim;
-    std::vector<T> &cur_index;
+    std::vector<T> cur_index;
     std::vector<T> &min_index;
     std::vector<T> &max_index;
     std::vector<T> &step;
@@ -282,7 +282,7 @@ public:
         std::vector<size_t> min = { 0, 0, 0 };
         std::vector<size_t> max = { N, N, N };
         std::vector<size_t> block = { block_result, block_result, block_input };
-        std::vector<bool> parallel_dims = { false, false, false };
+        std::vector<bool> parallel_dims = { true, true, false };
 
 //        hpx::parallel::par;
 //        const hpx::parallel::parallel_execution_policy &t = hpx::parallel::seq;
