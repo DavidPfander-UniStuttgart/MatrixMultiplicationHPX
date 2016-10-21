@@ -27,6 +27,7 @@
 #include "matrix_multiply_looped.hpp"
 #include "matrix_multiply_par.hpp"
 #include "matrix_multiply_semi.hpp"
+#include "matrix_multiply_kernel_test.hpp"
 #include "matrix_multiply_util.hpp"
 
 std::vector<double> A;
@@ -157,7 +158,10 @@ int hpx_main(boost::program_options::variables_map& vm) {
     } else if (algorithm.compare("semi") == 0) {
         semi::matrix_multiply_semi m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
         C = m.matrix_multiply();
-    }
+    } else if (algorithm.compare("kernel_test") == 0) {
+      kernel_test::matrix_multiply_kernel_test m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
+      C = m.matrix_multiply();
+  }
 
     duration = t.elapsed();
     hpx::cout << "[N = " << N << "] total time: " << duration << "s"
