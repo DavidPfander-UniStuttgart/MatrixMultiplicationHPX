@@ -3,12 +3,18 @@ import os
 vars = Variables("custom.py")
 vars.Add("PKG_CONFIG_PATH_RELEASE", "path to the pkg-config for configuring hpx, used for release builds", '')
 vars.Add("PKG_CONFIG_PATH_DEBUG", "path to the pkg-config for configuring hpx, used for debug builds", '')
+vars.Add("VC_INCLUDE_PATH", "include files of the Vc vectorization library", '')
+vars.Add("VC_LIBRARY_PATH", "path to shared libararies of the Vc vectorization library", '')
 vars.Add("CC", "C compiler", 'gcc')
 vars.Add("CXX", "C++ compiler", 'g++')
 
 env_release = Environment(variables=vars, ENV=os.environ)
-env_release.AppendUnique(CPPFLAGS=['-fopenmp'])
+env_release.AppendUnique(CPPFLAGS=['-fopenmp', '-Wall', '-Wno-ignored-attributes', '-Wno-unused-local-typedefs'])
 env_release.AppendUnique(LINKFLAGS=['-fopenmp'])
+env_release.AppendUnique(CPPPATH=[env_release["VC_INCLUDE_PATH"]])
+env_release.AppendUnique(LIBPATH=[env_release["VC_LIBRARY_PATH"]])
+env_release.AppendUnique(LIBS=['Vc'])
+
 
 env_debug = env_release.Clone()
 
