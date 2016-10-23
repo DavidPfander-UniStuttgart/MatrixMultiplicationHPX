@@ -15,6 +15,19 @@
 #include <Vc/Vc>
 #include <boost/align/aligned_allocator.hpp>
 
+#define PADDING 64
+#define L3_X 256 // max 2 L3 par set to 1024 (rest 512)
+#define L3_Y 256
+#define L3_K_STEP 512
+#define L2_X 128 // max 2 L2 par set to 128 (rest 64)
+#define L2_Y 128
+#define L2_K_STEP 64
+#define L1_X 64 // max all L1 par set to 32
+#define L1_Y 32
+#define L1_K_STEP 16
+#define X_REG 5
+#define Y_REG 8
+
 namespace kernel_test {
 
 class matrix_multiply_kernel_test {
@@ -23,25 +36,19 @@ private:
     size_t N;
     std::vector<double> &A;
     std::vector<double> &B;
-    bool transposed;
 
-    uint64_t block_result;
-    uint64_t block_input;
     uint64_t repetitions;
     uint64_t verbose;
 public:
     matrix_multiply_kernel_test(size_t N, std::vector<double> &A,
-            std::vector<double> &B, bool transposed, uint64_t block_result,
-            uint64_t block_input, uint64_t repetitions, uint64_t verbose) :
-            N(N), A(A), B(B), transposed(transposed), block_result(
-                    block_result), block_input(block_input), repetitions(
-                    repetitions), verbose(verbose) {
+				std::vector<double> &B, bool transposed,
+				uint64_t repetitions, uint64_t verbose) :
+      N(N), A(A), B(B), repetitions(repetitions), verbose(verbose) {
 
     }
 
   std::vector<double> matrix_multiply() {
 
-#define PADDING 64
     std::vector<double> C(N * N);
     std::fill(C.begin(), C.end(), 0.0);
       
@@ -154,21 +161,10 @@ public:
       ////          }
       //        }
       //      }
-
-#define L3_X 1024 // max 2 L3 par set to 1024 (rest 512)
-#define L3_Y 1024
-#define L3_K_STEP 512
-#define L2_X 128 // max 2 L2 par set to 128 (rest 64)
-#define L2_Y 128
-#define L2_K_STEP 64
-#define L1_X 64 // max all L1 par set to 32
-#define L1_Y 32
-#define L1_K_STEP 16
-#define X_REG 5
-#define Y_REG 8
 	  
       using Vc::double_v;
       // L3 blocking
+#pragma omp parallel for collapse(2)
       for (size_t l3_x = 0; l3_x < N; l3_x += L3_X) {
 	for (size_t l3_y = 0; l3_y < N; l3_y += L3_Y) {
 	  for (size_t l3_k = 0; l3_k < N; l3_k += L3_K_STEP) {
@@ -368,3 +364,16 @@ public:
 };
 
 }
+
+#undef PADDING
+#undef L3_X
+#undef L3_Y
+#undef L3_K_STEP
+#undef L2_X
+#undef L2_Y
+#undef L2_K_STEP
+#undef L1_X
+#undef L1_Y
+#undef L1_K_STEP
+#undef X_REG
+#undef Y_REG
