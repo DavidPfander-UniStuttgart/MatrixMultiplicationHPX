@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
 
       if (verbose >= 2) {
         std::cout << "non-HPX matrix C:" << std::endl;
-        print_matrix(N, C);
+        print_matrix_host(N, C);
       }
     } else if (algorithm.compare("kernel_tiled") == 0) {
       hpx::util::high_resolution_timer t;
@@ -259,7 +259,7 @@ int main(int argc, char* argv[]) {
 
       if (verbose >= 2) {
         std::cout << "non-HPX matrix C:" << std::endl;
-        print_matrix(N, C);
+        print_matrix_host(N, C);
       }
     }
 
@@ -297,16 +297,7 @@ int main(int argc, char* argv[]) {
 
             if (verbose >= 2) {
                 std::cout << "matrix Cref:" << std::endl;
-                // not in hpx context, can't use print_matrix
-                for (size_t i = 0; i < N; i++) {
-                    for (size_t j = 0; j < N; j++) {
-                        if (j > 0)
-                            std::cout << ", ";
-                        std::cout << Cref[i * N + j];
-                    }
-                    std::cout << std::endl;
-                }
-                print_matrix(N, Cref);
+                print_matrix_host(N, Cref);
             }
 
             // compare solutions
@@ -326,6 +317,15 @@ int main(int argc, char* argv[]) {
             } else {
                 std::cout << "error: check failed!" << std::endl;
             }
+
+	    if (verbose >= 2) {
+	      std::vector<double> diff_matrix(N * N);
+	      for (size_t k = 0; k < N * N; k++) {
+		diff_matrix.at(k) = fabs(Cref.at(k) - C.at(k));
+	      }
+	      std::cout << "diff_matrix:" << std::endl;
+	      print_matrix_host(N, diff_matrix);
+	    }
         }
     }
     return return_value;

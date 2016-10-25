@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include <boost/iterator/iterator_facade.hpp>
-#include "hpx/util/iterator_facade.hpp"
 #include <Vc/Vc>
 #include <boost/align/aligned_allocator.hpp>
+#include <omp.h>
 
 #define PADDING 64
 #define L3_X 256 // max 2 L3 par set to 1024 (rest 512)
@@ -160,6 +159,7 @@ public:
       //      }
 	  
       using Vc::double_v;
+
       // L3 blocking
 #pragma omp parallel for collapse(2)
       for (size_t l3_x = 0; l3_x < N; l3_x += L3_X) {
