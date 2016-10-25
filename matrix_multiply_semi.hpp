@@ -390,8 +390,6 @@ public:
 //        action_wrapper<size_t, compute_kernel_struct> wrap;
     hpx::cout << "now doing interesting stuff" << std::endl << hpx::flush;
     iterate_indices<3>(policy, min, max,
-//                [this, &C](const std::vector<size_t> &cur_index) {
-//                [N_fixed, blocks_x, blocks_y, blocks_k, submatrix_size, &C_conflict, &A_conflict, &B_conflict, this](size_t x, size_t y, size_t k) {
         [N_fixed, &C_conflict, &A_conflict, &B_conflict, this](size_t x, size_t y, size_t k) {
 
 //                    hpx::cout << "x: " << x << " y: " << y << " k: " << k << std::endl << hpx::flush;

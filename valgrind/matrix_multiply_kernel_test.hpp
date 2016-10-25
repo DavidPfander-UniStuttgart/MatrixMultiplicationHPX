@@ -48,10 +48,10 @@ public:
     std::vector<double> C(N * N);
     std::fill(C.begin(), C.end(), 0.0);
       
-    std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded((N + PADDING) * (N + PADDING));
+    std::vector<double, boost::alignment::aligned_allocator<double, 64>> C_padded((N + PADDING) * (N + PADDING));
     std::fill(C_padded.begin(), C_padded.end(), 0.0);
 
-    std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_padded((N + PADDING) * (N + PADDING));
+    std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_padded((N + PADDING) * (N + PADDING));
     for (size_t i = 0; i < N; i++) {
       for (size_t j = 0; j < N; j++) {
 	A_padded[i * (N + PADDING) + j] = A[i * N + j];	    
@@ -59,14 +59,14 @@ public:
     }
 
     // is also padded if padding is enabled
-    std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans((N + PADDING) * (N + PADDING));
+    std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_trans((N + PADDING) * (N + PADDING));
     for (size_t i = 0; i < N; i++) {
       for (size_t j = 0; j < N; j++) {
 	A_trans[i * (N + PADDING) + j] = A[j * N + i];	    
       }	
     }
 
-    std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_padded((N + PADDING) * (N + PADDING));
+    std::vector<double, boost::alignment::aligned_allocator<double, 64>> B_padded((N + PADDING) * (N + PADDING));
     for (size_t i = 0; i < N; i++) {
       for (size_t j = 0; j < N; j++) {
 	B_padded[i * (N + PADDING) + j] = B[i * N + j];	    
