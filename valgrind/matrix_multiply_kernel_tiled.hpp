@@ -13,25 +13,41 @@
 #include <boost/align/aligned_allocator.hpp>
 
 // best parameters
-#define L3_X 560 // max 2 L3 par set to 1024 (rest 512)
-#define L3_Y 512
-#define L3_K_STEP 512
-#define L2_X 70 // max 2 L2 par set to 128 (rest 64)
-#define L2_Y 64
-#define L2_K_STEP 128
+
+// #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
+// #define L3_Y 256
+// #define L3_K_STEP 512
+#define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
+#define L3_Y 256
+#define L3_K_STEP 256
+
 // parameters for kernel tuning
 // #define L3_X 70 // max 2 L3 par set to 1024 (rest 512)
 // #define L3_Y 64
 // #define L3_K_STEP 64
-// #define L2_X 70 // max 2 L2 par set to 128 (rest 64)
-// #define L2_Y 64
-// #define L2_K_STEP 64
+#define L2_X 70 // max 2 L2 par set to 128 (rest 64)
+#define L2_Y 64
+#define L2_K_STEP 128
 #define L1_X 35 // max all L1 par set to 32
 #define L1_Y 16
 #define L1_K_STEP 64
 #define X_REG 5 // cannot be changed!
 #define Y_REG 8 // cannot be changed!
 #define K_REG 1 // cannot be changed!
+
+// 4x12 approach kernel tuning
+// #define L3_X 32 // max 2 L3 par set to 1024 (rest 512)
+// #define L3_Y 24
+// #define L3_K_STEP 32
+// #define L2_X 32 // max 2 L2 par set to 128 (rest 64)
+// #define L2_Y 24
+// #define L2_K_STEP 32
+// #define L1_X 32 // max all L1 par set to 32
+// #define L1_Y 24
+// #define L1_K_STEP 32
+// #define X_REG 4 // cannot be changed!
+// #define Y_REG 12 // cannot be changed!
+// #define K_REG 1 // cannot be changed!
 
 namespace kernel_tiled {
 
@@ -217,7 +233,7 @@ namespace kernel_tiled {
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 	  
 	using Vc::double_v;
-	// L3 blocking
+	// L3 blocking and parallelization
 #pragma omp parallel for collapse(2)
 	for (size_t l3_x = 0; l3_x < X_size; l3_x += L3_X) {
 	  for (size_t l3_y = 0; l3_y < Y_size; l3_y += L3_Y) {
@@ -254,13 +270,29 @@ namespace kernel_tiled {
 
 			      double_v acc_52 = 0.0;
 
+			      // comment in for 4x12 approach
+			      // double_v acc_11 = 0.0;
+			      // double_v acc_21 = 0.0;
+			      // double_v acc_31 = 0.0;
+			      // double_v acc_41 = 0.0;
+	      
+			      // double_v acc_12 = 0.0;
+			      // double_v acc_22 = 0.0;
+			      // double_v acc_32 = 0.0;
+			      // double_v acc_42 = 0.0;
+
+			      // double_v acc_13 = 0.0;
+			      // double_v acc_23 = 0.0;
+			      // double_v acc_33 = 0.0;
+			      // double_v acc_43 = 0.0;
+
 			      for (size_t k_inner = 0; k_inner < L1_K_STEP; k_inner += 1) {
 				
 				double_v b_temp_1 =
 				  double_v(&B_padded[B_base_index + k_inner * L1_Y + y], Vc::Aligned);
 				double_v b_temp_2 =
 				  double_v(&B_padded[B_base_index + k_inner * L1_Y + (y + 4)], Vc::Aligned);
-
+				
 				double_v a_temp_1 = A_trans[A_base_index + k_inner * L1_X + (x + 0)];
 				double_v a_temp_2 = A_trans[A_base_index + k_inner * L1_X + (x + 1)];
 				double_v a_temp_3 = A_trans[A_base_index + k_inner * L1_X + (x + 2)];
@@ -283,85 +315,86 @@ namespace kernel_tiled {
 				acc_42 += a_temp_4 * b_temp_2;
 				acc_52 += a_temp_5 * b_temp_2;
 
-				// // unrolling slow stuff down, because instead of fma instruction, mul and add instruction are emitted
+				// comment in for 4x12 approach
+				// double_v b_temp_1 =
+				//   double_v(&B_padded[B_base_index + k_inner * L1_Y + y], Vc::Aligned);
+				// double_v b_temp_2 =
+				//   double_v(&B_padded[B_base_index + k_inner * L1_Y + (y + 4)], Vc::Aligned);
 				// double_v b_temp_3 =
-				//   double_v(&B_padded[B_base_index + (k_inner + 1) * L1_Y + y], Vc::Aligned);
-				// double_v b_temp_4 =
-				//   double_v(&B_padded[B_base_index + (k_inner + 1) * L1_Y + (y + 4)], Vc::Aligned);
+				//   double_v(&B_padded[B_base_index + k_inner * L1_Y + (y + 8)], Vc::Aligned);
+				
+				// double_v a_temp_1 = A_trans[A_base_index + k_inner * L1_X + (x + 0)];
+				// double_v a_temp_2 = A_trans[A_base_index + k_inner * L1_X + (x + 1)];
+				// double_v a_temp_3 = A_trans[A_base_index + k_inner * L1_X + (x + 2)];
+				// double_v a_temp_4 = A_trans[A_base_index + k_inner * L1_X + (x + 3)];
+				
+				// acc_11 += a_temp_1 * b_temp_1;
+				// acc_12 += a_temp_1 * b_temp_2;
+				// acc_13 += a_temp_1 * b_temp_3;
+				
+				// acc_21 += a_temp_2 * b_temp_1;
+				// acc_22 += a_temp_2 * b_temp_2;
+				// acc_23 += a_temp_2 * b_temp_3;
 
-				// double_v a_temp_6 = A_trans[A_base_index + (k_inner + 1) * L1_X + (x + 0)];
-				// double_v a_temp_7 = A_trans[A_base_index + (k_inner + 1) * L1_X + (x + 1)];
-				// double_v a_temp_8 = A_trans[A_base_index + (k_inner + 1) * L1_X + (x + 2)];
-				
-				// acc_11 += a_temp_6 * b_temp_3;				
-				// acc_21 += a_temp_7 * b_temp_3;
-				
-				// acc_12 += a_temp_6 * b_temp_4;
-				// acc_22 += a_temp_7 * b_temp_4;
-				
-				// double_v a_temp_9 = A_trans[A_base_index + (k_inner + 1) * L1_X + (x + 3)];
-				// double_v a_temp_10 = A_trans[A_base_index + (k_inner + 1) * L1_X + (x + 4)];		
+				// acc_31 += a_temp_3 * b_temp_1;
+				// acc_32 += a_temp_3 * b_temp_2;
+				// acc_33 += a_temp_3 * b_temp_3;
 
-				// acc_31 += a_temp_8 * b_temp_3;
-				// acc_32 += a_temp_8 * b_temp_4;
-				
-				// acc_41 += a_temp_9 * b_temp_3;
-				// acc_51 += a_temp_10 * b_temp_3;			       				
-			       
-				// acc_42 += a_temp_9 * b_temp_4;
-				// acc_52 += a_temp_10 * b_temp_4;
+				// acc_41 += a_temp_4 * b_temp_1;
+				// acc_42 += a_temp_4 * b_temp_2;			       
+				// acc_43 += a_temp_4 * b_temp_3;
 			      }
 		    
 			      double_v res_11 = double_v(&C_padded[C_base_index + (x + 0) * L1_Y + y]);
 			      res_11 += acc_11;
 			      res_11.store(&C_padded[C_base_index + (x + 0) * L1_Y + y]);
-			      // if (x + 1 < L1_X) {
-				double_v res_21 = double_v(&C_padded[C_base_index + (x + 1) * L1_Y + y]);
-				res_21 += acc_21;
-				res_21.store(&C_padded[C_base_index + (x + 1) * L1_Y + y]);
-			      // }
-			      // if (x + 2 < L1_X) {
-				double_v res_31 = double_v(&C_padded[C_base_index + (x + 2) * L1_Y + y]);
-				res_31 += acc_31;
-				res_31.store(&C_padded[C_base_index + (x + 2) * L1_Y + y]);
-			      // }
-			      // if (x + 3 < L1_X) {
-				double_v res_41 = double_v(&C_padded[C_base_index + (x + 3) * L1_Y + y]);
-				res_41 += acc_41;
-				res_41.store(&C_padded[C_base_index + (x + 3) * L1_Y + y]);
-			      // }
-		    
-			      // if (x + 4 < L1_X) {
-				double_v res_51 = double_v(&C_padded[C_base_index + (x + 4) * L1_Y + y]);
-				res_51 += acc_51;
-				res_51.store(&C_padded[C_base_index + (x + 4) * L1_Y + y]);
-			      // }
+			      double_v res_21 = double_v(&C_padded[C_base_index + (x + 1) * L1_Y + y]);
+			      res_21 += acc_21;
+			      res_21.store(&C_padded[C_base_index + (x + 1) * L1_Y + y]);
+			      double_v res_31 = double_v(&C_padded[C_base_index + (x + 2) * L1_Y + y]);
+			      res_31 += acc_31;
+			      res_31.store(&C_padded[C_base_index + (x + 2) * L1_Y + y]);
+			      double_v res_41 = double_v(&C_padded[C_base_index + (x + 3) * L1_Y + y]);
+			      res_41 += acc_41;
+			      res_41.store(&C_padded[C_base_index + (x + 3) * L1_Y + y]);
 
-			      // if (y + 4 < L1_Y) {
-				double_v res_12 = double_v(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 4)]);
-				res_12 += acc_12;
-				res_12.store(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 4)]);
-			      // }
-			      // if (x + 1 < L1_X) {
-				double_v res_22 = double_v(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 4)]);
-				res_22 += acc_22;
-				res_22.store(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 4)]);
-			      // }
-			      // if (x + 2 < L1_X) {
-				double_v res_32 = double_v(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 4)]);
-				res_32 += acc_32;
-				res_32.store(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 4)]);
-			      // }
-			      // if (x + 3 < L1_X) {
-				double_v res_42 = double_v(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 4)]);
-				res_42 += acc_42;
-				res_42.store(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 4)]);
-			      // }
-			      // if (x + 4 < L1_X) {
-				double_v res_52 = double_v(&C_padded[C_base_index + (x + 4) * L1_Y + (y + 4)]);
-				res_52 += acc_52;
-				res_52.store(&C_padded[C_base_index + (x + 4) * L1_Y + (y + 4)]);
-			      // }
+			      // has to be commented out for 4x12 approach
+			      double_v res_51 = double_v(&C_padded[C_base_index + (x + 4) * L1_Y + y]);
+			      res_51 += acc_51;
+			      res_51.store(&C_padded[C_base_index + (x + 4) * L1_Y + y]);
+
+			      double_v res_12 = double_v(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 4)]);
+			      res_12 += acc_12;
+			      res_12.store(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 4)]);
+			      double_v res_22 = double_v(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 4)]);
+			      res_22 += acc_22;
+			      res_22.store(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 4)]);
+			      double_v res_32 = double_v(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 4)]);
+			      res_32 += acc_32;
+			      res_32.store(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 4)]);
+			      double_v res_42 = double_v(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 4)]);
+			      res_42 += acc_42;
+			      res_42.store(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 4)]);
+
+			      // has to be commented out for 4x12 approach
+			      double_v res_52 = double_v(&C_padded[C_base_index + (x + 4) * L1_Y + (y + 4)]);
+			      res_52 += acc_52;
+			      res_52.store(&C_padded[C_base_index + (x + 4) * L1_Y + (y + 4)]);
+
+			      // has to be commented in for 4x12 approach
+			      // double_v res_13 = double_v(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 8)]);
+			      // res_13 += acc_13;
+			      // res_13.store(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 8)]);
+			      // double_v res_23 = double_v(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 8)]);
+			      // res_23 += acc_23;
+			      // res_23.store(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 8)]);
+			      // double_v res_33 = double_v(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 8)]);
+			      // res_33 += acc_33;
+			      // res_33.store(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 8)]);
+			      // double_v res_43 = double_v(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 8)]);
+			      // res_43 += acc_43;
+			      // res_43.store(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 8)]);
+
 			    }
 			  }
 			}
