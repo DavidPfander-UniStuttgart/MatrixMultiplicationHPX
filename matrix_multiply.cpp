@@ -25,8 +25,8 @@
 #include "matrix_multiply_static_improved.hpp"
 #include "matrix_multiply_algorithms.hpp"
 #include "matrix_multiply_looped.hpp"
-#include "matrix_multiply_par.hpp"
 #include "matrix_multiply_semi.hpp"
+#include "matrix_multiply_combined.hpp"
 #include "matrix_multiply_kernel_test.hpp"
 #include "matrix_multiply_kernel_tiled.hpp"
 #include "matrix_multiply_util.hpp"
@@ -156,11 +156,11 @@ int hpx_main(boost::program_options::variables_map& vm) {
     } else if (algorithm.compare("looped") == 0) {
         looped::matrix_multiply_looped m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
         C = m.matrix_multiply();
-    } else if (algorithm.compare("par") == 0) {
-        par::matrix_multiply_par m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
-        C = m.matrix_multiply();
     } else if (algorithm.compare("semi") == 0) {
         semi::matrix_multiply_semi m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
+        C = m.matrix_multiply();
+    } else if (algorithm.compare("combined") == 0) {
+        combined::matrix_multiply_combined m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
         C = m.matrix_multiply();
     } else {
       hpx::cout << "using non-HPX algorithm" << std::endl << hpx::flush;
@@ -246,11 +246,9 @@ int main(int argc, char* argv[]) {
         print_matrix_host(N, C);
       }
     } else if (algorithm.compare("kernel_tiled") == 0) {
-      hpx::util::high_resolution_timer t;
       kernel_tiled::matrix_multiply_kernel_tiled m(N, A, B, transposed, repetitions, verbose);
-      C = m.matrix_multiply();
+      C = m.matrix_multiply(duration);
 
-      duration = t.elapsed();
       std::cout << "non-HPX [N = " << N << "] total time: " << duration << "s"
 		<< std::endl;
       std::cout << "non-HPX [N = " << N << "] average time per run: "
