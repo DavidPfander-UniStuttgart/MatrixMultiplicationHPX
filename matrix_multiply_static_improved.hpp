@@ -15,7 +15,7 @@ private:
     bool transposed;
     uint64_t block_input;
     std::vector<double> C;
-    size_t small_block_size;
+    size_t block_result;
 
     uint64_t min_work_size;
     uint64_t max_work_difference;
@@ -26,11 +26,11 @@ private:
 public:
     matrix_multiply_static_improved(size_t N, std::vector<double> &A,
             std::vector<double> &B, bool transposed, uint64_t block_input,
-            size_t small_block_size, uint64_t min_work_size,
+            size_t block_result, uint64_t min_work_size,
             uint64_t max_work_difference, double max_relative_work_difference,
             uint64_t repetitions, uint64_t verbose) :
             N(N), A(A), B(B), transposed(transposed), block_input(block_input), C(
-                    N * N), small_block_size(small_block_size), min_work_size(
+                    N * N), block_result(block_result), min_work_size(
                     min_work_size), max_work_difference(max_work_difference), max_relative_work_difference(
                     max_relative_work_difference), repetitions(repetitions), verbose(
                     verbose) {

@@ -13,7 +13,6 @@
 #include <boost/align/aligned_allocator.hpp>
 
 // best parameters
-
 // #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
 // #define L3_Y 256
 // #define L3_K_STEP 512
@@ -86,13 +85,17 @@ namespace kernel_tiled {
       y_pad = 0; // nothing to pad
     }
 
-    std::cout << "matrix padding: x_pad = " << x_pad << ", y_pad = " << y_pad << ", k_pad = " << k_pad << std::endl;
+    if (verbose >= 1) {
+      std::cout << "matrix padding: x_pad = " << x_pad << ", y_pad = " << y_pad << ", k_pad = " << k_pad << std::endl;
+    }
 
     X_size = N + x_pad;
     Y_size = N + y_pad;
     K_size = N + k_pad;
 
-    std::cout << "matrix dimensions for calculation: X = " << X_size << ", Y = " << Y_size << ", K = " << K_size << std::endl;
+    if (verbose >= 1) {
+      std::cout << "matrix dimensions for calculation: X = " << X_size << ", Y = " << Y_size << ", K = " << K_size << std::endl;
+    }
 
     A = std::vector<double>(X_size * K_size);
     std::fill(A.begin(), A.end(), 0.0);
@@ -108,7 +111,6 @@ namespace kernel_tiled {
 	B.at(k * Y_size + y) = B_org.at(k * N + y);
       }
     }
-    std::cout << "resized matrices set up" << std::endl;
   }
 
   std::vector<double> matrix_multiply_kernel_tiled::matrix_multiply(double &duration) {
@@ -143,8 +145,6 @@ namespace kernel_tiled {
 	}
       }
     }
-
-    //TODO: test with padding enabled!
     
     // std::cout << "A:" << std::endl;
     // for (uint64_t x = 0; x < N; x++) {

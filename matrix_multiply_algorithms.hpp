@@ -135,9 +135,9 @@ private:
 public:
     matrix_multiply_algorithms(size_t N, std::vector<double> &A,
             std::vector<double> &B, bool transposed, uint64_t block_input,
-            size_t small_block_size, uint64_t repetitions, uint64_t verbose) :
+            size_t block_result, uint64_t repetitions, uint64_t verbose) :
             N(N), A(A), B(B), transposed(transposed), block_input(block_input), block_result(
-                    small_block_size), repetitions(repetitions), verbose(
+                    block_result), repetitions(repetitions), verbose(
                     verbose) {
 
     }

@@ -44,7 +44,7 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
         hpx::cout << hpx::find_here() << " work on x: " << x << ", y: " << y
                 << " blockSize: " << blockSize << std::endl << hpx::flush;
     }
-    if (blockSize <= small_block_size) {
+    if (blockSize <= block_result) {
         uint32_t comp_locality = hpx::get_locality_id();
         hpx::components::client<matrix_multiply_multiplier> multiplier;
         multiplier.connect_to("/multiplier#" + std::to_string(comp_locality));
@@ -63,12 +63,6 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
 
         //TODO: why does this make a difference?
         // std::vector<hpx::id_type> node_ids = hpx::find_all_localities();
-
-//    std::vector<hpx::components::client<matrix_multiply_recursive>> sub_recursives =
-//      hpx::new_<hpx::components::client<matrix_multiply_recursive>[]>(
-//								      // hpx::components::default_layout(node_ids),
-//								      hpx::find_here(),
-//								      submatrix_count, small_block_size, verbose).get();
 
         uint32_t comp_locality = hpx::get_locality_id();
         hpx::components::client<matrix_multiply_recursive> self;
@@ -95,16 +89,9 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
                                     })));
         }
 
-        //TODO: try it with dataflow
-
         // wait for the matrix C to become ready
         hpx::wait_all(g);
 
         return C;
     }
-
-    // hpx::cout << "---------------" << std::endl << "node mult:" << std::endl << hpx::flush;
-    // hpx::cout << "blockSize: " << blockSize << " small_block_size: " << small_block_size << std::endl << hpx::flush;
-    // 												     hpx::cout << "C.s: " << C.size() << std::endl << hpx::flush;
-    // print_matrix(blockSize, C);
 }

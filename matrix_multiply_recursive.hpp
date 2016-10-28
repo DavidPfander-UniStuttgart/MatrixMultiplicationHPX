@@ -16,16 +16,16 @@
 struct matrix_multiply_recursive: hpx::components::component_base<
         matrix_multiply_recursive> {
 
-    size_t small_block_size;
+    size_t block_result;
     uint64_t verbose;
 
     // TODO: why does this get called?
     matrix_multiply_recursive() :
-            small_block_size(1), verbose(0) {
+        block_result(1), verbose(0) {
     }
 
-    matrix_multiply_recursive(size_t small_block_size, uint64_t verbose) :
-            small_block_size(small_block_size), verbose(verbose) {
+    matrix_multiply_recursive(size_t block_result, uint64_t verbose) :
+        block_result(block_result), verbose(verbose) {
     }
 
     ~matrix_multiply_recursive() {

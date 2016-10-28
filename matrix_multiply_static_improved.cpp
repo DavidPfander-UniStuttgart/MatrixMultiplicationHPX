@@ -247,7 +247,7 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
                         hpx::new_<
                                 hpx::components::client<
                                         matrix_multiply_recursive>>(all_ids[i],
-                                small_block_size, verbose);
+                                block_result, verbose);
 
                 uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
                         recursive.get_id());

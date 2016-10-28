@@ -31,6 +31,11 @@
 #include "matrix_multiply_kernel_tiled.hpp"
 #include "matrix_multiply_util.hpp"
 
+boost::program_options::options_description desc_commandline(
+        "Usage: " HPX_APPLICATION_STRING " [options]");
+
+bool display_help = false;
+
 std::vector<double> A;
 std::vector<double> B;
 std::vector<double> C;
@@ -40,7 +45,7 @@ std::uint64_t verbose;
 bool check;
 bool transposed;
 uint64_t block_input;
-size_t small_block_size;
+size_t block_result;
 // initialized via program_options defaults
 
 double duration;
@@ -52,15 +57,25 @@ int hpx_main(boost::program_options::variables_map& vm) {
 
     // extract command line argument
     N = vm["n-value"].as<std::uint64_t>();
-    small_block_size = vm["small-block-size"].as<std::uint64_t>();
+    block_result = vm["block-result"].as<std::uint64_t>();
     verbose = vm["verbose"].as<uint64_t>();
     algorithm = vm["algorithm"].as<std::string>();
     check = vm["check"].as<bool>();
     transposed = vm["transposed"].as<bool>();
     block_input = vm["block-input"].as<uint64_t>();
     repetitions = vm["repetitions"].as<uint64_t>();
-  
+
     is_root_node = hpx::find_here() == hpx::find_root_locality();
+
+    if (vm.count("help")) {
+        display_help = true;
+        hpx::cout << "in here" << std::endl << hpx::flush;
+        if (is_root_node) {
+            hpx::cout << "in here2" << std::endl << hpx::flush;
+            hpx::cout << desc_commandline << std::endl << hpx::flush;
+        }
+        return hpx::finalize();
+    }
 
     // create matrices A, B
     std::default_random_engine generator;
@@ -127,7 +142,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
                 false);
         hpx::components::client<matrix_multiply_recursive> recursive =
                 hpx::new_<hpx::components::client<matrix_multiply_recursive>>(
-                        hpx::find_here(), small_block_size, verbose);
+                        hpx::find_here(), block_result, verbose);
         uint32_t comp_locality_recursive = hpx::naming::get_locality_id_from_id(
                 recursive.get_id());
         recursive.register_as(
@@ -146,25 +161,29 @@ int hpx_main(boost::program_options::variables_map& vm) {
                 vm["max-relative-work-difference"].as<double>();
 
         matrix_multiply_static_improved m(N, A, B, transposed, block_input,
-                small_block_size, min_work_size, max_work_difference,
+                block_result, min_work_size, max_work_difference,
                 max_relative_work_difference, repetitions, verbose);
         C = m.matrix_multiply();
     } else if (algorithm.compare("algorithms") == 0) {
-        algorithms::matrix_multiply_algorithms m(N, A, B, transposed, block_input,
-                small_block_size, repetitions, verbose);
+        algorithms::matrix_multiply_algorithms m(N, A, B, transposed,
+                block_input, block_result, repetitions, verbose);
         C = m.matrix_multiply();
     } else if (algorithm.compare("looped") == 0) {
-        looped::matrix_multiply_looped m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
+        looped::matrix_multiply_looped m(N, A, B, transposed, block_result,
+                block_input, repetitions, verbose);
         C = m.matrix_multiply();
     } else if (algorithm.compare("semi") == 0) {
-        semi::matrix_multiply_semi m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
+        semi::matrix_multiply_semi m(N, A, B, transposed, block_result,
+                block_input, repetitions, verbose);
         C = m.matrix_multiply();
     } else if (algorithm.compare("combined") == 0) {
-        combined::matrix_multiply_combined m(N, A, B, transposed, small_block_size, block_input, repetitions, verbose);
-        C = m.matrix_multiply();
+        combined::matrix_multiply_combined m(N, A, B, transposed, block_result,
+                block_input, repetitions, verbose);
+	double inner_duration;
+        C = m.matrix_multiply(inner_duration);
     } else {
-      hpx::cout << "using non-HPX algorithm" << std::endl << hpx::flush;
-      return hpx::finalize(); // Handles HPX shutdown
+        hpx::cout << "using non-HPX algorithm" << std::endl << hpx::flush;
+        return hpx::finalize(); // Handles HPX shutdown
     }
 
     duration = t.elapsed();
@@ -184,18 +203,21 @@ int hpx_main(boost::program_options::variables_map& vm) {
 
 int main(int argc, char* argv[]) {
 // Configure application-specific options
-    boost::program_options::options_description desc_commandline(
-            "Usage: " HPX_APPLICATION_STRING " [options]");
+//    boost::program_options::options_description desc_commandline(
+//            "Usage: " HPX_APPLICATION_STRING " [options]");
 
     desc_commandline.add_options()("n-value",
             boost::program_options::value<std::uint64_t>()->default_value(4),
-            "n value for the square matrices, should be a power of 2")(
+            "n value for the square matrices, should be a power of 2, arbitrary sized square matrices work with some implementations")(
             "repetitions",
             boost::program_options::value<std::uint64_t>()->default_value(1),
             "how often should the operation be repeated (for averaging timings)")(
-            "small-block-size",
-            boost::program_options::value<std::uint64_t>()->default_value(64),
-            "cut-off value for smaller matrices to compute within a single thread")(
+            "block-input",
+            boost::program_options::value<uint64_t>()->default_value(1),
+            "blocked application of the input matrices, set to 0 to disable")(
+            "block-result",
+            boost::program_options::value<std::uint64_t>()->default_value(1),
+            "square block of the input matrix to be processed by a single thread")(
             "verbose",
             boost::program_options::value<uint64_t>()->default_value(0),
             "set to 1 for status information, set to 2 to additionally print the matrices")(
@@ -217,50 +239,48 @@ int main(int argc, char* argv[]) {
             "for pseudodynamic scheduling, maximum relative tolerated load inbalance in matrix components assigned, in percent")(
             "transposed",
             boost::program_options::value<bool>()->default_value(true),
-            "use a transposed matrix for B")("block-input",
-            boost::program_options::value<uint64_t>()->default_value(0),
-            "blocked application of the input matrices, set to 0 to disable");
-
-
-    // boost::program_options::variables_map vm;
-    // boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc_commandline), vm);
-    // boost::program_options::notify(vm);         
+            "use a transposed matrix for B")("help", "display help");
 
 // Initialize and run HPX
     int return_value = hpx::init(desc_commandline, argc, argv);
-    
-    if (algorithm.compare("kernel_test") == 0) {
-      hpx::util::high_resolution_timer t;
-      kernel_test::matrix_multiply_kernel_test m(N, A, B, transposed, repetitions, verbose);
-      C = m.matrix_multiply();
 
-      duration = t.elapsed();
-      std::cout << "non-HPX [N = " << N << "] total time: " << duration << "s"
-		<< std::endl;
-      std::cout << "non-HPX [N = " << N << "] average time per run: "
-		<< (duration / repetitions) << "s (repetitions = " << repetitions
-		<< ")" << std::endl;
-
-      if (verbose >= 2) {
-        std::cout << "non-HPX matrix C:" << std::endl;
-        print_matrix_host(N, C);
-      }
-    } else if (algorithm.compare("kernel_tiled") == 0) {
-      kernel_tiled::matrix_multiply_kernel_tiled m(N, A, B, transposed, repetitions, verbose);
-      C = m.matrix_multiply(duration);
-
-      std::cout << "non-HPX [N = " << N << "] total time: " << duration << "s"
-		<< std::endl;
-      std::cout << "non-HPX [N = " << N << "] average time per run: "
-		<< (duration / repetitions) << "s (repetitions = " << repetitions
-		<< ")" << std::endl;
-
-      if (verbose >= 2) {
-        std::cout << "non-HPX matrix C:" << std::endl;
-        print_matrix_host(N, C);
-      }
+    if (display_help) {
+        return return_value;
     }
 
+    if (algorithm.compare("kernel_test") == 0) {
+        hpx::util::high_resolution_timer t;
+        kernel_test::matrix_multiply_kernel_test m(N, A, B, transposed,
+                repetitions, verbose);
+        C = m.matrix_multiply();
+
+        duration = t.elapsed();
+        std::cout << "non-HPX [N = " << N << "] total time: " << duration << "s"
+                << std::endl;
+        std::cout << "non-HPX [N = " << N << "] average time per run: "
+                << (duration / repetitions) << "s (repetitions = "
+                << repetitions << ")" << std::endl;
+
+        if (verbose >= 2) {
+            std::cout << "non-HPX matrix C:" << std::endl;
+            print_matrix_host(N, C);
+        }
+    } else if (algorithm.compare("kernel_tiled") == 0) {
+        kernel_tiled::matrix_multiply_kernel_tiled m(N, A, B, transposed,
+                repetitions, verbose);
+        C = m.matrix_multiply(duration);
+
+        std::cout << "non-HPX [N = " << N << "] total time: " << duration << "s"
+                << std::endl;
+        std::cout << "non-HPX [N = " << N << "] average time per run: "
+                << (duration / repetitions) << "s (repetitions = "
+                << repetitions << ")" << std::endl;
+
+        if (verbose >= 2) {
+            std::cout << "non-HPX matrix C:" << std::endl;
+            print_matrix_host(N, C);
+        }
+    }
 
     if (is_root_node) {
 
@@ -316,14 +336,14 @@ int main(int argc, char* argv[]) {
                 std::cout << "error: check failed!" << std::endl;
             }
 
-	    if (verbose >= 2) {
-	      std::vector<double> diff_matrix(N * N);
-	      for (size_t k = 0; k < N * N; k++) {
-		diff_matrix.at(k) = fabs(Cref.at(k) - C.at(k));
-	      }
-	      std::cout << "diff_matrix:" << std::endl;
-	      print_matrix_host(N, diff_matrix);
-	    }
+            if (verbose >= 2) {
+                std::vector<double> diff_matrix(N * N);
+                for (size_t k = 0; k < N * N; k++) {
+                    diff_matrix.at(k) = fabs(Cref.at(k) - C.at(k));
+                }
+                std::cout << "diff_matrix:" << std::endl;
+                print_matrix_host(N, diff_matrix);
+            }
         }
     }
     return return_value;

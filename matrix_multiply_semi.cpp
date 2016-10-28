@@ -61,7 +61,7 @@ namespace semi {
 
     std::vector<size_t> min = { 0, 0, 0 };
     std::vector<size_t> max = { N, N, N };
-    //        std::vector<size_t> block = { block_result, block_result, block_input };
+    std::vector<size_t> block = { block_result, block_result, block_input };
     //        std::vector<bool> parallel_dims = { true, true, false };
 
     //        hpx::parallel::par;
@@ -74,14 +74,14 @@ namespace semi {
     //        {   hpx::parallel::par, hpx::parallel::par, hpx::parallel::seq};
 
     blocking_pseudo_execution_policy<size_t> policy(3);
-    policy.add_blocking({32, 32, 32}, {false, false, false}); // L1 blocking
+    policy.add_blocking({4, 4, 4}, {false, false, false}); // L1 blocking
            // policy.add_blocking({32, 32, 64}, {false, false, false}); // L1 blocking
     // policy.add_blocking( { block_result, block_result, block_input }, { false,
     // 	  false, false }); // L1 blocking
     //        policy.add_blocking({256, 256, 256}, {true, true, false}); // L1 blocking
     //        policy.add_blocking(block, parallel_dims); // L1 blocking
     //        policy.add_blocking({512, 512, 128}, {false, false, false}); // LLC blocking
-    // policy.set_final_steps( { 4, 2, block_input });
+    policy.set_final_steps( { 4, 2, block_input });
 
     //        const size_t blocks_x = N / block_result; // N has to be divisible
     //        const size_t blocks_y = N / block_result; // N has to be divisible

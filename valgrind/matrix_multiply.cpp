@@ -29,7 +29,7 @@ std::uint64_t verbose;
 bool check;
 bool transposed;
 uint64_t block_input;
-size_t small_block_size;
+size_t block_result;
 // initialized via program_options defaults
 
 double duration;
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
   boost::program_options::notify(vm);
   // extract command line argument
   N = vm["n-value"].as<std::uint64_t>();
-  small_block_size = vm["small-block-size"].as<std::uint64_t>();
+  block_result = vm["small-block-size"].as<std::uint64_t>();
   verbose = vm["verbose"].as<uint64_t>();
   algorithm = vm["algorithm"].as<std::string>();
   check = vm["check"].as<bool>();

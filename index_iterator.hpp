@@ -31,7 +31,6 @@ template<size_t dim, size_t cur_dim, typename T, typename F, typename ... Args>
 typename std::enable_if<dim == 0, void>::type execute_looped(
     std::vector<T> &min, std::vector<T> &max, std::vector<T> &step, F f,
     Args ... args) {
-  hpx::cout << "in last execute looped cur:" << cur_dim << std::endl << hpx::flush;
   f(args...);
 }
 
@@ -39,16 +38,14 @@ template<size_t dim, size_t cur_dim, typename T, typename F, typename ... Args>
 typename std::enable_if<dim != 0, void>::type execute_looped(
     std::vector<T> &min, std::vector<T> &max, std::vector<T> &step, F f,
     Args ... args) {
-  hpx::cout << "in execute looped cur:" << cur_dim << std::endl << hpx::flush;
   for (T cur = min[cur_dim]; cur < max[cur_dim]; cur += step[cur_dim]) {
     execute_looped<dim - 1, cur_dim + 1>(min, max, step, f, args..., cur);
   }
 }
 
 template<size_t dim, typename T, typename F>
-void static_loop_nest(std::vector<T> &min, std::vector<T> &max,
+void loop_nest(std::vector<T> &min, std::vector<T> &max,
     std::vector<T> &step, F f) {
-  hpx::cout << "static loop nest" << std::endl << hpx::flush;
   execute_looped<dim, 0>(min, max, step, f);
 }
 
@@ -185,35 +182,35 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
   std::vector<T> &block = std::get<0>(pair);
   std::vector<bool> &parallel_dims = std::get<1>(pair);
 
-  hpx::cout << "inner min: ";
-  for (size_t i = 0; i < min.size(); i++) {
-    if (i > 0) {
-      hpx::cout << ", ";
-    }
-    hpx::cout << min[i];
-  }
-  hpx::cout << std::endl << hpx::flush;
+  // hpx::cout << "inner min: ";
+  // for (size_t i = 0; i < min.size(); i++) {
+  //   if (i > 0) {
+  //     hpx::cout << ", ";
+  //   }
+  //   hpx::cout << min[i];
+  // }
+  // hpx::cout << std::endl << hpx::flush;
 
-  hpx::cout << "inner max: ";
-  for (size_t i = 0; i < max.size(); i++) {
-    if (i > 0) {
-      hpx::cout << ", ";
-    }
-    hpx::cout << max[i];
-  }
-  hpx::cout << std::endl << hpx::flush;
+  // hpx::cout << "inner max: ";
+  // for (size_t i = 0; i < max.size(); i++) {
+  //   if (i > 0) {
+  //     hpx::cout << ", ";
+  //   }
+  //   hpx::cout << max[i];
+  // }
+  // hpx::cout << std::endl << hpx::flush;
 
-  hpx::cout << "block: ";
-  for (size_t i = 0; i < block.size(); i++) {
-    if (i > 0) {
-      hpx::cout << ", ";
-    }
-    hpx::cout << block[i];
-  }
-  hpx::cout << std::endl << hpx::flush;
+  // hpx::cout << "block: ";
+  // for (size_t i = 0; i < block.size(); i++) {
+  //   if (i > 0) {
+  //     hpx::cout << ", ";
+  //   }
+  //   hpx::cout << block[i];
+  // }
+  // hpx::cout << std::endl << "--------------------" << std::endl << hpx::flush;
   
   if (policy.is_last_blocking_step()) {
-    hpx::cout << "in last blocking step" << std::endl << hpx::flush;
+    // hpx::cout << "in final" << std::endl << hpx::flush;
 //        dim_index_iterator<T> dim_iter(min, max, block);
 //
 //        size_t inner_index_count = 1;
@@ -223,8 +220,9 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
 //
 //        hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter,
 //                inner_index_count, f);
-    static_loop_nest<dim>(min, max, block, f);
+    loop_nest<dim>(min, max, block, f);
   } else {
+    // hpx::cout << "not in final" << std::endl << hpx::flush;
     size_t parallel_dims_count = std::count(parallel_dims.begin(),
         parallel_dims.end(), true);
 
@@ -264,10 +262,9 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
     size_t inner_index_count_remain = 1;
     for (size_t d = 0; d < dim; d++) {
       if (parallel_dims[d]) {
-        inner_index_count_reduced *= (max[d] - min[d]) / block[d];
+        inner_index_count_reduced *= static_cast<size_t>(std::ceil(static_cast<double>(max[d] - min[d]) / static_cast<double>(block[d])));
       } else {
-        inner_index_count_remain *= (max[d] - min[d]) / block[d];
-
+        inner_index_count_remain *= static_cast<size_t>(std::ceil(static_cast<double>(max[d] - min[d]) / static_cast<double>(block[d])));
       }
     }
 
@@ -278,8 +275,6 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
     hpx::parallel::for_each_n(hpx::parallel::par, dim_iter_reduced,
         inner_index_count_reduced,
         [parallel_dims_count, inner_index_count_remain, &policy, &map, &min, &max, &block, f](const std::vector<size_t> &partial_index) {
-				hpx::cout << "in lambda" << std::endl << hpx::flush;
-
           std::vector<T> min_serial_fill(min);
           std::vector<T> max_serial_fill(max);
           map_dims(partial_index, map, min_serial_fill);
@@ -291,10 +286,36 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
           std::vector<T> recursive_min(dim);
           std::vector<T> recursive_max(dim);
 
+	  // hpx::cout << "min_serial_fill: ";
+	  // for (size_t i = 0; i < min_serial_fill.size(); i++) {
+	  //   if (i > 0) {
+	  //     hpx::cout << ", ";
+	  //   }
+	  //   hpx::cout << min_serial_fill[i];
+	  // }
+	  // hpx::cout << " ";
+	  // hpx::cout << "max_serial_fill: ";
+	  // for (size_t i = 0; i < max_serial_fill.size(); i++) {
+	  //   if (i > 0) {
+	  //     hpx::cout << ", ";
+	  //   }
+	  //   hpx::cout << max_serial_fill[i];
+	  // }
+	  // hpx::cout << std::endl << hpx::flush;
+	  // hpx::cout << " ";
+	  // hpx::cout << "block: ";
+	  // for (size_t i = 0; i < block.size(); i++) {
+	  //   if (i > 0) {
+	  //     hpx::cout << ", ";
+	  //   }
+	  //   hpx::cout << block[i];
+	  // }
+	  // hpx::cout << std::endl << hpx::flush;
+	  // hpx::cout << "inner_index_count_remain: " << inner_index_count_remain << std::endl << hpx::flush;
+
           hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter_serial_fill,
               inner_index_count_remain,
               [&policy, &block, f, &recursive_min, &recursive_max](const std::vector<size_t> &cur_index) {
-				      hpx::cout << "in other lambda" << std::endl << hpx::flush;
                 // iterate within block
                 for (size_t d = 0; d < dim; d++) {
                   recursive_min[d] = cur_index[d];
