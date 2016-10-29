@@ -52,6 +52,7 @@ double duration;
 uint64_t repetitions;
 // to skip printing and checking on all other nodes
 bool is_root_node;
+bool non_hpx_algorithm = false;
 
 int hpx_main(boost::program_options::variables_map& vm) {
 
@@ -182,7 +183,7 @@ int hpx_main(boost::program_options::variables_map& vm) {
 	double inner_duration;
         C = m.matrix_multiply(inner_duration);
     } else {
-        hpx::cout << "using non-HPX algorithm" << std::endl << hpx::flush;
+	non_hpx_algorithm = true;
         return hpx::finalize(); // Handles HPX shutdown
     }
 
@@ -280,6 +281,11 @@ int main(int argc, char* argv[]) {
             std::cout << "non-HPX matrix C:" << std::endl;
             print_matrix_host(N, C);
         }
+    } else {
+      if (non_hpx_algorithm) {
+	std::cout << "\"" << algorithm << "\" not a valid algorithm" << std::endl;
+	return 1;
+      }
     }
 
     if (is_root_node) {

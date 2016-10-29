@@ -29,16 +29,11 @@ namespace kernel_test {
 							   std::vector<double> &B, bool transposed,
 							   uint64_t repetitions, uint64_t verbose) :
     N(N), A(A), B(B), repetitions(repetitions), verbose(verbose) {
-
   }
 
   std::vector<double> matrix_multiply_kernel_test::matrix_multiply() {
 
-    std::vector<double> C(N * N);
-    std::fill(C.begin(), C.end(), 0.0);
-      
     std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded((N + PADDING) * (N + PADDING));
-    std::fill(C_padded.begin(), C_padded.end(), 0.0);
 
     std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_padded((N + PADDING) * (N + PADDING));
     for (size_t i = 0; i < N; i++) {
@@ -63,6 +58,8 @@ namespace kernel_test {
     }	
 
     for (size_t rep = 0; rep < repetitions; rep++) {
+
+      std::fill(C_padded.begin(), C_padded.end(), 0.0);
 	  
       using Vc::double_v;
       // L3 blocking
@@ -189,6 +186,10 @@ namespace kernel_test {
       }
     }
 
+
+    std::vector<double> C(N * N);
+    std::fill(C.begin(), C.end(), 0.0);
+    
     for (size_t i = 0; i < N; i++) {
       for (size_t j = 0; j < N; j++) {
 	C[i * N + j] = C_padded[i * (N + PADDING) + j];	    

@@ -218,6 +218,8 @@ namespace kernel_tiled {
     
     for (size_t rep = 0; rep < repetitions; rep++) {
 
+      std::fill(C_padded.begin(), C_padded.end(), 0.0);
+
       std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 	  
       using Vc::double_v;
