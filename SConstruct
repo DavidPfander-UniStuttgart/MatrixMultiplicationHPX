@@ -3,8 +3,8 @@ import os
 vars = Variables("custom.py")
 vars.Add("PKG_CONFIG_PATH_RELEASE", "path to the pkg-config for configuring hpx, used for release builds", '')
 vars.Add("PKG_CONFIG_PATH_DEBUG", "path to the pkg-config for configuring hpx, used for debug builds", '')
-vars.Add("VC_INCLUDE_PATH", "include files of the Vc vectorization library", '')
-vars.Add("VC_LIBRARY_PATH", "path to shared libararies of the Vc vectorization library", '')
+vars.Add("VC_INCLUDE_PATH", "include files of the Vc vectorization library (not needed for HPX with datapar)", '')
+vars.Add("VC_LIBRARY_PATH", "path to shared libararies of the Vc vectorization library (not needed for HPX with datapar)", '')
 vars.Add("CC", "C compiler", 'gcc')
 vars.Add("CXX", "C++ compiler", 'g++')
 

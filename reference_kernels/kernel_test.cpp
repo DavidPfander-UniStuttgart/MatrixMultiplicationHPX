@@ -1,11 +1,4 @@
-/*
- * matrix_multiply_algorithm.hpp
- *
- *  Created on: Oct 10, 2016
- *      Author: pfandedd
- */
-
-#include "matrix_multiply_kernel_test.hpp"
+#include "kernel_test.hpp"
 
 #include <Vc/Vc>
 #include <boost/align/aligned_allocator.hpp>
@@ -25,13 +18,13 @@
 
 namespace kernel_test {
 
-  matrix_multiply_kernel_test::matrix_multiply_kernel_test(size_t N, std::vector<double> &A,
+  kernel_test::kernel_test(size_t N, std::vector<double> &A,
 							   std::vector<double> &B, bool transposed,
 							   uint64_t repetitions, uint64_t verbose) :
     N(N), A(A), B(B), repetitions(repetitions), verbose(verbose) {
   }
 
-  std::vector<double> matrix_multiply_kernel_test::matrix_multiply() {
+  std::vector<double> kernel_test::matrix_multiply() {
 
     std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded((N + PADDING) * (N + PADDING));
 

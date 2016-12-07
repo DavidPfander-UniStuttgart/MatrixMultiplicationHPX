@@ -6,8 +6,10 @@
 
 #include "matrix_multiply_work.hpp"
 
+namespace multiply_components {
+
 // uses round-robin distribution scheme, granularity of distribution is determined by the number of nodes
-class matrix_multiply_static_improved {
+class static_improved {
 private:
     size_t N;
     std::vector<double> &A;
@@ -24,7 +26,7 @@ private:
     uint64_t repetitions;
     uint64_t verbose;
 public:
-    matrix_multiply_static_improved(size_t N, std::vector<double> &A,
+    static_improved(size_t N, std::vector<double> &A,
             std::vector<double> &B, bool transposed, uint64_t block_input,
             size_t block_result, uint64_t min_work_size,
             uint64_t max_work_difference, double max_relative_work_difference,
@@ -49,3 +51,5 @@ public:
 
     std::vector<double> matrix_multiply();
 };
+
+}

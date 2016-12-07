@@ -1,25 +1,25 @@
 /*
- * matrix_multiplication_component.hpp
+ *  recursive.cpp
  *
  *  Created on: Sep 5, 2016
  *      Author: pfandedd
  */
 
-#include "matrix_multiply_recursive.hpp"
+#include "recursive.hpp"
 
 #include <hpx/include/lcos.hpp>
-#include "matrix_multiply_util.hpp"
-#include "matrix_multiply_multiplier.hpp"
+#include "../util.hpp"
+#include "multiplier.hpp"
 
-HPX_REGISTER_COMPONENT(hpx::components::component<matrix_multiply_recursive>,
-        matrix_multiply_recursive);
+HPX_REGISTER_COMPONENT(hpx::components::component<multiply_components::recursive>,
+        recursive);
 
-HPX_REGISTER_ACTION(matrix_multiply_recursive::distribute_recursively_action);
+HPX_REGISTER_ACTION(multiply_components::recursive::distribute_recursively_action);
 
-// HPX_REGISTER_ACTION(matrix_multiply_recursive::extract_submatrix_action);
+namespace multiply_components {
 
 // make async as well
-void matrix_multiply_recursive::extract_submatrix(std::vector<double> &C,
+void recursive::extract_submatrix(std::vector<double> &C,
         std::vector<double> C_small, size_t x, size_t y, size_t blockSize) {
     try {
         size_t blocksize_last = 2 * blockSize;
@@ -37,7 +37,7 @@ void matrix_multiply_recursive::extract_submatrix(std::vector<double> &C,
     }
 }
 
-std::vector<double> matrix_multiply_recursive::distribute_recursively(
+std::vector<double> recursive::distribute_recursively(
         std::uint64_t x, std::uint64_t y, size_t blockSize) {
 
     if (verbose >= 1) {
@@ -46,10 +46,10 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
     }
     if (blockSize <= block_result) {
         uint32_t comp_locality = hpx::get_locality_id();
-        hpx::components::client<matrix_multiply_multiplier> multiplier;
+        hpx::components::client<multiplier> multiplier;
         multiplier.connect_to("/multiplier#" + std::to_string(comp_locality));
         auto f = hpx::async<
-                matrix_multiply_multiplier::calculate_submatrix_action>(
+                multiplier::calculate_submatrix_action>(
                 multiplier.get_id(), x, y, blockSize);
         return f.get();
     } else {
@@ -65,7 +65,7 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
         // std::vector<hpx::id_type> node_ids = hpx::find_all_localities();
 
         uint32_t comp_locality = hpx::get_locality_id();
-        hpx::components::client<matrix_multiply_recursive> self;
+        hpx::components::client<recursive> self;
         self.connect_to("/recursive#" + std::to_string(comp_locality));
 
         std::vector<std::tuple<size_t, size_t>> offsets = { { 0, 0 }, { 0
@@ -76,7 +76,7 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
         std::vector<hpx::future<void>> g;
         for (size_t i = 0; i < submatrix_count; i++) {
             hpx::future<std::vector<double>> f = hpx::async<
-                    matrix_multiply_recursive::distribute_recursively_action>(
+                    recursive::distribute_recursively_action>(
                     self.get_id(), x + std::get<0>(offsets[i]),
                     y + std::get<1>(offsets[i]), n_new);
             g.push_back(
@@ -94,4 +94,6 @@ std::vector<double> matrix_multiply_recursive::distribute_recursively(
 
         return C;
     }
+}
+
 }

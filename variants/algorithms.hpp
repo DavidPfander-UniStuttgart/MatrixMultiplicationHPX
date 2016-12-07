@@ -120,7 +120,7 @@ public:
     }
 };
 
-class matrix_multiply_algorithms {
+class algorithms {
 
 private:
     size_t N;
@@ -133,7 +133,7 @@ private:
     uint64_t repetitions;
     uint64_t verbose;
 public:
-    matrix_multiply_algorithms(size_t N, std::vector<double> &A,
+    algorithms(size_t N, std::vector<double> &A,
             std::vector<double> &B, bool transposed, uint64_t block_input,
             size_t block_result, uint64_t repetitions, uint64_t verbose) :
             N(N), A(A), B(B), transposed(transposed), block_input(block_input), block_result(

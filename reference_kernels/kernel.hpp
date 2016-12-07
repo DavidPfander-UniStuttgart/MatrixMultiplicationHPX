@@ -13,7 +13,7 @@
 namespace kernel {
 
 template<typename T>
-void matrix_multiply_kernel(std::vector<T> &A, std::vector<T> &B,
+void kernel(std::vector<T> &A, std::vector<T> &B,
         std::vector<T> &C, size_t N, size_t x, size_t y, size_t blockSize) {
     try {
         for (uint64_t i = 0; i < blockSize; i++) {
@@ -27,7 +27,7 @@ void matrix_multiply_kernel(std::vector<T> &A, std::vector<T> &B,
             }
         }
     } catch (const std::out_of_range &oor) {
-        std::cout << "in matrix_multiply_kernel: \"" << oor.what() << "\""
+        std::cout << "in kernel: \"" << oor.what() << "\""
                 << std::endl;
     }
 }
@@ -36,7 +36,7 @@ void matrix_multiply_kernel(std::vector<T> &A, std::vector<T> &B,
 // OPT: assume matrix B transposed
 // OPT: use accumulator for result in innermost loop
 template<typename T>
-void matrix_multiply_kernel_transposed(std::vector<T> &A, std::vector<T> &B,
+void kernel_transposed(std::vector<T> &A, std::vector<T> &B,
         std::vector<T> &C, size_t N, size_t x, size_t y, size_t blockSize) {
     for (uint64_t i = 0; i < blockSize; i++) {
         for (uint64_t j = 0; j < blockSize; j++) {
@@ -56,7 +56,7 @@ void matrix_multiply_kernel_transposed(std::vector<T> &A, std::vector<T> &B,
 // OPT: use unsafe accesses
 // opt: precache data in small arrays to avoid large power of 2 conflict misses for large input arrays
 template<typename T>
-void matrix_multiply_kernel_transposed_blocked(std::vector<T> &A,
+void kernel_transposed_blocked(std::vector<T> &A,
         std::vector<T> &B, std::vector<T> &C, const size_t N, const size_t x,
         const size_t y, const size_t block_result, const size_t block_input) {
 

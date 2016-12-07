@@ -1,5 +1,5 @@
 /*
- * matrix_multiply_algorithm.hpp
+ * Matrix_multiply_algorithm.hpp
  *
  *  Created on: Oct 10, 2016
  *      Author: pfandedd
@@ -232,7 +232,7 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
 //
 //};
 
-class matrix_multiply_looped {
+class looped {
 
 private:
     size_t N;
@@ -245,7 +245,7 @@ private:
     uint64_t repetitions;
     uint64_t verbose;
 public:
-    matrix_multiply_looped(size_t N, std::vector<double> &A,
+    looped(size_t N, std::vector<double> &A,
             std::vector<double> &B, bool transposed, uint64_t block_result,
             uint64_t block_input, uint64_t repetitions, uint64_t verbose) :
             N(N), A(A), B(B), transposed(transposed), block_result(

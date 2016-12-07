@@ -1,11 +1,4 @@
-/*
- * matrix_multiply_algorithm.hpp
- *
- *  Created on: Oct 10, 2016
- *      Author: pfandedd
- */
-
-#include "matrix_multiply_combined.hpp"
+#include "combined.hpp"
 
 #include <chrono>
 
@@ -52,7 +45,7 @@ using namespace index_iterator;
 
 namespace combined {
 
-  void matrix_multiply_combined::verify_blocking_setup() {
+  void combined::verify_blocking_setup() {
     if (!((L2_X % L1_X == 0) && (L3_X % L2_X == 0))) {
       std::cout << "error: x direction blocking not set up correctly" << std::endl;
       throw;
@@ -67,7 +60,7 @@ namespace combined {
     }
   }
   
-  matrix_multiply_combined::matrix_multiply_combined(size_t N, std::vector<double> &A_org,
+  combined::combined(size_t N, std::vector<double> &A_org,
 						     std::vector<double> &B_org,
 						     bool transposed, uint64_t block_result, uint64_t block_input,
 						     uint64_t repetitions, uint64_t verbose) :
@@ -116,7 +109,7 @@ namespace combined {
     }
   }
 
-  std::vector<double> matrix_multiply_combined::matrix_multiply(double &duration) {
+  std::vector<double> combined::matrix_multiply(double &duration) {
 
     // create a matrix of l1 cachable submatrices, caching by tiling, no large strides even without padding
     std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(X_size * Y_size);

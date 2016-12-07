@@ -1,0 +1,3 @@
+PKG_CONFIG_PATH_RELEASE='/home/xyz/hpx_install/lib/pkgconfig'
+PKG_CONFIG_PATH_DEBUG='/home/xyz/hpx_install_debug/lib/pkgconfig'
+

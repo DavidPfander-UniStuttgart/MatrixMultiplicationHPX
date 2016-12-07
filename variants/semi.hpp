@@ -1,10 +1,3 @@
-/*
- * matrix_multiply_algorithm.hpp
- *
- *  Created on: Oct 10, 2016
- *      Author: pfandedd
- */
-
 #pragma once
 
 #include <cstddef>
@@ -13,7 +6,7 @@
 
 namespace semi {
 
-  class matrix_multiply_semi {
+  class semi {
 
   private:
     size_t N;
@@ -26,7 +19,7 @@ namespace semi {
     uint64_t repetitions;
     uint64_t verbose;
   public:
-    matrix_multiply_semi(size_t N, std::vector<double> &A, std::vector<double> &B,
+    semi(size_t N, std::vector<double> &A, std::vector<double> &B,
 			 bool transposed, uint64_t block_result, uint64_t block_input,
 			 uint64_t repetitions, uint64_t verbose);
 

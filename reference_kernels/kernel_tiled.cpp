@@ -1,11 +1,4 @@
-/*
- * matrix_multiply_algorithm.hpp
- *
- *  Created on: Oct 10, 2016
- *      Author: pfandedd
- */
-
-#include "matrix_multiply_kernel_tiled.hpp"
+#include "kernel_tiled.hpp"
 
 #include <chrono>
 
@@ -50,7 +43,7 @@
 
 namespace kernel_tiled {
 
-  void matrix_multiply_kernel_tiled::verify_blocking_setup() {
+  void kernel_tiled::verify_blocking_setup() {
     if (!((L2_X % L1_X == 0) && (L3_X % L2_X == 0))) {
       std::cout << "error: x direction blocking not set up correctly" << std::endl;
       throw;
@@ -65,7 +58,7 @@ namespace kernel_tiled {
     }
   }
 
-  matrix_multiply_kernel_tiled::matrix_multiply_kernel_tiled(size_t N, std::vector<double> &A_org,
+  kernel_tiled::kernel_tiled(size_t N, std::vector<double> &A_org,
 							     std::vector<double> &B_org, bool transposed,
 							     uint64_t repetitions, uint64_t verbose) :
     N_org(N), repetitions(repetitions), verbose(verbose) {
@@ -113,7 +106,7 @@ namespace kernel_tiled {
     }
   }
 
-  std::vector<double> matrix_multiply_kernel_tiled::matrix_multiply(double &duration) {
+  std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
 
     // create a matrix of l1 cachable submatrices, caching by tiling, no large strides even without padding
     std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(X_size * Y_size);

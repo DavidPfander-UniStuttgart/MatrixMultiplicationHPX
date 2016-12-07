@@ -1,5 +1,5 @@
 /*
- * matrix_multiplication_component.hpp
+ * recursive.hpp
  *
  *  Created on: Sep 5, 2016
  *      Author: pfandedd
@@ -11,24 +11,26 @@
 #include <hpx/include/components.hpp>
 #include <hpx/include/iostreams.hpp>
 
-#include "matrix_multiply_kernel.hpp"
+#include "../reference_kernels/kernel.hpp"
 
-struct matrix_multiply_recursive: hpx::components::component_base<
-        matrix_multiply_recursive> {
+namespace multiply_components {
+
+struct recursive: hpx::components::component_base<
+        recursive> {
 
     size_t block_result;
     uint64_t verbose;
 
     // TODO: why does this get called?
-    matrix_multiply_recursive() :
+    recursive() :
         block_result(1), verbose(0) {
     }
 
-    matrix_multiply_recursive(size_t block_result, uint64_t verbose) :
+    recursive(size_t block_result, uint64_t verbose) :
         block_result(block_result), verbose(verbose) {
     }
 
-    ~matrix_multiply_recursive() {
+    ~recursive() {
     }
 
     std::vector<double> distribute_recursively(std::uint64_t x, std::uint64_t y,
@@ -37,7 +39,7 @@ struct matrix_multiply_recursive: hpx::components::component_base<
     void extract_submatrix(std::vector<double> &C, std::vector<double> C_small,
             size_t x, size_t y, size_t blockSize);
 
-    HPX_DEFINE_COMPONENT_ACTION(matrix_multiply_recursive, distribute_recursively,
+    HPX_DEFINE_COMPONENT_ACTION(recursive, distribute_recursively,
             distribute_recursively_action);
 
     // HPX_DEFINE_COMPONENT_ACTION(matrix_multiply_recursive, extract_submatrix,
@@ -45,5 +47,7 @@ struct matrix_multiply_recursive: hpx::components::component_base<
 
 };
 
+}
+
 HPX_REGISTER_ACTION_DECLARATION(
-        matrix_multiply_recursive::distribute_recursively_action);
+				multiply_components::recursive::distribute_recursively_action);

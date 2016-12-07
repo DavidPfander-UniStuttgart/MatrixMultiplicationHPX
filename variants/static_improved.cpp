@@ -1,4 +1,4 @@
-#include "matrix_multiply_static_improved.hpp"
+#include "static_improved.hpp"
 
 #include <algorithm>
 
@@ -7,10 +7,12 @@
 #include <hpx/include/iostreams.hpp>
 #include <hpx/include/lcos.hpp>
 
-#include "matrix_multiply_recursive.hpp"
-#include "matrix_multiply_multiplier.hpp"
+#include "recursive.hpp"
+#include "multiplier.hpp"
 
-void matrix_multiply_static_improved::print_schedule(
+namespace multiply_components {
+
+void static_improved::print_schedule(
         std::vector<std::vector<matrix_multiply_work>> &all_work) {
     std::cout << "-----work-distribution:-----" << std::endl;
     for (size_t i = 0; i < all_work.size(); i++) {
@@ -26,7 +28,7 @@ void matrix_multiply_static_improved::print_schedule(
     }
 }
 
-void matrix_multiply_static_improved::insert_submatrix(
+void static_improved::insert_submatrix(
         const std::vector<double> &submatrix, const matrix_multiply_work &w) {
     for (size_t i = 0; i < w.N; i++) {
         for (size_t j = 0; j < w.N; j++) {
@@ -36,7 +38,7 @@ void matrix_multiply_static_improved::insert_submatrix(
     }
 }
 
-bool matrix_multiply_static_improved::fulfills_constraints(
+bool static_improved::fulfills_constraints(
         std::vector<uint64_t> &total_work) {
     uint64_t min_work = total_work[0];
     uint64_t max_work = total_work[0];
@@ -67,7 +69,7 @@ bool matrix_multiply_static_improved::fulfills_constraints(
     return false;
 }
 
-std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::create_schedule(
+std::vector<std::vector<matrix_multiply_work>> static_improved::create_schedule(
         size_t num_localities) {
     // one slot per locality, stores the work to do
     std::vector<std::vector<matrix_multiply_work>> all_work(num_localities);
@@ -190,7 +192,7 @@ std::vector<std::vector<matrix_multiply_work>> matrix_multiply_static_improved::
     return all_work;
 }
 
-std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
+std::vector<double> static_improved::matrix_multiply() {
     hpx::cout << "using pseudodynamic distributed algorithm" << std::endl
             << hpx::flush;
     size_t num_localities = hpx::get_num_localities().get();
@@ -216,12 +218,12 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 
     // one multiplier per node, to avoid additional copies of A and B
 
-    std::vector<hpx::components::client<matrix_multiply_multiplier>> multipliers =
-            hpx::new_<hpx::components::client<matrix_multiply_multiplier>[]>(
+    std::vector<hpx::components::client<multiplier>> multipliers =
+            hpx::new_<hpx::components::client<multiplier>[]>(
                     policy, compute_localities, N, A, B, transposed,
                     block_input, verbose).get();
 
-    for (hpx::components::client<matrix_multiply_multiplier> &multiplier : multipliers) {
+    for (hpx::components::client<multiplier> &multiplier : multipliers) {
         uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
                 multiplier.get_id());
         multiplier.register_as("/multiplier#" + std::to_string(comp_locality),
@@ -230,7 +232,7 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
 
     std::vector<hpx::future<void>> futures;
 
-    std::vector<hpx::components::client<matrix_multiply_recursive>> recursives;
+    std::vector<hpx::components::client<recursive>> recursives;
 
     std::vector<std::vector<matrix_multiply_work>> all_work =
             this->create_schedule(compute_localities);
@@ -243,34 +245,31 @@ std::vector<double> matrix_multiply_static_improved::matrix_multiply() {
         for (size_t i = 0; i < all_work.size(); i++) {
             // transmit the work to the processing locality
             for (matrix_multiply_work &w : all_work[i]) {
-                hpx::components::client<matrix_multiply_recursive> recursive =
-                        hpx::new_<
-                                hpx::components::client<
-                                        matrix_multiply_recursive>>(all_ids[i],
-                                block_result, verbose);
+              hpx::components::client<recursive> recursive = hpx::new_<
+                  hpx::components::client<multiply_components::recursive>>(
+                  all_ids[i], block_result, verbose);
 
-                uint32_t comp_locality = hpx::naming::get_locality_id_from_id(
-                        recursive.get_id());
-                recursive.register_as(
-                        "/recursive#" + std::to_string(comp_locality), false);
+              uint32_t comp_locality =
+                  hpx::naming::get_locality_id_from_id(recursive.get_id());
+              recursive.register_as(
+                  "/recursive#" + std::to_string(comp_locality), false);
 
-                hpx::future<std::vector<double>> f =
-                        hpx::async<
-                                matrix_multiply_recursive::distribute_recursively_action>(
-                                recursive.get_id(), w.x, w.y, w.N);
-//	    f.wait();
-                hpx::future<void> g = f.then(
-                        hpx::util::unwrapped([=](std::vector<double> submatrix)
-                        {
-                            this->insert_submatrix(submatrix, w);
-                        }));
-//	    g.wait();
-                futures.push_back(std::move(g));
-                recursives.push_back(std::move(recursive));
+              hpx::future<std::vector<double>> f =
+                  hpx::async<recursive::distribute_recursively_action>(
+                      recursive.get_id(), w.x, w.y, w.N);
+              hpx::future<void> g = f.then(
+                  hpx::util::unwrapped([=](std::vector<double> submatrix) {
+                    this->insert_submatrix(submatrix, w);
+                  }));
+
+              futures.push_back(std::move(g));
+              recursives.push_back(std::move(recursive));
             }
         }
 
         hpx::wait_all(futures);
     }
     return C;
+}
+
 }
