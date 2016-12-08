@@ -18,27 +18,31 @@ Usage: matrix_multiply [options]:
   --n-value arg (=4)                    n value for the square matrices, should
                                         be a power of 2, arbitrary sized square
                                         matrices work with some implementations
+  --transposed arg (=1)                 use a transposed matrix for B
   --repetitions arg (=1)                how often should the operation be 
                                         repeated (for averaging timings)
-  --block-input arg (=128)              blocked application of the input 
-                                        matrices, set to 0 to disable
-  --block-result arg (=128)             square block of the input matrix to be 
-                                        processed by a single thread
-  --verbose arg (=0)                    set to 1 for status information, set to
-                                        2 to additionally print the matrices
+  --verbose arg (=0)                    set to 1 for some status information, 
+                                        set to 2 more output
+  --block-result arg (=128)             block size in the result matrix (width 
+                                        of the band of the band matrix 
+                                        multiplication), set to 0 to disable
+  --block-input arg (=128)              chunks the band of the band matrix 
+                                        multiplication
   --check arg (=0)                      check result against a naive and slow 
                                         matrix-multiplication implementation
-  --algorithm arg (=single)             select algorithm: single, static
-  --min-work-size arg (=256)            for pseudodynamic scheduling, minimum 
-                                        work package size per node
-  --max-work-difference arg (=10000)    for pseudodynamic scheduling, maximum 
+  --algorithm arg (=single)             select algorithm: single, 
+                                        pseudodynamic, algorithms, looped, 
+                                        semi, combined, kernel_test, 
+                                        kernel_tiled
+  --min-work-size arg (=256)            pseudodynamic algorithm: minimum work 
+                                        package size per node
+  --max-work-difference arg (=10000)    pseudodynamic algorithm: maximum 
                                         tolerated load inbalance in matrix 
                                         components assigned
   --max-relative-work-difference arg (=0.050000000000000003)
-                                        for pseudodynamic scheduling, maximum 
+                                        pseudodynamic algorithm: maximum 
                                         relative tolerated load inbalance in 
                                         matrix components assigned, in percent
-  --transposed arg (=1)                 use a transposed matrix for B
   --help                                display help
 ```
 
