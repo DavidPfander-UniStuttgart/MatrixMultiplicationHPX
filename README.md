@@ -12,6 +12,7 @@ Needs a installation of HPX with datapar enabled, requires the build tool Scons 
 
 ## Usage
 
+```
 ./release/matrix_multiply --help
 Usage: matrix_multiply [options]:
   --n-value arg (=4)                    n value for the square matrices, should
@@ -39,6 +40,7 @@ Usage: matrix_multiply [options]:
                                         matrix components assigned, in percent
   --transposed arg (=1)                 use a transposed matrix for B
   --help                                display help
+```
 
 ## Some performance results
 
@@ -46,47 +48,57 @@ All results obtained on a single i7 6700k
 
 # Node-level low-level HPX component-based variants:
 
+```
 ./release/matrix_multiply --n-value=8192 --check=False --algorithm=single --block-result=128 --block-input=128 --hpx:threads=4
 using parallel single node algorithm
 [N = 8192] total time: 12.7411s
 [N = 8192] average time per run: 12.7411s (repetitions = 1)
 [N = 8192] performance: 86.2967Gflops (average across repetitions)
+```
 
 # Parallel algorithm based variants:
 
+```
 ./release/matrix_multiply --n-value=8192 --check=False --algorithm=combined --block-result=128 --block-input=128 --hpx:threads=4
 duration inner: 6.76058s
 [X_size = 8400, Y_size = 8192, K_size = 8192] inner performance: 166.765Gflops (average across repetitions)
 [N = 8192] total time: 8.5711s
 [N = 8192] average time per run: 8.5711s (repetitions = 1)
 [N = 8192] performance: 128.281Gflops (average across repetitions)
+```
 
 Ther inner performance is relevant, which excludes the matrix creation overhead. This is required, because of the fast matrix processing.
 
+```
 ./release/matrix_multiply --n-value=8192 --check=False --algorithm=kernel_tiled --block-result=128 --block-input=128 --hpx:threads=4
 duration inner: 6.45054s
 [X_size = 8400, Y_size = 8192, K_size = 8192] inner performance: 174.781Gflops (average across repetitions)
 non-HPX [N = 8192] total time: 6.45054s
 non-HPX [N = 8192] average time per run: 6.45054s (repetitions = 1)
 [N = 8192] performance: 170.453Gflops (average across repetitions)
+```
 
 The inner performance is relevant for this algorithm as well. Fastest variant.
 
 # Distributed HPX component-based variant:
 
+```
 (example run with only a single node)
 ./release/matrix_multiply --n-value=8192 --check=False --algorithm=pseudodynamic --block-result=128 --block-input=128 --hpx:threads=4
 using pseudodynamic distributed algorithm
 [N = 8192] total time: 13.0368s
 [N = 8192] average time per run: 13.0368s (repetitions = 1)
 [N = 8192] performance: 84.3391Gflops (average across repetitions)
+```
 
 # Somewhat optimized OpenMP-based reference implementation:
 
+```
 ./release/matrix_multiply --n-value=8192 --check=False --algorithm=kernel_test --block-result=128 --block-input=128 --hpx:threads=4
 non-HPX [N = 8192] total time: 11.5435s
 non-HPX [N = 8192] average time per run: 11.5435s (repetitions = 1)
 [N = 8192] performance: 95.2494Gflops (average across repetitions)
+```
 
 ## Testing
 
