@@ -2,6 +2,8 @@ All results obtained on Intel i7 6700K
 The results were not checked carefully, some implementation variants seem to be buggy (blocked4, gpuasm)
 n = 4096 (set in benchmark.cpp, should be increased on modern hardware for reliable results)
 
+The fastest (propably) correct implementation reaches up to ~50% peak performance.
+
 ```
 ./benchmark naive
 total flops 2n^3 -> 137438953472
