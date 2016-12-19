@@ -6,7 +6,7 @@ MatrixMultiplicationHPX is a small project that demonstrates the usability of [H
 
 This is a demonstrator project to show that modern C++ together with the library HPX and the vectorization library [Vc](https://github.com/VcDevel/Vc) enable a relatively easy to write, easy to maintain, but still very fast implementation of a important linear algebra algorithm.
 
-We additionally provide algorithm variants with different optimizations, so that the optimization project can be tracked throughout the optimizations and the benefit of individual optimizations becomes clearer. For more details on this see the subproject found in the folder otherExperiments, which includes a matrix multiplication that starts with no optimizations and is then optimized up to ~50 peak performance.
+We additionally provide algorithm variants with different optimizations, so that the optimization project can be tracked throughout the optimizations and the benefit of individual optimizations becomes clearer. For more details on this see the subproject found in the folder otherExperiments, which includes a matrix multiplication that starts with no optimizations and is then optimized up to ~50% peak performance.
 
 ## Compilation
 
