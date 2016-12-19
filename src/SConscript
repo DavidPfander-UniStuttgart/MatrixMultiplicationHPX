@@ -1,0 +1,14 @@
+import fnmatch
+import os
+
+Import('env')
+
+# partial solution to variantdir combined with recursive source search
+# for discussion, see: http://stackoverflow.com/questions/11050211
+sources = []
+for root, dirnames, filenames in os.walk('.'):
+  for filename in fnmatch.filter(filenames, '*.cpp'):
+    sources.append(File(os.path.join(root, filename)))
+
+objects = [env.Object(s) for s in sources]
+env.Program('matrix_multiply', objects)

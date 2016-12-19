@@ -1,1 +1,0 @@
-(64×32+64×16+32×16)×8÷(1024) = 28KB - best L1 performance, fits 32KB size

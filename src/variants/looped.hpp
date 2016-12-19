@@ -1,10 +1,3 @@
-/*
- * Matrix_multiply_algorithm.hpp
- *
- *  Created on: Oct 10, 2016
- *      Author: pfandedd
- */
-
 #pragma once
 
 #include "hpx/parallel/algorithms/for_each.hpp"

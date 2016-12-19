@@ -1,13 +1,6 @@
-/*
- *  recursive.cpp
- *
- *  Created on: Sep 5, 2016
- *      Author: pfandedd
- */
-
 #include "recursive.hpp"
 
-#include "../util.hpp"
+#include "../../util.hpp"
 #include "multiplier.hpp"
 #include <hpx/include/lcos.hpp>
 

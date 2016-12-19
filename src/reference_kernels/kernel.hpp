@@ -1,10 +1,3 @@
-/*
- *  matrix_multiplication_kernel.hpp
- *
- *  Created on: Sep 5, 2016
- *      Author: pfandedd
- */
-
 #pragma once
 
 //#include "aligned_allocator.hpp"

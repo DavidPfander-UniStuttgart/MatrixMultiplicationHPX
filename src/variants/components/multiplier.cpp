@@ -1,6 +1,6 @@
 #include "multiplier.hpp"
 
-#include "../reference_kernels/kernel.hpp"
+#include "../../reference_kernels/kernel.hpp"
 #include <hpx/include/iostreams.hpp>
 #include <hpx/include/lcos.hpp>
 #include <iostream>

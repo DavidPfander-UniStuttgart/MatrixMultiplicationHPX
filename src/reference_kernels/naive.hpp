@@ -1,12 +1,6 @@
-/*
- * naive_matrix_m\ultiplication.cpp
- *
- *  Created on: Sep 5, 2016
- *      Author: pfandedd
- */
-
 #pragma once
 
+#include <vector>
 #include <cinttypes>
 
 template <typename T>

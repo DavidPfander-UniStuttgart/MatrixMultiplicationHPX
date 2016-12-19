@@ -1,17 +1,10 @@
-/*
- * recursive.hpp
- *
- *  Created on: Sep 5, 2016
- *      Author: pfandedd
- */
-
 #pragma once
 
 #include <cinttypes>
 #include <hpx/include/components.hpp>
 #include <hpx/include/iostreams.hpp>
 
-#include "../reference_kernels/kernel.hpp"
+#include "../../reference_kernels/kernel.hpp"
 
 namespace multiply_components {
 

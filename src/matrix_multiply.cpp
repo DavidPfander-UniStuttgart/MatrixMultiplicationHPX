@@ -1,10 +1,3 @@
-////////////////////////////////////////////////////////////////////////////////
-//  Copyright (c) 2016 David Pfander
-//
-//  Distributed under the Boost Software License, Version 1.0. (See accompanying
-//  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-////////////////////////////////////////////////////////////////////////////////
-
 #include <hpx/hpx_init.hpp>
 #include <hpx/include/actions.hpp>
 #include <hpx/include/async.hpp>
@@ -26,10 +19,11 @@
 #include "variants/algorithms.hpp"
 #include "variants/combined.hpp"
 #include "variants/looped.hpp"
-#include "variants/multiplier.hpp"
-#include "variants/recursive.hpp"
+#include "variants/components/multiplier.hpp"
+#include "variants/components/recursive.hpp"
 #include "variants/semi.hpp"
 #include "variants/static_improved.hpp"
+#include "variants/proposal.hpp"
 
 boost::program_options::options_description
     desc_commandline("Usage: matrix_multiply [options]");
@@ -176,6 +170,11 @@ int hpx_main(boost::program_options::variables_map &vm) {
     C = m.matrix_multiply();
   } else if (algorithm.compare("combined") == 0) {
     combined::combined m(N, A, B, transposed, block_result, block_input,
+                         repetitions, verbose);
+    double inner_duration;
+    C = m.matrix_multiply(inner_duration);
+  } else if (algorithm.compare("proposal") == 0) {
+    proposal::proposal m(N, A, B, transposed, block_result, block_input,
                          repetitions, verbose);
     double inner_duration;
     C = m.matrix_multiply(inner_duration);

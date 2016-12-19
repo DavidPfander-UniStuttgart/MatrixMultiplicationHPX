@@ -7,8 +7,8 @@
 #include <hpx/include/iostreams.hpp>
 #include <hpx/include/lcos.hpp>
 
-#include "multiplier.hpp"
-#include "recursive.hpp"
+#include "components/multiplier.hpp"
+#include "components/recursive.hpp"
 
 namespace multiply_components {
 
