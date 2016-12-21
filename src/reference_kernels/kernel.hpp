@@ -3,6 +3,9 @@
 //#include "aligned_allocator.hpp"
 #include <boost/align/aligned_allocator.hpp>
 
+#include <vector>
+#include <iostream>
+
 namespace kernel {
 
 template <typename T>

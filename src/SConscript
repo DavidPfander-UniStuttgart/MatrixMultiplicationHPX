@@ -3,12 +3,39 @@ import os
 
 Import('env')
 
-# partial solution to variantdir combined with recursive source search
-# for discussion, see: http://stackoverflow.com/questions/11050211
-sources = []
-for root, dirnames, filenames in os.walk('.'):
-  for filename in fnmatch.filter(filenames, '*.cpp'):
-    sources.append(File(os.path.join(root, filename)))
+# # partial solution to variantdir combined with recursive source search
+# # for discussion, see: http://stackoverflow.com/questions/11050211
+# exclude = ["tests", "matrix_multiply_application"]
+# sources = []
+# for root, dirnames, filenames in os.walk("."):
+#   # in-place modification will prevent descent into excluded dirs
+#   dirnames[:] = [d for d in dirnames if d not in exclude]
+#   for filename in fnmatch.filter(filenames, '*.cpp'):
+#     print os.path.join(root, filename)
+#     sources.append(File(os.path.join(root, filename)))
+# objects = [env.Object(s) for s in sources]
+# print [o[0].get_abspath() for o in objects]
 
+# exclude_matrix_multiplication = ["tests"]
+# matrix_multiplication_sources = find_sources_recursively(".")
+# matrix_multiplication_objects = [env.Object(s) for s in matrix_multiplication_sources]
+
+sources = []
+sources += Glob("memory_layout/*.cpp")
+sources += Glob("reference_kernels/*.cpp")
+sources += Glob("variants/*.cpp")
+sources += Glob("variants/components/*.cpp")
 objects = [env.Object(s) for s in sources]
-env.Program('matrix_multiply', objects)
+
+sources_matrix_multiply = Glob("matrix_multiply_application/*.cpp")
+objects_matrix_multiply = [env.Object(s) for s in sources_matrix_multiply] + objects
+env.AppendUnique(CPPPATH=['.'])
+env.Program('matrix_multiply', objects_matrix_multiply)
+
+env_tests = env.Clone()
+sources_tests = env_tests.Glob("tests/*.cpp")
+objects_tests = [env_tests.Object(s) for s in sources_tests]
+env_tests.AppendUnique(LIBS=['boost_unit_test_framework'])
+env_tests.AppendUnique(CPPPATH=['.'])
+
+env_tests.Program('boost_tests', objects_tests + objects)

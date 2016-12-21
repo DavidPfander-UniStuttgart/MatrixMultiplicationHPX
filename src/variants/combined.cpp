@@ -2,6 +2,7 @@
 
 #include <chrono>
 
+#include "util/util.hpp"
 #include "index_iterator.hpp"
 
 #include <hpx/include/iostreams.hpp>
@@ -11,35 +12,31 @@ using Vc::double_v;
 #include <boost/align/aligned_allocator.hpp>
 
 // best parameters
-// #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-// #define L3_Y 256
-// #define L3_K_STEP 512
 #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
 #define L3_Y 256
 #define L3_K_STEP 256
-// #define L3_X 840 // max 2 L3 par set to 1024 (rest 512)
-// #define L3_Y 512
-// #define L3_K_STEP 1024
-// #define L3_X 70 // max 2 L3 par set to 1024 (rest 512)
-// #define L3_Y 64
-// #define L3_K_STEP 128
-
-// parameters for kernel tuning
-// #define L3_X 70 // max 2 L3 par set to 1024 (rest 512)
-// #define L3_Y 64
-// #define L3_K_STEP 64
 #define L2_X 70 // max 2 L2 par set to 128 (rest 64)
 #define L2_Y 64
 #define L2_K_STEP 128
-// #define L2_X 35 // max 2 L2 par set to 128 (rest 64)
-// #define L2_Y 16
-// #define L2_K_STEP 64
 #define L1_X 35 // max all L1 par set to 32
 #define L1_Y 16
 #define L1_K_STEP 64
 #define X_REG 5 // cannot be changed!
 #define Y_REG 8 // cannot be changed!
-#define K_REG 1 // cannot be changed!
+
+
+// #define L3_X 5 // max all L1 par set to 32
+// #define L3_Y 8
+// #define L3_K_STEP 8
+// #define L2_X 5 // max all L1 par set to 32
+// #define L2_Y 8
+// #define L2_K_STEP 8
+// #define L1_X 5 // max all L1 par set to 32
+// #define L1_Y 8
+// #define L1_K_STEP 8
+// #define X_REG 5 // cannot be changed!
+// #define Y_REG 8 // cannot be changed!
+
 
 using namespace index_iterator;
 
@@ -64,12 +61,9 @@ void combined::verify_blocking_setup() {
 }
 
 combined::combined(size_t N, std::vector<double> &A_org,
-                   std::vector<double> &B_org, bool transposed,
-                   uint64_t block_result, uint64_t block_input,
-                   uint64_t repetitions, uint64_t verbose)
-    : N_org(N), A(A_org), B(B_org), transposed(transposed),
-      block_result(block_result), block_input(block_input),
-      repetitions(repetitions), verbose(verbose) {
+                   std::vector<double> &B_org, uint64_t repetitions,
+                   uint64_t verbose)
+    : N_org(N), A(A_org), B(B_org), repetitions(repetitions), verbose(verbose) {
   verify_blocking_setup();
 
   // k direction padding
@@ -124,6 +118,14 @@ std::vector<double> combined::matrix_multiply(double &duration) {
       X_size * Y_size);
   std::fill(C_padded.begin(), C_padded.end(), 0.0);
 
+  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans_untiled(
+  									       K_size * X_size);
+  for (size_t i = 0; i < K_size; i++) {
+    for (size_t j = 0; j < X_size; j++) {
+      A_trans_untiled[i * X_size + j] = A[j * K_size + i];
+    }
+  }
+
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
   // is also padded if padding is enabled (row padded only)
@@ -161,6 +163,15 @@ std::vector<double> combined::matrix_multiply(double &duration) {
   std::vector<size_t> min = {0, 0, 0};
   std::vector<size_t> max = {X_size, Y_size, K_size};
 
+  // std::cout << "A:" << std::endl;
+  // print_matrix_host(X_size, K_size, A);
+  // std::cout << "A_trans_untiled:" << std::endl;
+  // print_matrix_host(K_size, X_size, A_trans_untiled);
+  // std::cout << "A_trans:" << std::endl;
+  // print_matrix_host(K_size, X_size, A_trans);
+  // std::cout << "B_padded:" << std::endl;
+  // print_matrix_host(K_size, Y_size, B_padded);
+
   for (size_t rep = 0; rep < repetitions; rep++) {
 
     blocking_pseudo_execution_policy<size_t> policy(3);
@@ -168,13 +179,15 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     policy.set_final_steps({L1_X, L1_Y, L1_K_STEP});
     policy.add_blocking({L2_X, L2_Y, L2_K_STEP}, {false, false, false});
     policy.add_blocking({L3_X, L3_Y, L3_K_STEP},
-                        {true, true, false}); // LLC blocking
+                        {false, false, false}); // LLC blocking
 
     std::chrono::high_resolution_clock::time_point start =
         std::chrono::high_resolution_clock::now();
 
+    bool first = true;
+    
     iterate_indices<3>(
-        policy, min, max, [&C_padded, &A_trans, &B_padded,
+		       policy, min, max, [&first, &C_padded, &A_trans, &B_padded,
                            this](size_t l1_x, size_t l1_y, size_t l1_k) {
           size_t l1_block_x = l1_x / L1_X;
           size_t l1_block_y = l1_y / L1_Y;
@@ -238,7 +251,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
                 acc_42 += a_temp_4 * b_temp_2;
                 acc_52 += a_temp_5 * b_temp_2;
               }
-
+	      
               double_v res_11 =
                   double_v(&C_padded[C_base_index + (x + 0) * L1_Y + y]);
               res_11 += acc_11;
@@ -285,6 +298,10 @@ std::vector<double> combined::matrix_multiply(double &duration) {
             }
           }
 
+	  if (first) {
+	    first = false;
+	  }
+	  
         });
     std::chrono::high_resolution_clock::time_point end =
         std::chrono::high_resolution_clock::now();
@@ -292,6 +309,9 @@ std::vector<double> combined::matrix_multiply(double &duration) {
   }
 
   std::cout << "duration inner: " << duration << "s" << std::endl;
+
+  // std::cout << "C_tiled or padded:" << std::endl;
+  // print_matrix_host(Y_size, X_size, C_padded);
 
   std::vector<double> C_return(N_org * N_org);
   std::fill(C_return.begin(), C_return.end(), 0.0);
@@ -314,7 +334,8 @@ std::vector<double> combined::matrix_multiply(double &duration) {
 
   // std::vector<double> C_return(N * N);
   // iterate_indices<2>(pol_copy, { 0, 0 }, { N, N },
-  // 		       [this, &C_return, &C_conflict, N_fixed](size_t x, size_t y)
+  // 		       [this, &C_return, &C_conflict, N_fixed](size_t x, size_t
+  // y)
   // {
   // 			 C_return[x * N + y] = C_conflict[x * N_fixed + y];
   // 		       });

@@ -13,3 +13,4 @@
 -I/home/pfandedd/hpx_install_debug/include/hpx/external
 -I/home/pfandedd/Vc_install_debug/include
 -I/home/pfandedd/boost_1_62_0_install_debug/include
+-I/home/pfandedd/git/MatrixMultiplicationHPX/src/

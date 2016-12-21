@@ -5,6 +5,7 @@
 #include "hpx/parallel/execution_policy.hpp"
 #include "hpx/util/iterator_facade.hpp"
 #include <boost/iterator/iterator_facade.hpp>
+#include <numeric>
 
 namespace algorithms {
 
@@ -145,10 +146,10 @@ public:
       result_blocks += 1;
     }
 
-    if (verbose >= 1) {
-      hpx::cout << "result_blocks: " << result_blocks << std::endl
-                << hpx::flush;
-    }
+    // if (verbose >= 1) {
+    //   hpx::cout << "result_blocks: " << result_blocks << std::endl
+    //             << hpx::flush;
+    // }
 
     //        dim_index_iterator<size_t> test(2, result_blocks, 1);
     //        const std::vector<size_t> &ele = *test;

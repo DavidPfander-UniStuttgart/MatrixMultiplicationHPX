@@ -1,6 +1,6 @@
 #include "recursive.hpp"
 
-#include "../../util.hpp"
+#include "util/util.hpp"
 #include "multiplier.hpp"
 #include <hpx/include/lcos.hpp>
 

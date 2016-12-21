@@ -199,7 +199,7 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
     hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter, inner_index_count,
                               f);
   } else {
-    hpx::cout << "recursive blocking step" << std::endl << hpx::flush;
+    // hpx::cout << "recursive blocking step" << std::endl << hpx::flush;
     hpx::parallel::for_each_n(
         hpx::parallel::seq, dim_iter, inner_index_count,
         [dim, policy, &block, f](const std::vector<size_t> &cur_index) {

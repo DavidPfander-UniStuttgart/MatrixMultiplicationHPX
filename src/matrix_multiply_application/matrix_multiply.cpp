@@ -15,7 +15,7 @@
 #include "reference_kernels/kernel_test.hpp"
 #include "reference_kernels/kernel_tiled.hpp"
 #include "reference_kernels/naive.hpp"
-#include "util.hpp"
+#include "util/util.hpp"
 #include "variants/algorithms.hpp"
 #include "variants/combined.hpp"
 #include "variants/looped.hpp"
@@ -89,7 +89,7 @@ int hpx_main(boost::program_options::variables_map &vm) {
     for (uint64_t i = 0; i < N; i++) {
       for (uint64_t j = 0; j < N; j++) {
         if (i == j) {
-          B.at(i * N + j) = 2.0;
+          B.at(i * N + j) = 1.0;
         } else {
           B.at(i * N + j) = 0.0;
         }
@@ -99,7 +99,7 @@ int hpx_main(boost::program_options::variables_map &vm) {
     for (uint64_t i = 0; i < N; i++) {
       for (uint64_t j = 0; j < N; j++) {
         if (i == j) {
-          B.at(j * N + i) = 2.0;
+          B.at(j * N + i) = 1.0;
         } else {
           B.at(j * N + i) = 0.0;
         }
@@ -169,8 +169,7 @@ int hpx_main(boost::program_options::variables_map &vm) {
                  verbose);
     C = m.matrix_multiply();
   } else if (algorithm.compare("combined") == 0) {
-    combined::combined m(N, A, B, transposed, block_result, block_input,
-                         repetitions, verbose);
+    combined::combined m(N, A, B, repetitions, verbose);
     double inner_duration;
     C = m.matrix_multiply(inner_duration);
   } else if (algorithm.compare("proposal") == 0) {
