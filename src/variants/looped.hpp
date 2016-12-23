@@ -235,19 +235,15 @@ private:
   size_t N;
   std::vector<double> &A;
   std::vector<double> &B;
-  bool transposed;
 
   uint64_t block_result;
   uint64_t block_input;
-  uint64_t repetitions;
-  uint64_t verbose;
 
 public:
   looped(size_t N, std::vector<double> &A, std::vector<double> &B,
-         bool transposed, uint64_t block_result, uint64_t block_input,
-         uint64_t repetitions, uint64_t verbose)
-      : N(N), A(A), B(B), transposed(transposed), block_result(block_result),
-        block_input(block_input), repetitions(repetitions), verbose(verbose) {}
+         uint64_t block_result, uint64_t block_input)
+      : N(N), A(A), B(B), block_result(block_result), block_input(block_input) {
+  }
 
   std::vector<double> matrix_multiply() {
     std::vector<double> C(N * N);

@@ -2,6 +2,7 @@
 
 #include <hpx/hpx_init.hpp>
 
+#include "util/matrix_multiplication_exception.hpp"
 #include "variants/algorithms.hpp"
 #include "variants/combined.hpp"
 #include "variants/looped.hpp"
@@ -50,18 +51,31 @@ int hpx_main(int argc, char *argv[]) {
         verbose);
     C = m.matrix_multiply();
   } else if (hpx_parameters::algorithm.compare("algorithms") == 0) {
-    algorithms::algorithms m(N, A, B, transposed, block_input, block_result,
-                             repetitions, verbose);
+    if (!transposed) {
+      throw util::matrix_multiplication_exception(
+          "algorithm \"algorithms\" requires B to be transposed");
+    }
+    algorithms::algorithms m(N, A, B, block_input, block_result);
     C = m.matrix_multiply();
   } else if (hpx_parameters::algorithm.compare("looped") == 0) {
-    looped::looped m(N, A, B, transposed, block_result, block_input,
-                     repetitions, verbose);
+		if (!transposed) {
+      throw util::matrix_multiplication_exception(
+          "algorithm \"looped\" requires B to be transposed");
+    }
+    looped::looped m(N, A, B, block_result, block_input);
     C = m.matrix_multiply();
   } else if (hpx_parameters::algorithm.compare("semi") == 0) {
-    semi::semi m(N, A, B, transposed, block_result, block_input, repetitions,
-                 verbose);
+		if (!transposed) {
+      throw util::matrix_multiplication_exception(
+          "algorithm \"semi\" requires B to be transposed");
+    }
+    semi::semi m(N, A, B, block_result, block_input);
     C = m.matrix_multiply();
   } else if (hpx_parameters::algorithm.compare("combined") == 0) {
+    if (transposed) {
+      throw util::matrix_multiplication_exception(
+          "algorithm \"combined\" doens't allow B to be transposed");
+    }
     combined::combined m(N, A, B, repetitions, verbose);
     double inner_duration;
     C = m.matrix_multiply(inner_duration);

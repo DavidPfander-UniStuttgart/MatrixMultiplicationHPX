@@ -18,7 +18,7 @@
 #include "util/util.hpp"
 
 
-BOOST_AUTO_TEST_SUITE(test_combined)
+BOOST_AUTO_TEST_SUITE(test_algorithms)
 
 BOOST_AUTO_TEST_CASE(apply_inverse_2) {
 
@@ -29,15 +29,16 @@ BOOST_AUTO_TEST_CASE(apply_inverse_2) {
   A = {2., 5., 1., 3.};
   // B = util::create_random_matrix<double>(N);
   B = {3., -5, -1, 2.};
+	B = util::transpose_matrix(N, B);
 
   C = std::vector<double>();
   C_reference = util::create_identity_matrix<double>(N);
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 1;
   block_result = 1;
@@ -82,15 +83,16 @@ BOOST_AUTO_TEST_CASE(apply_inverse_4) {
        0.2176165803,  0.0414507772,  -0.0569948187, -0.1139896373, //
        0.0660621762,  0.1554404145,  0.0362694301,  -0.1774611399, //
        -0.1502590674, 0.3523316062,  0.0155440415,  0.0310880829};
+	B = util::transpose_matrix(N, B);
 
   C = std::vector<double>();
   C_reference = util::create_identity_matrix<double>(N);
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 1;
   block_result = 1;
@@ -166,15 +168,16 @@ BOOST_AUTO_TEST_CASE(apply_inverse_8) {
        0.709923664122137,  0.387786259541985,  0.873282442748091,
        -0.210687022900763, 0.251908396946565,  0.309923664122138,
        -0.27175572519084,  -0.244274809160305};
+	B = util::transpose_matrix(N, B);
 
   C = std::vector<double>();
   C_reference = util::create_identity_matrix<double>(N);
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 1;
   block_result = 1;
@@ -217,11 +220,11 @@ BOOST_AUTO_TEST_CASE(random_matrices_2) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 1;
   block_result = 1;
@@ -263,11 +266,11 @@ BOOST_AUTO_TEST_CASE(random_matrices_4) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 1;
   block_result = 1;
@@ -309,11 +312,11 @@ BOOST_AUTO_TEST_CASE(random_matrices_8) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 1;
   block_result = 1;
@@ -355,11 +358,11 @@ BOOST_AUTO_TEST_CASE(random_matrices_256) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 128;
   block_result = 128;
@@ -401,11 +404,11 @@ BOOST_AUTO_TEST_CASE(random_matrices_512) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 128;
   block_result = 128;
@@ -447,11 +450,11 @@ BOOST_AUTO_TEST_CASE(random_matrices_1024) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "combined";
+  algorithm = "algorithms";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
-  transposed = false;
+  transposed = true;
 
   block_input = 128;
   block_result = 128;

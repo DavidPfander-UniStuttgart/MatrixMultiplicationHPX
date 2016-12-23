@@ -13,9 +13,13 @@ single::single(size_t N, std::vector<double> &A, std::vector<double> &B,
 
 std::vector<double> single::matrix_multiply() {
 
-	std::vector<double> C(N * N);
+  std::vector<double> C(N * N);
 
   hpx::cout << "using parallel single node algorithm" << std::endl
+            << hpx::flush;
+  hpx::cout << "warning: stack overflows can occur depending on block_input, "
+               "block_result and the size of the matrix"
+            << std::endl
             << hpx::flush;
   hpx::components::client<multiply_components::multiplier> multiplier =
       hpx::new_<hpx::components::client<multiply_components::multiplier>>(
@@ -38,7 +42,6 @@ std::vector<double> single::matrix_multiply() {
     C = f.get();
   }
 
-	return C;
+  return C;
 }
-
 }

@@ -112,6 +112,8 @@ combined::combined(size_t N, std::vector<double> &A_org,
 
 std::vector<double> combined::matrix_multiply(double &duration) {
 
+	duration = 0.0;
+
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
   std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(
@@ -179,13 +181,13 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     policy.set_final_steps({L1_X, L1_Y, L1_K_STEP});
     policy.add_blocking({L2_X, L2_Y, L2_K_STEP}, {false, false, false});
     policy.add_blocking({L3_X, L3_Y, L3_K_STEP},
-                        {false, false, false}); // LLC blocking
+                        {true, true, false}); // LLC blocking
 
     std::chrono::high_resolution_clock::time_point start =
         std::chrono::high_resolution_clock::now();
 
     bool first = true;
-    
+
     iterate_indices<3>(
 		       policy, min, max, [&first, &C_padded, &A_trans, &B_padded,
                            this](size_t l1_x, size_t l1_y, size_t l1_k) {
@@ -251,7 +253,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
                 acc_42 += a_temp_4 * b_temp_2;
                 acc_52 += a_temp_5 * b_temp_2;
               }
-	      
+
               double_v res_11 =
                   double_v(&C_padded[C_base_index + (x + 0) * L1_Y + y]);
               res_11 += acc_11;
@@ -301,7 +303,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
 	  if (first) {
 	    first = false;
 	  }
-	  
+
         });
     std::chrono::high_resolution_clock::time_point end =
         std::chrono::high_resolution_clock::now();

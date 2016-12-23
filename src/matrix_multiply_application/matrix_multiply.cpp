@@ -12,18 +12,19 @@
 
 #include <boost/format.hpp>
 
+#include "util/matrix_multiplication_exception.hpp"
 #include "reference_kernels/kernel_test.hpp"
 #include "reference_kernels/kernel_tiled.hpp"
 #include "reference_kernels/naive.hpp"
 #include "util/util.hpp"
 #include "variants/algorithms.hpp"
 #include "variants/combined.hpp"
-#include "variants/looped.hpp"
 #include "variants/components/multiplier.hpp"
 #include "variants/components/recursive.hpp"
+#include "variants/looped.hpp"
+#include "variants/proposal.hpp"
 #include "variants/semi.hpp"
 #include "variants/static_improved.hpp"
-#include "variants/proposal.hpp"
 
 boost::program_options::options_description
     desc_commandline("Usage: matrix_multiply [options]");
@@ -157,18 +158,49 @@ int hpx_main(boost::program_options::variables_map &vm) {
         verbose);
     C = m.matrix_multiply();
   } else if (algorithm.compare("algorithms") == 0) {
-    algorithms::algorithms m(N, A, B, transposed, block_input, block_result,
-                             repetitions, verbose);
+    if (!transposed) {
+      throw util::matrix_multiplication_exception(
+          "algorithm \"algorithms\" requires B to be transposed");
+    }
+		if (verbose > 0) {
+			std::cout << "warning: algorithm \"looped\" doesn't support the \"verbose\" parameter";
+		}
+		if (repetitions > 1) {
+			std::cout << "warning: algorithm \"looped\" doesn't support the \"repetitions\" parameter";
+		}
+    algorithms::algorithms m(N, A, B, block_input, block_result);
     C = m.matrix_multiply();
   } else if (algorithm.compare("looped") == 0) {
-    looped::looped m(N, A, B, transposed, block_result, block_input,
-                     repetitions, verbose);
+		if (!transposed) {
+      throw util::matrix_multiplication_exception(
+          "algorithm \"looped\" requires B to be transposed");
+    }
+		if (verbose > 0) {
+			std::cout << "warning: algorithm \"looped\" doesn't support the \"verbose\" parameter";
+		}
+		if (repetitions > 1) {
+			std::cout << "warning: algorithm \"looped\" doesn't support the \"repetitions\" parameter";
+		}
+    looped::looped m(N, A, B, block_result, block_input);
     C = m.matrix_multiply();
   } else if (algorithm.compare("semi") == 0) {
-    semi::semi m(N, A, B, transposed, block_result, block_input, repetitions,
-                 verbose);
+		if (!transposed) {
+      throw util::matrix_multiplication_exception(
+          "algorithm \"semi\" requires B to be transposed");
+    }
+		if (verbose > 0) {
+			std::cout << "warning: algorithm \"semi\" doesn't support the \"verbose\" parameter";
+		}
+		if (repetitions > 1) {
+			std::cout << "warning: algorithm \"semi\" doesn't support the \"repetitions\" parameter";
+		}
+    semi::semi m(N, A, B, block_result, block_input);
     C = m.matrix_multiply();
   } else if (algorithm.compare("combined") == 0) {
+    if (transposed) {
+      throw util::matrix_multiplication_exception(
+          "algorithm \"combined\" doens't allow B to be transposed");
+    }
     combined::combined m(N, A, B, repetitions, verbose);
     double inner_duration;
     C = m.matrix_multiply(inner_duration);
@@ -324,8 +356,9 @@ int main(int argc, char *argv[]) {
       // compare solutions
       bool ok = std::equal(C.begin(), C.end(), Cref.begin(), Cref.end(),
                            [](double first, double second) {
-                             //							std::cout << "first: " << first << "
-                             //second: " << second << std::endl;
+                             //							std::cout << "first: " << first <<
+                             //"
+                             // second: " << second << std::endl;
                              if (std::abs(first - second) < 1E-10) {
                                //								std::cout
                                //<< "true" << std::endl;

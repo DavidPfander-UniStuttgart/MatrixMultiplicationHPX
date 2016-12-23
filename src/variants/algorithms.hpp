@@ -118,20 +118,13 @@ private:
   size_t N;
   std::vector<double> &A;
   std::vector<double> &B;
-  bool transposed;
   uint64_t block_input;
   size_t block_result;
 
-  uint64_t repetitions;
-  uint64_t verbose;
-
 public:
   algorithms(size_t N, std::vector<double> &A, std::vector<double> &B,
-             bool transposed, uint64_t block_input, size_t block_result,
-             uint64_t repetitions, uint64_t verbose)
-      : N(N), A(A), B(B), transposed(transposed), block_input(block_input),
-        block_result(block_result), repetitions(repetitions), verbose(verbose) {
-
+             uint64_t block_input, size_t block_result)
+      : N(N), A(A), B(B), block_input(block_input), block_result(block_result) {
   }
 
   std::vector<double> matrix_multiply() {
@@ -247,7 +240,6 @@ public:
                   C_inner[x * block_result + y];
             }
           }
-          //                            });
         });
     return C;
   }

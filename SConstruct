@@ -33,7 +33,8 @@ env_debug.AppendUnique(LIBS=['hpx_iostreamsd'])
 env_debug.AppendUnique(CPPFLAGS=['-O0', '-g', '-fno-omit-frame-pointer'])
 env_debug.AppendUnique(LIBPATH=[env_debug['BOOST_ROOT_DEBUG'] + "/lib"])
 env_debug.AppendUnique(CPPPATH=[env_debug['BOOST_ROOT_DEBUG'] + "/include"])
+env_debug.AppendUnique(CPPDEFINES=["DEBUG"])
 
 SConscript('src/SConscript', variant_dir='release', exports={'env':env_release}, duplicate=0)
 # debug is a bad idea with Vc, as the vector would need to be actually portable
-#SConscript('src/SConscript', variant_dir='debug', exports={'env':env_debug}, duplicate=0)
+# SConscript('src/SConscript', variant_dir='debug', exports={'env':env_debug}, duplicate=0)

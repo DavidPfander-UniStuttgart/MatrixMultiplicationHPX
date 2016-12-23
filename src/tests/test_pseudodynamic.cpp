@@ -18,7 +18,7 @@
 #include "util/util.hpp"
 
 
-BOOST_AUTO_TEST_SUITE(test_single)
+BOOST_AUTO_TEST_SUITE(test_pseudodynamic)
 
 BOOST_AUTO_TEST_CASE(apply_inverse_2) {
 
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(apply_inverse_2) {
   C = std::vector<double>();
   C_reference = util::create_identity_matrix<double>(N);
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(apply_inverse_4) {
   C = std::vector<double>();
   C_reference = util::create_identity_matrix<double>(N);
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(apply_inverse_8) {
   C = std::vector<double>();
   C_reference = util::create_identity_matrix<double>(N);
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_2) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_4) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_8) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_256) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_512) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -447,7 +447,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_1024) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -494,7 +494,7 @@ BOOST_AUTO_TEST_CASE(apply_inverse_2_transposed) {
   C_reference = util::create_identity_matrix<double>(N);
   C = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(apply_inverse_4_transposed) {
   C_reference = util::create_identity_matrix<double>(N);
   C = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -619,7 +619,7 @@ BOOST_AUTO_TEST_CASE(apply_inverse_8_transposed) {
   C_reference = util::create_identity_matrix<double>(N);
   C = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_2_transposed) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -707,7 +707,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_4_transposed) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -753,7 +753,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_8_transposed) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -799,7 +799,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_256_transposed) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -845,7 +845,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_512_transposed) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm
@@ -891,7 +891,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_1024_transposed) {
   C = std::vector<double>();
   C_reference = std::vector<double>();
 
-  algorithm = "single";
+  algorithm = "pseudodynamic";
   verbose = false;
   check = true;
   // is B transposed, relevant for some (reference) algorithm

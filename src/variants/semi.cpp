@@ -14,10 +14,8 @@ using namespace index_iterator;
 namespace semi {
 
 semi::semi(size_t N, std::vector<double> &A, std::vector<double> &B,
-           bool transposed, uint64_t block_result, uint64_t block_input,
-           uint64_t repetitions, uint64_t verbose)
-    : N(N), A(A), B(B), transposed(transposed), block_result(block_result),
-      block_input(block_input), repetitions(repetitions), verbose(verbose) {}
+           uint64_t block_result, uint64_t block_input)
+    : N(N), A(A), B(B), block_result(block_result), block_input(block_input) {}
 
 std::vector<double> semi::matrix_multiply() {
 
@@ -54,11 +52,15 @@ std::vector<double> semi::matrix_multiply() {
 
   std::vector<size_t> min = {0, 0, 0};
   std::vector<size_t> max = {N, N, N};
-  std::vector<size_t> block = {block_result, block_result, block_input};
+  // std::vector<size_t> block = {block_result, block_result, block_input};
 
-  blocking_pseudo_execution_policy<size_t> policy(3);
-  policy.add_blocking({4, 4, 4}, {true, true, false}); // L1 blocking
-  policy.set_final_steps({4, 2, block_input});
+  // blocking_pseudo_execution_policy<size_t> policy(3);
+  // policy.add_blocking({4, 4, 4}, {true, true, false}); // L1 blocking
+  // policy.set_final_steps({4, 2, block_input});
+	blocking_pseudo_execution_policy<size_t> policy(3);
+	// TODO: setup up blocking leads to errors
+	// policy.add_blocking({4, 4, 4}, {false, false, false});
+	policy.set_final_steps({4, 2, block_input});
 
   iterate_indices<3>(policy, min, max, [N_fixed, &C_conflict, &A_conflict,
                                         &B_conflict,
