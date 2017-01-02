@@ -21,29 +21,29 @@ Usage: matrix_multiply [options]:
                                         be a power of 2, arbitrary sized square
                                         matrices work with some implementations
   --transposed arg (=1)                 use a transposed matrix for B
-  --repetitions arg (=1)                how often should the operation be 
+  --repetitions arg (=1)                how often should the operation be
                                         repeated (for averaging timings)
-  --verbose arg (=0)                    set to 1 for some status information, 
+  --verbose arg (=0)                    set to 1 for some status information,
                                         set to 2 more output
-  --block-result arg (=128)             block size in the result matrix (width 
-                                        of the band of the band matrix 
+  --block-result arg (=128)             block size in the result matrix (width
+                                        of the band of the band matrix
                                         multiplication), set to 0 to disable
-  --block-input arg (=128)              chunks the band of the band matrix 
+  --block-input arg (=128)              chunks the band of the band matrix
                                         multiplication
-  --check arg (=0)                      check result against a naive and slow 
+  --check arg (=0)                      check result against a naive and slow
                                         matrix-multiplication implementation
-  --algorithm arg (=single)             select algorithm: single, 
-                                        pseudodynamic, algorithms, looped, 
-                                        semi, combined, kernel_test, 
+  --algorithm arg (=single)             select algorithm: single,
+                                        pseudodynamic, algorithms, looped,
+                                        semi, combined, kernel_test,
                                         kernel_tiled
-  --min-work-size arg (=256)            pseudodynamic algorithm: minimum work 
+  --min-work-size arg (=256)            pseudodynamic algorithm: minimum work
                                         package size per node
-  --max-work-difference arg (=10000)    pseudodynamic algorithm: maximum 
-                                        tolerated load inbalance in matrix 
+  --max-work-difference arg (=10000)    pseudodynamic algorithm: maximum
+                                        tolerated load inbalance in matrix
                                         components assigned
   --max-relative-work-difference arg (=0.050000000000000003)
-                                        pseudodynamic algorithm: maximum 
-                                        relative tolerated load inbalance in 
+                                        pseudodynamic algorithm: maximum
+                                        relative tolerated load inbalance in
                                         matrix components assigned, in percent
   --help                                display help
 ```
@@ -108,4 +108,4 @@ non-HPX [N = 8192] average time per run: 11.5435s (repetitions = 1)
 
 ## Testing
 
-No unittests at this point, results may be wrong.
+Unit tests are built alongside the application.
