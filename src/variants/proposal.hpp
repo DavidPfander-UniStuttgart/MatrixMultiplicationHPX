@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <vector>
 
+#include <hpx/config.hpp>
+#include <boost/align/aligned_allocator.hpp>
+
 namespace proposal {
 
 class proposal {
@@ -14,8 +17,8 @@ private:
   std::size_t Y_size;
   std::size_t K_size;
 
-  std::vector<double> A;
-  std::vector<double> B;
+  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans;
+  std::vector<double, boost::alignment::aligned_allocator<double, 32>> B;
   bool transposed;
 
   uint64_t block_result;

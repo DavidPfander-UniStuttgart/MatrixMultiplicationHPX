@@ -8,7 +8,7 @@ template <size_t dim>
 void compare_tile(std::vector<double> &tiled_matrix,
                   std::vector<memory_layout::tiling_info_dim> &tiling_info,
                   size_t (&tile_index)[dim], std::vector<double> reference) {
-  memory_layout::tile_view<2, double> view(tiled_matrix, tile_index, tiling_info);
+  memory_layout::tile_view<2, double, std::allocator<double>> view(tiled_matrix, tile_index, tiling_info);
 
   for (size_t i = 0; i < tiling_info[0].tile_size_dir; i++) {
     for (size_t j = 0; j < tiling_info[1].tile_size_dir; j++) {
