@@ -8,6 +8,8 @@ dependencies:
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 20
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 20
         - ./circle_ci_scripts/build-boost.sh
+        - ./circle_ci_scripts/build-Vc.sh
+        - ./circle_ci_scripts/build-hpx.sh
     cache_directories:
         - "/home/ubuntu/boost_1_63_0"
         - "/home/ubuntu/boost_1_63_0_install"
@@ -17,8 +19,6 @@ dependencies:
         - "/home/ubuntu/hpx_install"
 compile:
     override:
-        - ./circle_ci_scripts/build-Vc.sh
-        - ./circle_ci_scripts/build-hpx.sh
         - mkdir build 
         - cd build && cmake -DCMAKE_PREFIX_PATH=/home/ubuntu/hpx_install ../ 
         - cd build && make -j4 VERBOSE=1
