@@ -6,7 +6,7 @@ compile:
   override:
         - mkdir build
         - cd build
-        - cmake
+        - cmake ../
         - make -j4 VERBOSE=1
         - cd ..
 
