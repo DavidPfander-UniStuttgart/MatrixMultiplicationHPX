@@ -4,6 +4,7 @@ dependencies:
 
 compile:
   override:
+        - ls
         - mkdir build
         - cd build
         - cmake ../
