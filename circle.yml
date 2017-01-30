@@ -21,7 +21,7 @@ compile:
     override:
         - mkdir build 
         - cd build && cmake -DCMAKE_PREFIX_PATH=/home/ubuntu/hpx_install ../ 
-        - cd build && make -j4 VERBOSE=1
+        - cd build && make -j2 VERBOSE=1
 
 test:
     override:
