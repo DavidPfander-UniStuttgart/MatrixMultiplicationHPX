@@ -1,0 +1,17 @@
+dependencies:
+    pre:
+        - sudo apt-get install cmake
+
+compile:
+  override:
+        - mkdir build
+        - cd build
+        - cmake
+        - make -j4 VERBOSE=1
+        - cd ..
+
+test:
+    override:
+        - cd build
+        - ./boost_tests
+        - cd ..
