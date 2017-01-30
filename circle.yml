@@ -7,11 +7,24 @@ dependencies:
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 10
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 20
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 20
+        - wget 'http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2' -O - | tar xj
+        - cd boost_1_63_0 && ./bootstrap.sh --prefix=/home/pfandedd/boost_1_63_0_install
+        - cd boost_1_63_0 && ./b2 -j4
 compile:
-  override:
-        - ls
-        - mkdir build && cd build && cmake ../ && make -j4 VERBOSE=1
+    override:
+        - mkdir Vc && git clone https://github.com/VcDevel/Vc.git
+        - cd Vc && mkdir build
+        - cd Vc/build && cmake -DCMAKE_INSTALL_PREFIX=/home/ubuntu/Vc_install ../
+        - cd Vc/build && make -j4 install
+        - mkdir hpx && git clone https://github.com/STEllAR-GROUP/hpx.git
+        - cd hpx && mkdir build
+        - cd hpx/build && cmake -DBOOST_ROOT=/home/ubuntu/boost_1_63_0_install -DHPX_WITH_DATAPAR_VC=true -DVc_ROOT=/home/ubuntu/Vc_install -DCMAKE_INSTALL_PREFIX=/home/ubuntu/hpx_install ../
+        - cd hpx/build && make -j4 install
+        - mkdir build 
+        - cd build && cmake -DCMAKE_PREFIX_PATH=/home/ubuntu/hpx_install ../ 
+        - cd build && make -j4 VERBOSE=1
 
 test:
     override:
+        - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/boost_1_63_0_install/lib:/home/ubuntu/hpx_install/lib:/home/ubuntu/Vc_install/lib
         - cd build && ./boost_tests
