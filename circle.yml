@@ -5,7 +5,7 @@ dependencies:
 compile:
   override:
         - ls
-        - mkdir build cd build && cmake ../ && make -j4 VERBOSE=1
+        - mkdir build && cd build && cmake ../ && make -j4 VERBOSE=1
 
 test:
     override:
