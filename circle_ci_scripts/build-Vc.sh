@@ -12,5 +12,5 @@ fi
 mkdir -p Vc/build
 cd Vc/build
 cmake -DCMAKE_INSTALL_PREFIX="../../Vc_install" ../
-make -j4 install
+make -j4 VERBOSE=1 install
 cd ../..
