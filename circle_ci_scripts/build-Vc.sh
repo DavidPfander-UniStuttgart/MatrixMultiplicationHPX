@@ -1,7 +1,7 @@
 #!/bin/bash -e
 set -x
 
-if [ ! -d "~/Vc/" ]; then    
+if [ ! -d "Vc/" ]; then    
     git clone https://github.com/VcDevel/Vc.git
 else
     cd Vc
@@ -11,6 +11,6 @@ fi
 
 mkdir -p Vc/build
 cd Vc/build
-cmake -DCMAKE_INSTALL_PREFIX=/home/ubuntu/Vc_install ../
+cmake -DCMAKE_INSTALL_PREFIX="../../Vc_install" ../
 make -j4 install
 cd ../..
