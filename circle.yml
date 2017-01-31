@@ -20,7 +20,7 @@ dependencies:
 compile:
     override:
         - mkdir build
-	- cd build && cmake -DBOOST_ROOT="`realpath ../boost_1_63_0_install`" -DCMAKE_PREFIX_PATH="`realpath ../hpx_install`" ../
+        - cd build && cmake -DBOOST_ROOT="`realpath ../boost_1_63_0_install`" -DCMAKE_PREFIX_PATH="`realpath ../hpx_install`" ../
         - cd build && make -j2 VERBOSE=1
 
 test:
