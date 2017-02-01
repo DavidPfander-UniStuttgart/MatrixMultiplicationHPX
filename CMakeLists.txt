@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.2)
 
 project(MatrixMultiplicationHPX)
 
+option(DISABLE_BIND_FOR_CIRCLE_CI "Circle CI containers don't support binding" OFF)
+
+if (DISABLE_BIND_FOR_CIRCLE_CI)
+  MESSAGE(WARNING "HPX is used with BIND=NONE (meant for Circle CI")
+  add_definitions(-DDISABLE_BIND_FOR_CIRCLE_CI)
+endif()
+
 find_package(PkgConfig REQUIRED)
 
 find_package(OpenMP REQUIRED)

@@ -11,6 +11,9 @@
 void start_hpx_with_threads(size_t threads) {
   std::stringstream s;
   s << "--hpx:threads=" << threads;
+#ifdef DISABLE_BIND_FOR_CIRCLE_CI
+  s << " --hpx:bind=none";
+#endif
   std::string hpx_threads(s.str());
   // std::string hpx_threads = "--hpx:threads=4";
   std::vector<char *> argv_hpx;
