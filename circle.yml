@@ -17,12 +17,12 @@ dependencies:
         - ./circle_ci_scripts/build-Vc.sh
         - ./circle_ci_scripts/build-hpx.sh
     cache_directories:
-        - "/home/ubuntu/boost_1_63_0"
-        - "/home/ubuntu/boost_1_63_0_install"
-        - "/home/ubuntu/Vc"
-        - "/home/ubuntu/Vc_install"
-        - "/home/ubuntu/hpx"
-        - "/home/ubuntu/hpx_install"
+        - "/home/ubuntu/MatrixMultiplicationHPX/boost_1_63_0"
+        - "/home/ubuntu/MatrixMultiplicationHPX/boost_1_63_0_install"
+        - "/home/ubuntu/MatrixMultiplicationHPX/Vc"
+        - "/home/ubuntu/MatrixMultiplicationHPX/Vc_install"
+        - "/home/ubuntu/MatrixMultiplicationHPX/hpx"
+        - "/home/ubuntu/MatrixMultiplicationHPX/hpx_install"
 compile:
     override:
         - ./circle_ci_scripts/build-MatrixMultiplicationHPX.sh
