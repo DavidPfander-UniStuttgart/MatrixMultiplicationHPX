@@ -58,14 +58,14 @@ int hpx_main(int argc, char *argv[]) {
     algorithms::algorithms m(N, A, B, block_input, block_result);
     C = m.matrix_multiply();
   } else if (hpx_parameters::algorithm.compare("looped") == 0) {
-		if (!transposed) {
+    if (!transposed) {
       throw util::matrix_multiplication_exception(
           "algorithm \"looped\" requires B to be transposed");
     }
     looped::looped m(N, A, B, block_result, block_input);
     C = m.matrix_multiply();
   } else if (hpx_parameters::algorithm.compare("semi") == 0) {
-		if (!transposed) {
+    if (!transposed) {
       throw util::matrix_multiplication_exception(
           "algorithm \"semi\" requires B to be transposed");
     }

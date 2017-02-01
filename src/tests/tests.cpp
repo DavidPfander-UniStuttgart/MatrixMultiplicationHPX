@@ -24,5 +24,9 @@ void start_hpx_with_threads(size_t threads) {
   argv_hpx.push_back(const_cast<char *>(hpx_bind.c_str()));
 #endif
   char **argv_hpx_ptr = argv_hpx.data();
+#ifdef DISABLE_BIND_FOR_CIRCLE_CI
   hpx::start(3, argv_hpx_ptr);
+#else
+  hpx::start(2, argv_hpx_ptr);
+#endif
 }
