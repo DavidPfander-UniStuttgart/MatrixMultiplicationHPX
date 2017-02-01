@@ -29,5 +29,5 @@ compile:
 test:
     override:
         - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/boost_1_63_0_install/lib:/home/ubuntu/hpx_install/lib:/home/ubuntu/Vc_install/lib
-        - cd build && ./boost_tests
+        - cd build && ./boost_tests --log_level=test_suite
 
