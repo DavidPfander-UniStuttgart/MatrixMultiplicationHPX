@@ -3,6 +3,6 @@ set -x
 
 mkdir build
 cd build
-cmake -DBOOST_ROOT="$Boost_ROOT" -DCMAKE_PREFIX_PATH="$HPX_ROOT" ../
+cmake -DDISABLE_BIND_FOR_CIRCLE_CI=ON -DBOOST_ROOT="$Boost_ROOT" -DCMAKE_PREFIX_PATH="$HPX_ROOT" ../
 make -j2 VERBOSE=1
 cd ..
