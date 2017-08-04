@@ -11,14 +11,10 @@
 using Vc::double_v;
 #include <boost/align/aligned_allocator.hpp>
 
-#include "autotune/autotune.hpp"
-#include "autotune/parameter.hpp"
-
-AUTOTUNE_DECLARE_DEFINE_KERNEL(void(std::size_t, std::size_t, std::size_t,
-                                    std::size_t, std::vector<double> &,
-                                    std::vector<double> &,
-                                    std::vector<double> &, size_t, double &),
-                               combined_kernel)
+AUTOTUNE_DEFINE_KERNEL(void(std::size_t, std::size_t, std::size_t, std::size_t,
+                            std::vector<double> &, std::vector<double> &,
+                            std::vector<double> &, size_t, double &),
+                       combined_kernel)
 
 // best parameters
 #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
@@ -119,57 +115,55 @@ combined::combined(size_t N, std::vector<double> &A_org,
 
 std::vector<double> combined::matrix_multiply(double &duration) {
 
-  constexpr size_t N = 50;
+  if (!autotune::combined_kernel.is_compiled()) {
 
-  std::vector<double> arr(N);
-  std::fill(arr.begin(), arr.end(), 0.0);
+    auto builder =
+        autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
+    builder->set_verbose(true);
+    builder->set_include_paths(
+        "-I /home/winter/git/AutoTuneTMP/src -I src/variants/ -I "
+        "/home/winter/hpx_install_with_symbols/include -I "
+        "/home/winter/hpx_install_with_symbols/include/hpx/external -DNDEBUG "
+        "-std=c++14 -march=native -mtune=native -O3 -ffast-math "
+        "-DHPX_APPLICATION_EXPORTS "
+        "-DHPX_ENABLE_ASSERT_HANDLER -I/home/winter/Vc_head_install/include "
+        "-I/home/winter/boost_1_63_0_install/include");
 
-  auto builder =
-      autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(true);
-  builder->set_include_paths(
-      "-I /home/winter/git/AutoTuneTMP/src -I src/variants/ -I "
-      "/home/winter/hpx_install_with_symbols/include -I "
-      "/home/winter/hpx_install_with_symbols/include/hpx/external -DNDEBUG "
-      "-std=c++14 -march=native -mtune=native -O3 -ffast-math -DHPX_APPLICATION_EXPORTS "
-      "-DHPX_ENABLE_ASSERT_HANDLER -I/home/winter/Vc_head_install/include "
-      "-I/home/winter/boost_1_63_0_install/include");
+    //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
+    autotune::combined_kernel.add_parameter("L3_X", {"420"});
+    // #define L3_Y 256
+    autotune::combined_kernel.add_parameter("L3_Y", {"256"});
+    //#define L3_K_STEP 256
+    autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
+    //#define L2_X 70 // max 2 L2 par set to 128 (rest 64)
+    autotune::combined_kernel.add_parameter("L2_X", {"70"});
+    // #define L2_Y 64
+    autotune::combined_kernel.add_parameter("L2_Y", {"64"});
+    // #define L2_K_STEP 128
+    autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
+    // #define L1_X 35 // max all L1 par set to 32
+    autotune::combined_kernel.add_parameter("L1_X", {"35"});
+    // #define L1_Y 16
+    autotune::combined_kernel.add_parameter("L1_Y", {"16"});
+    // #define L1_K_STEP 64
+    autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
+    // #define X_REG 5 // cannot be changed!
+    // #define Y_REG 8 // cannot be changed!
 
-  // autotune::combined_kernel.add_parameter("UNROLL_LOOP",
-  //                                         std::vector<std::string>({"0",
-  //                                         "1"}));
+    std::vector<size_t> parameter_indices(
+        autotune::combined_kernel.get_parameters().size(), 0);
 
-  //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-  autotune::combined_kernel.add_parameter("L3_X", {"420"});
-  // #define L3_Y 256
-  autotune::combined_kernel.add_parameter("L3_Y", {"256"});
-  //#define L3_K_STEP 256
-  autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-  //#define L2_X 70 // max 2 L2 par set to 128 (rest 64)
-  autotune::combined_kernel.add_parameter("L2_X", {"70"});
-  // #define L2_Y 64
-  autotune::combined_kernel.add_parameter("L2_Y", {"64"});
-  // #define L2_K_STEP 128
-  autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
-  // #define L1_X 35 // max all L1 par set to 32
-  autotune::combined_kernel.add_parameter("L1_X", {"35"});
-  // #define L1_Y 16
-  autotune::combined_kernel.add_parameter("L1_Y", {"16"});
-  // #define L1_K_STEP 64
-  autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
-  // #define X_REG 5 // cannot be changed!
-  // #define Y_REG 8 // cannot be changed!
+    autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
-  std::vector<size_t> parameter_indices(
-      autotune::combined_kernel.get_parameters().size(), 0);
+    autotune::combined_kernel.create_parameter_file(parameter_indices);
 
-  autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
+    autotune::combined_kernel.compile();
 
-  autotune::combined_kernel.create_parameter_file(parameter_indices);
-
-  autotune::combined_kernel.compile();
-
-  std::cout << "compile finished!" << std::endl;
+    std::cout << "compile finished!" << std::endl;
+  } else {
+    std::cout << "kernel already compiled! skipping compilation step"
+              << std::endl;
+  }
 
   // autotune::combined_kernel.print_parameters();
 

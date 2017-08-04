@@ -15,11 +15,30 @@ using Vc::double_v;
 
 using namespace index_iterator;
 
+extern "C" bool is_valid_parameter_combination() {
+  if (!((L2_X % L1_X == 0) && (L3_X % L2_X == 0))) {
+    std::cout << "error: x direction blocking not set up correctly"
+              << std::endl;
+    return false;
+  }
+  if (!((L2_Y % L1_Y == 0) && (L3_Y % L2_Y == 0))) {
+    std::cout << "error: y direction blocking not set up correctly"
+              << std::endl;
+    return false;
+  }
+  if (!((L2_K_STEP % L1_K_STEP == 0) && (L3_K_STEP % L2_K_STEP == 0))) {
+    std::cout << "error: k direction blocking not set up correctly"
+              << std::endl;
+    return false;
+  }
+  return true;
+}
+
 extern "C" void combined_kernel(std::size_t N_org, std::size_t X_size,
                                 std::size_t Y_size, std::size_t K_size,
                                 std::vector<double> &A, std::vector<double> &B,
-                                std::vector<double> &C_return, size_t repetitions,
-                                double &duration) {
+                                std::vector<double> &C_return,
+                                size_t repetitions, double &duration) {
 
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding

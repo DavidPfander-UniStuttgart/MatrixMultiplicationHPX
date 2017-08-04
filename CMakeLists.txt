@@ -60,3 +60,10 @@ target_compile_options(boost_tests PUBLIC -std=c++14 -march=native -mtune=native
 target_compile_options(boost_tests PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS})
 target_link_libraries(boost_tests PUBLIC ${HPX_APPLICATION_LDFLAGS} ${Boost_LIBRARIES} ${OpenMP_CXX_FLAGS})
 INSTALL_TARGETS(/bin boost_tests)
+
+set(SOURCES_COMBINED_TUNING ${SOURCES_COMMON} "src/combined_tuning_application/combined_tuning.cpp")
+add_executable(combined_tuning ${SOURCES_COMBINED_TUNING})
+target_compile_options(combined_tuning PUBLIC -std=c++14 -march=native -mtune=native)
+target_compile_options(combined_tuning PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS})
+target_link_libraries(combined_tuning PUBLIC ${HPX_APPLICATION_LDFLAGS} ${OpenMP_CXX_FLAGS})
+INSTALL_TARGETS(/bin combined_tuning)
