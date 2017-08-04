@@ -11,9 +11,11 @@
 using Vc::double_v;
 #include <boost/align/aligned_allocator.hpp>
 
-AUTOTUNE_DEFINE_KERNEL(void(std::size_t, std::size_t, std::size_t, std::size_t,
-                            std::vector<double> &, std::vector<double> &,
-                            std::vector<double> &, size_t, double &),
+AUTOTUNE_DEFINE_KERNEL(std::vector<double>(std::size_t, std::size_t,
+                                           std::size_t, std::size_t,
+                                           std::vector<double> &,
+                                           std::vector<double> &, size_t,
+                                           double &),
                        combined_kernel)
 
 // best parameters
@@ -169,11 +171,9 @@ std::vector<double> combined::matrix_multiply(double &duration) {
 
   duration = 0.0;
 
-  std::vector<double> C_return(N_org * N_org);
-  std::fill(C_return.begin(), C_return.end(), 0.0);
-
-  autotune::combined_kernel(N_org, X_size, Y_size, K_size, A, B, C_return,
-                            repetitions, duration);
+  std::vector<double> C_return;
+  C_return = autotune::combined_kernel(N_org, X_size, Y_size, K_size, A, B,
+                                       repetitions, duration);
 
   // // autotune::combined_kernel(arr, N);
 

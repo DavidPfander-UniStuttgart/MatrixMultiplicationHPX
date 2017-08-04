@@ -34,11 +34,10 @@ extern "C" bool is_valid_parameter_combination() {
   return true;
 }
 
-extern "C" void combined_kernel(std::size_t N_org, std::size_t X_size,
-                                std::size_t Y_size, std::size_t K_size,
-                                std::vector<double> &A, std::vector<double> &B,
-                                std::vector<double> &C_return,
-                                size_t repetitions, double &duration) {
+extern "C" std::vector<double>
+combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
+                std::size_t K_size, std::vector<double> &A,
+                std::vector<double> &B, size_t repetitions, double &duration) {
 
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
@@ -255,7 +254,7 @@ extern "C" void combined_kernel(std::size_t N_org, std::size_t X_size,
   // std::cout << "C_tiled or padded:" << std::endl;
   // print_matrix_host(Y_size, X_size, C_padded);
 
-  // std::vector<double> C_return(N_org * N_org);
+  std::vector<double> C_return(N_org * N_org);
   // std::fill(C_return.begin(), C_return.end(), 0.0);
 
   for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
@@ -273,4 +272,5 @@ extern "C" void combined_kernel(std::size_t N_org, std::size_t X_size,
       }
     }
   }
+  return C_return;
 }

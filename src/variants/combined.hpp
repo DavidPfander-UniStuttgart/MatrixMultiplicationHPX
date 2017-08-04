@@ -7,9 +7,11 @@
 #include <cstdint>
 #include <vector>
 
-AUTOTUNE_DECLARE_KERNEL(void(std::size_t, std::size_t, std::size_t, std::size_t,
-                             std::vector<double> &, std::vector<double> &,
-                             std::vector<double> &, size_t, double &),
+AUTOTUNE_DECLARE_KERNEL(std::vector<double>(std::size_t, std::size_t,
+                                            std::size_t, std::size_t,
+                                            std::vector<double> &,
+                                            std::vector<double> &, size_t,
+                                            double &),
                         combined_kernel)
 
 namespace combined {
