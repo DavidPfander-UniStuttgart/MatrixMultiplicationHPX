@@ -299,11 +299,11 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
 
                             double_v b_temp_1 = double_v(
                                 &B_padded[B_base_index + k_inner * L1_Y + y],
-                                Vc::Aligned);
+                                Vc::flags::vector_aligned);
                             double_v b_temp_2 =
                                 double_v(&B_padded[B_base_index +
                                                    k_inner * L1_Y + (y + 4)],
-                                         Vc::Aligned);
+                                         Vc::flags::vector_aligned);
 
                             double_v a_temp_1 =
                                 A_trans[A_base_index + k_inner * L1_X +
@@ -340,13 +340,13 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
                             // comment in for 4x12 approach
                             // double_v b_temp_1 =
                             //   double_v(&B_padded[B_base_index + k_inner *
-                            //   L1_Y + y], Vc::Aligned);
+                            //   L1_Y + y], Vc::flags::vector_aligned);
                             // double_v b_temp_2 =
                             //   double_v(&B_padded[B_base_index + k_inner *
-                            //   L1_Y + (y + 4)], Vc::Aligned);
+                            //   L1_Y + (y + 4)], Vc::flags::vector_aligned);
                             // double_v b_temp_3 =
                             //   double_v(&B_padded[B_base_index + k_inner *
-                            //   L1_Y + (y + 8)], Vc::Aligned);
+                            //   L1_Y + (y + 8)], Vc::flags::vector_aligned);
 
                             // double_v a_temp_1 = A_trans[A_base_index +
                             // k_inner * L1_X + (x + 0)];
@@ -375,86 +375,106 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
                           }
 
                           double_v res_11 = double_v(
-                              &C_padded[C_base_index + (x + 0) * L1_Y + y]);
+                              &C_padded[C_base_index + (x + 0) * L1_Y + y],
+                              Vc::flags::element_aligned);
                           res_11 += acc_11;
-                          res_11.store(
-                              &C_padded[C_base_index + (x + 0) * L1_Y + y]);
+                          res_11.memstore(
+                              &C_padded[C_base_index + (x + 0) * L1_Y + y],
+                              Vc::flags::element_aligned);
                           double_v res_21 = double_v(
-                              &C_padded[C_base_index + (x + 1) * L1_Y + y]);
+                              &C_padded[C_base_index + (x + 1) * L1_Y + y],
+                              Vc::flags::element_aligned);
                           res_21 += acc_21;
-                          res_21.store(
-                              &C_padded[C_base_index + (x + 1) * L1_Y + y]);
+                          res_21.memstore(
+                              &C_padded[C_base_index + (x + 1) * L1_Y + y],
+                              Vc::flags::element_aligned);
                           double_v res_31 = double_v(
-                              &C_padded[C_base_index + (x + 2) * L1_Y + y]);
+                              &C_padded[C_base_index + (x + 2) * L1_Y + y],
+                              Vc::flags::element_aligned);
                           res_31 += acc_31;
-                          res_31.store(
-                              &C_padded[C_base_index + (x + 2) * L1_Y + y]);
+                          res_31.memstore(
+                              &C_padded[C_base_index + (x + 2) * L1_Y + y],
+                              Vc::flags::element_aligned);
                           double_v res_41 = double_v(
-                              &C_padded[C_base_index + (x + 3) * L1_Y + y]);
+                              &C_padded[C_base_index + (x + 3) * L1_Y + y],
+                              Vc::flags::element_aligned);
                           res_41 += acc_41;
-                          res_41.store(
-                              &C_padded[C_base_index + (x + 3) * L1_Y + y]);
+                          res_41.memstore(
+                              &C_padded[C_base_index + (x + 3) * L1_Y + y],
+                              Vc::flags::element_aligned);
 
                           // has to be commented out for 4x12 approach
                           double_v res_51 = double_v(
-                              &C_padded[C_base_index + (x + 4) * L1_Y + y]);
+                              &C_padded[C_base_index + (x + 4) * L1_Y + y],
+                              Vc::flags::element_aligned);
                           res_51 += acc_51;
-                          res_51.store(
-                              &C_padded[C_base_index + (x + 4) * L1_Y + y]);
+                          res_51.memstore(
+                              &C_padded[C_base_index + (x + 4) * L1_Y + y],
+                              Vc::flags::element_aligned);
 
                           double_v res_12 =
                               double_v(&C_padded[C_base_index + (x + 0) * L1_Y +
-                                                 (y + 4)]);
+                                                 (y + 4)],
+                                       Vc::flags::element_aligned);
                           res_12 += acc_12;
-                          res_12.store(&C_padded[C_base_index + (x + 0) * L1_Y +
-                                                 (y + 4)]);
+                          res_12.memstore(&C_padded[C_base_index +
+                                                    (x + 0) * L1_Y + (y + 4)],
+                                          Vc::flags::element_aligned);
                           double_v res_22 =
                               double_v(&C_padded[C_base_index + (x + 1) * L1_Y +
-                                                 (y + 4)]);
+                                                 (y + 4)],
+                                       Vc::flags::element_aligned);
                           res_22 += acc_22;
-                          res_22.store(&C_padded[C_base_index + (x + 1) * L1_Y +
-                                                 (y + 4)]);
+                          res_22.memstore(&C_padded[C_base_index +
+                                                    (x + 1) * L1_Y + (y + 4)],
+                                          Vc::flags::element_aligned);
                           double_v res_32 =
                               double_v(&C_padded[C_base_index + (x + 2) * L1_Y +
-                                                 (y + 4)]);
+                                                 (y + 4)],
+                                       Vc::flags::element_aligned);
                           res_32 += acc_32;
-                          res_32.store(&C_padded[C_base_index + (x + 2) * L1_Y +
-                                                 (y + 4)]);
+                          res_32.memstore(&C_padded[C_base_index +
+                                                    (x + 2) * L1_Y + (y + 4)],
+                                          Vc::flags::element_aligned);
                           double_v res_42 =
                               double_v(&C_padded[C_base_index + (x + 3) * L1_Y +
-                                                 (y + 4)]);
+                                                 (y + 4)],
+                                       Vc::flags::element_aligned);
                           res_42 += acc_42;
-                          res_42.store(&C_padded[C_base_index + (x + 3) * L1_Y +
-                                                 (y + 4)]);
+                          res_42.memstore(&C_padded[C_base_index +
+                                                    (x + 3) * L1_Y + (y + 4)],
+                                          Vc::flags::element_aligned);
 
                           // has to be commented out for 4x12 approach
                           double_v res_52 =
                               double_v(&C_padded[C_base_index + (x + 4) * L1_Y +
-                                                 (y + 4)]);
+                                                 (y + 4)],
+                                       Vc::flags::element_aligned);
                           res_52 += acc_52;
-                          res_52.store(&C_padded[C_base_index + (x + 4) * L1_Y +
-                                                 (y + 4)]);
+                          res_52.memstore(&C_padded[C_base_index +
+                                                    (x + 4) * L1_Y + (y + 4)],
+                                          Vc::flags::element_aligned);
 
                           // has to be commented in for 4x12 approach
                           // double_v res_13 = double_v(&C_padded[C_base_index +
                           // (x + 0) * L1_Y + (y + 8)]);
                           // res_13 += acc_13;
-                          // res_13.store(&C_padded[C_base_index + (x + 0) *
+                          // res_13.memstore(&C_padded[C_base_index + (x + 0) *
                           // L1_Y + (y + 8)]);
                           // double_v res_23 = double_v(&C_padded[C_base_index +
                           // (x + 1) * L1_Y + (y + 8)]);
                           // res_23 += acc_23;
-                          // res_23.store(&C_padded[C_base_index + (x + 1) *
+                          // res_23.memstore(&C_padded[C_base_index + (x + 1) *
                           // L1_Y + (y + 8)]);
                           // double_v res_33 = double_v(&C_padded[C_base_index +
                           // (x + 2) * L1_Y + (y + 8)]);
                           // res_33 += acc_33;
-                          // res_33.store(&C_padded[C_base_index + (x + 2) *
+                          // res_33.memstore(&C_padded[C_base_index + (x + 2) *
                           // L1_Y + (y + 8)]);
                           // double_v res_43 = double_v(&C_padded[C_base_index +
                           // (x + 3) * L1_Y + (y + 8)]);
                           // res_43 += acc_43;
-                          // res_43.store(&C_padded[C_base_index + (x + 3) *
+                          // res_43.memstore(&C_padded[C_base_index + (x + 3) *
                           // L1_Y + (y + 8)]);
                         }
                       }

@@ -2,8 +2,8 @@
 
 #include <chrono>
 
-#include "util/util.hpp"
 #include "index_iterator.hpp"
+#include "util/util.hpp"
 
 #include <hpx/include/iostreams.hpp>
 
@@ -24,7 +24,6 @@ using Vc::double_v;
 #define X_REG 5 // cannot be changed!
 #define Y_REG 8 // cannot be changed!
 
-
 // #define L3_X 5 // max all L1 par set to 32
 // #define L3_Y 8
 // #define L3_K_STEP 8
@@ -36,7 +35,6 @@ using Vc::double_v;
 // #define L1_K_STEP 8
 // #define X_REG 5 // cannot be changed!
 // #define Y_REG 8 // cannot be changed!
-
 
 using namespace index_iterator;
 
@@ -112,7 +110,7 @@ combined::combined(size_t N, std::vector<double> &A_org,
 
 std::vector<double> combined::matrix_multiply(double &duration) {
 
-	duration = 0.0;
+  duration = 0.0;
 
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
@@ -120,8 +118,8 @@ std::vector<double> combined::matrix_multiply(double &duration) {
       X_size * Y_size);
   std::fill(C_padded.begin(), C_padded.end(), 0.0);
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans_untiled(
-  									       K_size * X_size);
+  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+      A_trans_untiled(K_size * X_size);
   for (size_t i = 0; i < K_size; i++) {
     for (size_t j = 0; j < X_size; j++) {
       A_trans_untiled[i * X_size + j] = A[j * K_size + i];
@@ -189,7 +187,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     bool first = true;
 
     iterate_indices<3>(
-		       policy, min, max, [&first, &C_padded, &A_trans, &B_padded,
+        policy, min, max, [&first, &C_padded, &A_trans, &B_padded,
                            this](size_t l1_x, size_t l1_y, size_t l1_k) {
           size_t l1_block_x = l1_x / L1_X;
           size_t l1_block_y = l1_y / L1_Y;
@@ -220,11 +218,12 @@ std::vector<double> combined::matrix_multiply(double &duration) {
 
               for (size_t k_inner = 0; k_inner < L1_K_STEP; k_inner += 1) {
 
-                double_v b_temp_1 = double_v(
-                    &B_padded[B_base_index + k_inner * L1_Y + y], Vc::Aligned);
+                double_v b_temp_1 =
+                    double_v(&B_padded[B_base_index + k_inner * L1_Y + y],
+                             Vc::flags::vector_aligned);
                 double_v b_temp_2 =
                     double_v(&B_padded[B_base_index + k_inner * L1_Y + (y + 4)],
-                             Vc::Aligned);
+                             Vc::flags::vector_aligned);
 
                 double_v a_temp_1 =
                     A_trans[A_base_index + k_inner * L1_X + (x + 0)];
@@ -255,54 +254,74 @@ std::vector<double> combined::matrix_multiply(double &duration) {
               }
 
               double_v res_11 =
-                  double_v(&C_padded[C_base_index + (x + 0) * L1_Y + y]);
+                  double_v(&C_padded[C_base_index + (x + 0) * L1_Y + y],
+                           Vc::flags::element_aligned);
               res_11 += acc_11;
-              res_11.store(&C_padded[C_base_index + (x + 0) * L1_Y + y]);
+              res_11.memstore(&C_padded[C_base_index + (x + 0) * L1_Y + y],
+                           Vc::flags::element_aligned);
               double_v res_21 =
-                  double_v(&C_padded[C_base_index + (x + 1) * L1_Y + y]);
+                  double_v(&C_padded[C_base_index + (x + 1) * L1_Y + y],
+                           Vc::flags::element_aligned);
               res_21 += acc_21;
-              res_21.store(&C_padded[C_base_index + (x + 1) * L1_Y + y]);
+              res_21.memstore(&C_padded[C_base_index + (x + 1) * L1_Y + y],
+                           Vc::flags::element_aligned);
               double_v res_31 =
-                  double_v(&C_padded[C_base_index + (x + 2) * L1_Y + y]);
+                  double_v(&C_padded[C_base_index + (x + 2) * L1_Y + y],
+                           Vc::flags::element_aligned);
               res_31 += acc_31;
-              res_31.store(&C_padded[C_base_index + (x + 2) * L1_Y + y]);
+              res_31.memstore(&C_padded[C_base_index + (x + 2) * L1_Y + y],
+                           Vc::flags::element_aligned);
               double_v res_41 =
-                  double_v(&C_padded[C_base_index + (x + 3) * L1_Y + y]);
+                  double_v(&C_padded[C_base_index + (x + 3) * L1_Y + y],
+                           Vc::flags::element_aligned);
               res_41 += acc_41;
-              res_41.store(&C_padded[C_base_index + (x + 3) * L1_Y + y]);
+              res_41.memstore(&C_padded[C_base_index + (x + 3) * L1_Y + y],
+                           Vc::flags::element_aligned);
 
               double_v res_51 =
-                  double_v(&C_padded[C_base_index + (x + 4) * L1_Y + y]);
+                  double_v(&C_padded[C_base_index + (x + 4) * L1_Y + y],
+                           Vc::flags::element_aligned);
               res_51 += acc_51;
-              res_51.store(&C_padded[C_base_index + (x + 4) * L1_Y + y]);
+              res_51.memstore(&C_padded[C_base_index + (x + 4) * L1_Y + y],
+                           Vc::flags::element_aligned);
 
               double_v res_12 =
-                  double_v(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 4)]);
+                  double_v(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
               res_12 += acc_12;
-              res_12.store(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 4)]);
+              res_12.memstore(&C_padded[C_base_index + (x + 0) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
               double_v res_22 =
-                  double_v(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 4)]);
+                  double_v(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
               res_22 += acc_22;
-              res_22.store(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 4)]);
+              res_22.memstore(&C_padded[C_base_index + (x + 1) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
               double_v res_32 =
-                  double_v(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 4)]);
+                  double_v(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
               res_32 += acc_32;
-              res_32.store(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 4)]);
+              res_32.memstore(&C_padded[C_base_index + (x + 2) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
               double_v res_42 =
-                  double_v(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 4)]);
+                  double_v(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
               res_42 += acc_42;
-              res_42.store(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 4)]);
+              res_42.memstore(&C_padded[C_base_index + (x + 3) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
 
               double_v res_52 =
-                  double_v(&C_padded[C_base_index + (x + 4) * L1_Y + (y + 4)]);
+                  double_v(&C_padded[C_base_index + (x + 4) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
               res_52 += acc_52;
-              res_52.store(&C_padded[C_base_index + (x + 4) * L1_Y + (y + 4)]);
+              res_52.memstore(&C_padded[C_base_index + (x + 4) * L1_Y + (y + 4)],
+                           Vc::flags::element_aligned);
             }
           }
 
-	  if (first) {
-	    first = false;
-	  }
+          if (first) {
+            first = false;
+          }
 
         });
     std::chrono::high_resolution_clock::time_point end =

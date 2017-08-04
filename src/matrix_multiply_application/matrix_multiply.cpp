@@ -12,10 +12,10 @@
 
 #include <boost/format.hpp>
 
-#include "util/matrix_multiplication_exception.hpp"
 #include "reference_kernels/kernel_test.hpp"
 #include "reference_kernels/kernel_tiled.hpp"
 #include "reference_kernels/naive.hpp"
+#include "util/matrix_multiplication_exception.hpp"
 #include "util/util.hpp"
 #include "variants/algorithms.hpp"
 #include "variants/combined.hpp"
@@ -49,7 +49,14 @@ uint64_t repetitions;
 bool is_root_node;
 bool non_hpx_algorithm = false;
 
+// pseudodynamic algorithm only
+std::uint64_t min_work_size;
+std::uint64_t max_work_difference;
+double max_relative_work_difference;
+
 int hpx_main(boost::program_options::variables_map &vm) {
+
+  std::cout << "in HPX main" << std::endl;
 
   // extract command line argument
   N = vm["n-value"].as<std::uint64_t>();
@@ -61,15 +68,17 @@ int hpx_main(boost::program_options::variables_map &vm) {
   block_input = vm["block-input"].as<uint64_t>();
   repetitions = vm["repetitions"].as<uint64_t>();
 
-  is_root_node = hpx::find_here() == hpx::find_root_locality();
+  min_work_size = vm["min-work-size"].as<std::uint64_t>();
+  max_work_difference = vm["max-work-difference"].as<std::uint64_t>();
+  max_relative_work_difference =
+      vm["max-relative-work-difference"].as<double>();
 
   if (vm.count("help")) {
-    display_help = true;
-    if (is_root_node) {
-      hpx::cout << desc_commandline << std::endl << hpx::flush;
-    }
+    std::cout << desc_commandline << std::endl;
     return hpx::finalize();
   }
+
+  is_root_node = hpx::find_here() == hpx::find_root_locality();
 
   // create matrices A, B
   std::default_random_engine generator;
@@ -146,11 +155,6 @@ int hpx_main(boost::program_options::variables_map &vm) {
       C = f.get();
     }
   } else if (algorithm.compare("pseudodynamic") == 0) {
-    std::uint64_t min_work_size = vm["min-work-size"].as<std::uint64_t>();
-    std::uint64_t max_work_difference =
-        vm["max-work-difference"].as<std::uint64_t>();
-    double max_relative_work_difference =
-        vm["max-relative-work-difference"].as<double>();
 
     multiply_components::static_improved m(
         N, A, B, transposed, block_input, block_result, min_work_size,
@@ -162,38 +166,44 @@ int hpx_main(boost::program_options::variables_map &vm) {
       throw util::matrix_multiplication_exception(
           "algorithm \"algorithms\" requires B to be transposed");
     }
-		if (verbose > 0) {
-			std::cout << "warning: algorithm \"looped\" doesn't support the \"verbose\" parameter";
-		}
-		if (repetitions > 1) {
-			std::cout << "warning: algorithm \"looped\" doesn't support the \"repetitions\" parameter";
-		}
+    if (verbose > 0) {
+      std::cout << "warning: algorithm \"looped\" doesn't support the "
+                   "\"verbose\" parameter";
+    }
+    if (repetitions > 1) {
+      std::cout << "warning: algorithm \"looped\" doesn't support the "
+                   "\"repetitions\" parameter";
+    }
     algorithms::algorithms m(N, A, B, block_input, block_result);
     C = m.matrix_multiply();
   } else if (algorithm.compare("looped") == 0) {
-		if (!transposed) {
+    if (!transposed) {
       throw util::matrix_multiplication_exception(
           "algorithm \"looped\" requires B to be transposed");
     }
-		if (verbose > 0) {
-			std::cout << "warning: algorithm \"looped\" doesn't support the \"verbose\" parameter";
-		}
-		if (repetitions > 1) {
-			std::cout << "warning: algorithm \"looped\" doesn't support the \"repetitions\" parameter";
-		}
+    if (verbose > 0) {
+      std::cout << "warning: algorithm \"looped\" doesn't support the "
+                   "\"verbose\" parameter";
+    }
+    if (repetitions > 1) {
+      std::cout << "warning: algorithm \"looped\" doesn't support the "
+                   "\"repetitions\" parameter";
+    }
     looped::looped m(N, A, B, block_result, block_input);
     C = m.matrix_multiply();
   } else if (algorithm.compare("semi") == 0) {
-		if (!transposed) {
+    if (!transposed) {
       throw util::matrix_multiplication_exception(
           "algorithm \"semi\" requires B to be transposed");
     }
-		if (verbose > 0) {
-			std::cout << "warning: algorithm \"semi\" doesn't support the \"verbose\" parameter";
-		}
-		if (repetitions > 1) {
-			std::cout << "warning: algorithm \"semi\" doesn't support the \"repetitions\" parameter";
-		}
+    if (verbose > 0) {
+      std::cout << "warning: algorithm \"semi\" doesn't support the "
+                   "\"verbose\" parameter";
+    }
+    if (repetitions > 1) {
+      std::cout << "warning: algorithm \"semi\" doesn't support the "
+                   "\"repetitions\" parameter";
+    }
     semi::semi m(N, A, B, block_result, block_input);
     C = m.matrix_multiply();
   } else if (algorithm.compare("combined") == 0) {
@@ -274,12 +284,38 @@ int main(int argc, char *argv[]) {
       "pseudodynamic algorithm: maximum relative tolerated load inbalance "
       "in matrix components assigned, in percent")("help", "display help");
 
+  // std::cout << "parsing" << std::endl;
+  // boost::program_options::variables_map vm;
+  // boost::program_options::store(
+  //     boost::program_options::parse_command_line(argc, argv,
+  //     desc_commandline),
+  //     vm);
+  // boost::program_options::notify(vm);
+
+  // // extract command line argument
+  // N = vm["n-value"].as<std::uint64_t>();
+  // block_result = vm["block-result"].as<std::uint64_t>();
+  // verbose = vm["verbose"].as<uint64_t>();
+  // algorithm = vm["algorithm"].as<std::string>();
+  // check = vm["check"].as<bool>();
+  // transposed = vm["transposed"].as<bool>();
+  // block_input = vm["block-input"].as<uint64_t>();
+  // repetitions = vm["repetitions"].as<uint64_t>();
+
+  // min_work_size = vm["min-work-size"].as<std::uint64_t>();
+  // max_work_difference = vm["max-work-difference"].as<std::uint64_t>();
+  // max_relative_work_difference =
+  //     vm["max-relative-work-difference"].as<double>();
+
+  // if (vm.count("help")) {
+  //   std::cout << desc_commandline << std::endl;
+  //   return 0;
+  // }
+
+  std::cout << "before HPX" << std::endl;
   // Initialize and run HPX
   int return_value = hpx::init(desc_commandline, argc, argv);
-
-  if (display_help) {
-    return return_value;
-  }
+  std::cout << "after HPX" << std::endl;
 
   if (algorithm.compare("kernel_test") == 0) {
     hpx::util::high_resolution_timer t;
@@ -356,7 +392,13 @@ int main(int argc, char *argv[]) {
       // compare solutions
       bool ok = std::equal(C.begin(), C.end(), Cref.begin(), Cref.end(),
                            [](double first, double second) {
-                             //							std::cout << "first: " << first <<
+                             //							std::cout
+                             //<<
+                             //"first:
+                             //"
+                             //<<
+                             // first
+                             //<<
                              //"
                              // second: " << second << std::endl;
                              if (std::abs(first - second) < 1E-10) {

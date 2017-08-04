@@ -92,11 +92,12 @@ std::vector<double> kernel_test::matrix_multiply() {
 
                           double_v acc_52 = 0.0;
 
-                          double_v b_temp_1 = double_v(
-                              &B_padded[l1_k * (N + PADDING) + y], Vc::Aligned);
+                          double_v b_temp_1 =
+                              double_v(&B_padded[l1_k * (N + PADDING) + y],
+                                       Vc::flags::vector_aligned);
                           double_v b_temp_2 = double_v(
                               &B_padded[l1_k * (N + PADDING) + (y + 4)],
-                              Vc::Aligned);
+                              Vc::flags::vector_aligned);
 
                           for (size_t k_inner = l1_k;
                                k_inner < l1_k + L1_K_STEP; k_inner += 1) {
@@ -125,7 +126,7 @@ std::vector<double> kernel_test::matrix_multiply() {
 
                             b_temp_1 = double_v(
                                 &B_padded[(k_inner + 1) * (N + PADDING) + y],
-                                Vc::Aligned);
+                                Vc::flags::vector_aligned);
 
                             acc_42 += a_temp_4 * b_temp_2;
                             acc_52 += a_temp_5 * b_temp_2;
@@ -134,75 +135,96 @@ std::vector<double> kernel_test::matrix_multiply() {
                             b_temp_2 = double_v(
                                 &B_padded[(k_inner + 1) * (N + PADDING) +
                                           (y + 4)],
-                                Vc::Aligned);
+                                Vc::flags::vector_aligned);
                           }
 
                           double_v res_11 =
-                              double_v(&C_padded[(x + 0) * (N + PADDING) + y]);
+                              double_v(&C_padded[(x + 0) * (N + PADDING) + y],
+                                       Vc::flags::element_aligned);
                           res_11 += acc_11;
-                          res_11.store(&C_padded[(x + 0) * (N + PADDING) + y]);
+                          res_11.memstore(
+                              &C_padded[(x + 0) * (N + PADDING) + y],
+                              Vc::flags::element_aligned);
                           if (x + 1 < l1_x + L1_X) {
-                            double_v res_21 = double_v(
-                                &C_padded[(x + 1) * (N + PADDING) + y]);
+                            double_v res_21 =
+                                double_v(&C_padded[(x + 1) * (N + PADDING) + y],
+                                         Vc::flags::element_aligned);
                             res_21 += acc_21;
-                            res_21.store(
-                                &C_padded[(x + 1) * (N + PADDING) + y]);
+                            res_21.memstore(
+                                &C_padded[(x + 1) * (N + PADDING) + y],
+                                Vc::flags::element_aligned);
                           }
                           if (x + 2 < l1_x + L1_X) {
-                            double_v res_31 = double_v(
-                                &C_padded[(x + 2) * (N + PADDING) + y]);
+                            double_v res_31 =
+                                double_v(&C_padded[(x + 2) * (N + PADDING) + y],
+                                         Vc::flags::element_aligned);
                             res_31 += acc_31;
-                            res_31.store(
-                                &C_padded[(x + 2) * (N + PADDING) + y]);
+                            res_31.memstore(
+                                &C_padded[(x + 2) * (N + PADDING) + y],
+                                Vc::flags::element_aligned);
                           }
                           if (x + 3 < l1_x + L1_X) {
-                            double_v res_41 = double_v(
-                                &C_padded[(x + 3) * (N + PADDING) + y]);
+                            double_v res_41 =
+                                double_v(&C_padded[(x + 3) * (N + PADDING) + y],
+                                         Vc::flags::element_aligned);
                             res_41 += acc_41;
-                            res_41.store(
-                                &C_padded[(x + 3) * (N + PADDING) + y]);
+                            res_41.memstore(
+                                &C_padded[(x + 3) * (N + PADDING) + y],
+                                Vc::flags::element_aligned);
                           }
 
                           if (x + 4 < l1_x + L1_X) {
-                            double_v res_51 = double_v(
-                                &C_padded[(x + 4) * (N + PADDING) + y]);
+                            double_v res_51 =
+                                double_v(&C_padded[(x + 4) * (N + PADDING) + y],
+                                         Vc::flags::element_aligned);
                             res_51 += acc_51;
-                            res_51.store(
-                                &C_padded[(x + 4) * (N + PADDING) + y]);
+                            res_51.memstore(
+                                &C_padded[(x + 4) * (N + PADDING) + y],
+                                Vc::flags::element_aligned);
                           }
 
                           double_v res_12 = double_v(
-                              &C_padded[(x + 0) * (N + PADDING) + (y + 4)]);
+                              &C_padded[(x + 0) * (N + PADDING) + (y + 4)],
+                              Vc::flags::element_aligned);
                           res_12 += acc_12;
-                          res_12.store(
-                              &C_padded[(x + 0) * (N + PADDING) + (y + 4)]);
+                          res_12.memstore(
+                              &C_padded[(x + 0) * (N + PADDING) + (y + 4)],
+                              Vc::flags::element_aligned);
                           if (x + 1 < l1_x + L1_X) {
                             double_v res_22 = double_v(
-                                &C_padded[(x + 1) * (N + PADDING) + (y + 4)]);
+                                &C_padded[(x + 1) * (N + PADDING) + (y + 4)],
+                                Vc::flags::element_aligned);
                             res_22 += acc_22;
-                            res_22.store(
-                                &C_padded[(x + 1) * (N + PADDING) + (y + 4)]);
+                            res_22.memstore(
+                                &C_padded[(x + 1) * (N + PADDING) + (y + 4)],
+                                Vc::flags::element_aligned);
                           }
                           if (x + 2 < l1_x + L1_X) {
                             double_v res_32 = double_v(
-                                &C_padded[(x + 2) * (N + PADDING) + (y + 4)]);
+                                &C_padded[(x + 2) * (N + PADDING) + (y + 4)],
+                                Vc::flags::element_aligned);
                             res_32 += acc_32;
-                            res_32.store(
-                                &C_padded[(x + 2) * (N + PADDING) + (y + 4)]);
+                            res_32.memstore(
+                                &C_padded[(x + 2) * (N + PADDING) + (y + 4)],
+                                Vc::flags::element_aligned);
                           }
                           if (x + 3 < l1_x + L1_X) {
                             double_v res_42 = double_v(
-                                &C_padded[(x + 3) * (N + PADDING) + (y + 4)]);
+                                &C_padded[(x + 3) * (N + PADDING) + (y + 4)],
+                                Vc::flags::element_aligned);
                             res_42 += acc_42;
-                            res_42.store(
-                                &C_padded[(x + 3) * (N + PADDING) + (y + 4)]);
+                            res_42.memstore(
+                                &C_padded[(x + 3) * (N + PADDING) + (y + 4)],
+                                Vc::flags::element_aligned);
                           }
                           if (x + 4 < l1_x + L1_X) {
                             double_v res_52 = double_v(
-                                &C_padded[(x + 4) * (N + PADDING) + (y + 4)]);
+                                &C_padded[(x + 4) * (N + PADDING) + (y + 4)],
+                                Vc::flags::element_aligned);
                             res_52 += acc_52;
-                            res_52.store(
-                                &C_padded[(x + 4) * (N + PADDING) + (y + 4)]);
+                            res_52.memstore(
+                                &C_padded[(x + 4) * (N + PADDING) + (y + 4)],
+                                Vc::flags::element_aligned);
                           }
                         }
                       }
