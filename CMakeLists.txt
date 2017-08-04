@@ -21,6 +21,8 @@ pkg_search_module(HPX_APPLICATION REQUIRED hpx_application)
 
 include_directories(src)
 include_directories(${HPX_APPLICATION_INCLUDE_DIRS})
+# ${AUTOTUNETMP_INCLUDE}
+include_directories(/home/winter/git/AutoTuneTMP/src /home/winter/git/AutoTuneTMP/dependencies/cppjit/include)
 link_directories(${HPX_APPLICATION_LIBRARY_DIRS})
 link_libraries(${HPX_APPLICATION_LIBRARIES} "libhpx_iostreams.so" )
 
