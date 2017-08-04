@@ -30,9 +30,9 @@ int hpx_main() {
   std::vector<double> A = util::create_random_matrix<double>(N);
   std::vector<double> B = util::create_random_matrix<double>(N);
 
-  std::cout << "calculating reference solution...";
+  std::cout << "calculating reference solution..." << std::flush;
   std::vector<double> C_reference = naive_matrix_multiply(N, A, B);
-  std::cout << " done" << std::endl;
+  std::cout << " done" << std::endl << std::flush;
 
   if (transposed) {
     throw util::matrix_multiplication_exception(

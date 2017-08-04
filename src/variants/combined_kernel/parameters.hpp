@@ -1,6 +1,6 @@
 #pragma once
 #define L3_X 210
-#define L3_Y 256
+#define L3_Y 128
 #define L3_K_STEP 256
 #define L2_X 70
 #define L2_Y 64
