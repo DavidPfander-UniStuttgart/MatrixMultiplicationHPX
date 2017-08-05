@@ -1,12 +1,14 @@
 #pragma once
 
-#include <vector>
 #include <cinttypes>
+#include <vector>
 
 template <typename T>
 std::vector<T> naive_matrix_multiply(std::size_t N, std::vector<T> &A,
                                      std::vector<T> &B) {
+
   std::vector<T> C(N * N);
+
 #pragma omp parallel for
   for (uint64_t i = 0; i < N; i++) {
     for (uint64_t j = 0; j < N; j++) {

@@ -1,11 +1,11 @@
 #include "combined.hpp"
 
+#include <hpx/include/iostreams.hpp>
+
 #include <chrono>
 
 #include "index_iterator.hpp"
 #include "util/util.hpp"
-
-#include <hpx/include/iostreams.hpp>
 
 #include <Vc/Vc>
 using Vc::double_v;
@@ -114,6 +114,8 @@ combined::combined(size_t N, std::vector<double> &A_org,
     }
   }
 }
+
+combined::~combined() { autotune::combined_kernel.clear(); }
 
 std::vector<double> combined::matrix_multiply(double &duration) {
 

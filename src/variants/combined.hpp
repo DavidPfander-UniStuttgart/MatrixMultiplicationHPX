@@ -36,6 +36,8 @@ public:
   combined(size_t N, std::vector<double> &A, std::vector<double> &B,
            uint64_t repetitions, uint64_t verbose);
 
+  ~combined();
+
   std::vector<double> matrix_multiply(double &duration);
 };
 }

@@ -1,13 +1,13 @@
 #include "semi.hpp"
 
-#include "index_iterator.hpp"
-
 #include "hpx/parallel/algorithms/for_each.hpp"
 #include "hpx/parallel/algorithms/for_loop.hpp"
 #include "hpx/parallel/execution_policy.hpp"
 #include "hpx/util/iterator_facade.hpp"
-#include <boost/iterator/iterator_facade.hpp>
 #include <hpx/include/iostreams.hpp>
+
+#include <boost/iterator/iterator_facade.hpp>
+#include "index_iterator.hpp"
 
 using namespace index_iterator;
 

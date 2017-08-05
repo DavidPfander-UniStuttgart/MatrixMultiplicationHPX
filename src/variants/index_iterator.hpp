@@ -1,13 +1,42 @@
 #pragma once
 
-#include "hpx/parallel/algorithms/for_each.hpp"
-#include "hpx/parallel/algorithms/for_loop.hpp"
-#include "hpx/parallel/execution_policy.hpp"
-#include "hpx/util/iterator_facade.hpp"
+// #include "hpx/parallel/algorithms/for_each.hpp"
+// #include "hpx/parallel/execution_policy.hpp"
+// #include "hpx/util/iterator_facade.hpp"
+
 #include <boost/iterator/iterator_facade.hpp>
-#include <hpx/include/iostreams.hpp>
+
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 namespace index_iterator {
+
+template <class iterator_type, class F>
+void my_for_each_n(iterator_type iterator, size_t count, F f) {
+  for (size_t i = 0; i < count; i++) {
+    f(*iterator);
+    iterator++;
+  }
+}
+
+    // parallelism disabled, because buggy
+template <class iterator_type, class F>
+void my_parallel_for_each_n(iterator_type &iterator, size_t count, F f) {
+
+// #pragma omp parallel for
+  for (size_t i = 0; i < count; i++) {
+    std::vector<size_t> thread_index;
+#pragma omp critical
+    {
+      thread_index = *iterator;
+      if (i < count - 1) {
+        iterator++;
+      }
+    }
+    f(thread_index);
+  }
+}
 
 template <typename T>
 void map_dims(const std::vector<T> &sub_index, const std::vector<T> &map,
@@ -22,8 +51,8 @@ void map_dims(const std::vector<T> &sub_index, const std::vector<T> &map,
 
 template <size_t dim, size_t cur_dim, typename T, typename F, typename... Args>
 typename std::enable_if<dim == 0, void>::type
-execute_looped(std::vector<T> &min, std::vector<T> &max, std::vector<T> &step,
-               F f, Args... args) {
+execute_looped(std::vector<T> &, std::vector<T> &, std::vector<T> &, F f,
+               Args... args) {
   f(args...);
 }
 
@@ -44,21 +73,17 @@ void loop_nest(std::vector<T> &min, std::vector<T> &max, std::vector<T> &step,
 
 template <typename T>
 class dim_index_iterator
-    : public hpx::util::iterator_facade<dim_index_iterator<T>, std::vector<T>,
-                                        std::forward_iterator_tag,
-                                        const std::vector<T> &> {
+    : public boost::iterator_facade<dim_index_iterator<T>, std::vector<T>,
+                                    std::forward_iterator_tag,
+                                    const std::vector<T> &> {
 private:
-  //    typedef hpx::util::iterator_facade<dim_index_iterator<T>,
-  //    std::vector<T>,
-  //            std::forward_iterator_tag, const std::vector<T>&> base_type;
-
   size_t dim;
   std::vector<T> cur_index;
   std::vector<T> &min_index;
   std::vector<T> &max_index;
   std::vector<T> &step;
 
-  friend class hpx::util::iterator_core_access;
+  friend class boost::iterator_core_access;
 
   // end check is definitely missing
 
@@ -92,20 +117,6 @@ private:
   const std::vector<T> &dereference() const { return cur_index; }
 
 public:
-  //    dim_index_iterator() :
-  //            dim(0), cur_index(0),  {
-  //    }
-
-  //    dim_index_iterator(size_t dim, T max_index_1d) :
-  //            dim(dim), cur_index(dim), min_index(dim), max_index(dim),
-  //            step(dim) {
-  //        // initialize index vector with default values
-  //        std::fill(cur_index.begin(), cur_index.end(), T());
-  //        std::fill(min_index.begin(), min_index.end(), T());
-  //        std::fill(max_index.begin(), max_index.end(), max_index_1d);
-  //        std::fill(step.begin(), step.end(), static_cast<T>(1));
-  //    }
-
   dim_index_iterator(std::vector<T> &min_index, std::vector<T> &max_index,
                      std::vector<T> &step)
       : dim(min_index.size()), cur_index(min_index), min_index(min_index),
@@ -176,45 +187,7 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
   std::vector<T> &block = std::get<0>(pair);
   std::vector<bool> &parallel_dims = std::get<1>(pair);
 
-  // hpx::cout << "inner min: ";
-  // for (size_t i = 0; i < min.size(); i++) {
-  //   if (i > 0) {
-  //     hpx::cout << ", ";
-  //   }
-  //   hpx::cout << min[i];
-  // }
-  // hpx::cout << std::endl << hpx::flush;
-
-  // hpx::cout << "inner max: ";
-  // for (size_t i = 0; i < max.size(); i++) {
-  //   if (i > 0) {
-  //     hpx::cout << ", ";
-  //   }
-  //   hpx::cout << max[i];
-  // }
-  // hpx::cout << std::endl << hpx::flush;
-
-  // hpx::cout << "block: ";
-  // for (size_t i = 0; i < block.size(); i++) {
-  //   if (i > 0) {
-  //     hpx::cout << ", ";
-  //   }
-  //   hpx::cout << block[i];
-  // }
-  // hpx::cout << std::endl << "--------------------" << std::endl <<
-  // hpx::flush;
-
   if (policy.is_last_blocking_step()) {
-    // hpx::cout << "in final" << std::endl << hpx::flush;
-    //        dim_index_iterator<T> dim_iter(min, max, block);
-    //
-    //        size_t inner_index_count = 1;
-    //        for (size_t d = 0; d < dim; d++) {
-    //            inner_index_count *= (max[d] - min[d]) / block[d];
-    //        }
-    //
-    //        hpx::parallel::for_each_n(hpx::parallel::seq, dim_iter,
-    //                inner_index_count, f);
     loop_nest<dim>(min, max, block, f);
   } else {
     // hpx::cout << "not in final" << std::endl << hpx::flush;
@@ -271,8 +244,10 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
                                            block_reduced);
 
     // first process parallel dimensions
-    hpx::parallel::for_each_n(
-        hpx::parallel::par, dim_iter_reduced, inner_index_count_reduced,
+    // hpx::parallel::for_each_n(
+    //     hpx::parallel::par, dim_iter_reduced, inner_index_count_reduced,
+    my_parallel_for_each_n(
+        dim_iter_reduced, inner_index_count_reduced,
         [parallel_dims_count, inner_index_count_remain, &policy, &map, &min,
          &max, &block, f](const std::vector<size_t> &partial_index) {
           std::vector<T> min_serial_fill(min);
@@ -287,75 +262,25 @@ void iterate_indices(blocking_pseudo_execution_policy<T> policy,
           std::vector<T> recursive_min(dim);
           std::vector<T> recursive_max(dim);
 
-          // hpx::cout << "min_serial_fill: ";
-          // for (size_t i = 0; i < min_serial_fill.size(); i++) {
-          //   if (i > 0) {
-          //     hpx::cout << ", ";
-          //   }
-          //   hpx::cout << min_serial_fill[i];
-          // }
-          // hpx::cout << " ";
-          // hpx::cout << "max_serial_fill: ";
-          // for (size_t i = 0; i < max_serial_fill.size(); i++) {
-          //   if (i > 0) {
-          //     hpx::cout << ", ";
-          //   }
-          //   hpx::cout << max_serial_fill[i];
-          // }
-          // hpx::cout << std::endl << hpx::flush;
-          // hpx::cout << " ";
-          // hpx::cout << "block: ";
-          // for (size_t i = 0; i < block.size(); i++) {
-          //   if (i > 0) {
-          //     hpx::cout << ", ";
-          //   }
-          //   hpx::cout << block[i];
-          // }
-          // hpx::cout << std::endl << hpx::flush;
-          // hpx::cout << "inner_index_count_remain: " <<
-          // inner_index_count_remain << std::endl << hpx::flush;
+          // hpx::parallel::for_each_n(
+          //     hpx::parallel::seq, dim_iter_serial_fill,
+          //     inner_index_count_remain,
+          my_for_each_n(dim_iter_serial_fill, inner_index_count_remain,
+                        [&policy, &block, f, &recursive_min,
+                         &recursive_max](const std::vector<size_t> &cur_index) {
+                          // iterate within block
+                          for (size_t d = 0; d < dim; d++) {
+                            recursive_min[d] = cur_index[d];
+                          }
 
-          hpx::parallel::for_each_n(
-              hpx::parallel::seq, dim_iter_serial_fill,
-              inner_index_count_remain,
-              [&policy, &block, f, &recursive_min,
-               &recursive_max](const std::vector<size_t> &cur_index) {
-                // iterate within block
-                for (size_t d = 0; d < dim; d++) {
-                  recursive_min[d] = cur_index[d];
-                }
+                          for (size_t d = 0; d < dim; d++) {
+                            recursive_max[d] = cur_index[d] + block[d];
+                          }
 
-                for (size_t d = 0; d < dim; d++) {
-                  recursive_max[d] = cur_index[d] + block[d];
-                }
-
-                //                                hpx::cout << "recursive_min:
-                //                                ";
-                //                                for (size_t i = 0; i <
-                //                                recursive_min.size(); i++) {
-                //                                    if (i > 0) {
-                //                                        hpx::cout << ", ";
-                //                                    }
-                //                                    hpx::cout <<
-                //                                    recursive_min[i];
-                //                                }
-                //                                hpx::cout << " ";
-                //                                hpx::cout << "recursive_max:
-                //                                ";
-                //                                for (size_t i = 0; i <
-                //                                recursive_max.size(); i++) {
-                //                                    if (i > 0) {
-                //                                        hpx::cout << ", ";
-                //                                    }
-                //                                    hpx::cout <<
-                //                                    recursive_max[i];
-                //                                }
-                //                                hpx::cout << std::endl <<
-                //                                hpx::flush;
-
-                // do recursive blocking
-                iterate_indices<dim>(policy, recursive_min, recursive_max, f);
-              });
+                          // do recursive blocking
+                          iterate_indices<dim>(policy, recursive_min,
+                                               recursive_max, f);
+                        });
 
         });
   }
