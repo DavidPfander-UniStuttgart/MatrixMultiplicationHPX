@@ -17,22 +17,34 @@
 
 #include <random>
 
-std::uint64_t N = 4096;
-bool transposed = false;
-size_t repetitions = 5;
-bool verbose = false;
-
-// create matrices A, B>
-std::vector<double> A;
-std::vector<double> B;
-std::vector<double> C_reference;
-
 // int hpx_main() {
 
 //   return hpx::finalize();
 // }
 
 int main(int argc, char **argv) {
+
+  if (argc < 2) {
+    std::cerr << "Error: no scenario name given!" << std::endl;
+    return 1;
+  } else if (argc > 2) {
+    std::cerr << "Error: two many arguments given!" << std::endl;
+    return 1;
+  }
+
+  std::string scenario_name(argv[1]);
+  std::cout << "scenario_name: " << scenario_name << std::endl;
+
+  std::uint64_t N = 4096;
+  bool transposed = false;
+  size_t repetitions = 7;
+  bool verbose = false;
+
+  // create matrices A, B>
+  std::vector<double> A;
+  std::vector<double> B;
+  std::vector<double> C_reference;
+
   // create matrices A, B>
   A = util::create_random_matrix<double>(N);
   B = util::create_random_matrix<double>(N);
@@ -55,6 +67,9 @@ int main(int argc, char **argv) {
   combined::combined m(N, A, B, repetitions, verbose);
 
   autotune::combined_kernel.set_verbose(true);
+
+  autotune::combined_kernel.set_write_measurement(scenario_name +
+                                                  "_bruteforce");
 
   auto builder =
       autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
@@ -90,9 +105,9 @@ int main(int argc, char **argv) {
   // autotune::combined_kernel.add_parameter("L3_X", {"210", "420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"128", "256"});
   // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-  autotune::combined_kernel.add_parameter("L2_X", {"70"});
-  autotune::combined_kernel.add_parameter("L2_Y", {"64"});
-  autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
+  autotune::combined_kernel.add_parameter("L2_X", {"35", "70", "140"});
+  autotune::combined_kernel.add_parameter("L2_Y", {"32", "64", "128"});
+  autotune::combined_kernel.add_parameter("L2_K_STEP", {"64", "128", "256"});
   autotune::combined_kernel.add_parameter("L1_X", {"10", "35", "70"});
   autotune::combined_kernel.add_parameter("L1_Y", {"8", "16", "32"});
   autotune::combined_kernel.add_parameter("L1_K_STEP", {"32", "64", "128"});
@@ -109,25 +124,9 @@ int main(int argc, char **argv) {
 
   autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
-  // std::vector<double> C_return(N * N, 0.0);
-  // std::fill(C_return.begin(), C_return.end(), 0.0);
-
-  std::vector<size_t> optimal_parameter_indices(
-      autotune::combined_kernel.get_parameters().size(), 0.0);
-
-  // autotune::combined_kernel.create_parameter_file(optimal_parameter_indices);
-  // autotune::combined_kernel.compile();
-
-  // if (autotune::combined_kernel.is_valid_parameter_combination()) {
-  //   std::cout << "parameter combination is valid" << std::endl;
-  // } else {
-  //   std::cout << "parameter combination is NOT valid" << std::endl;
-  // }
-
-  // std::vector<size_t> optimal_parameter_indices;
   double tune_kernel_duration_temp;
 
-  auto test_result = [](const std::vector<double> &C) -> bool {
+  auto test_result = [&C_reference, N](const std::vector<double> &C) -> bool {
     // std::cout << "C_reference:" << std::endl;
     // print_matrix_host(N, C_reference);
     // std::cout << "C mine:" << std::endl;
@@ -147,9 +146,10 @@ int main(int argc, char **argv) {
   std::cout
       << "----------------------- starting tuning  -----------------------"
       << std::endl;
-  optimal_parameter_indices = autotune::combined_kernel.tune(
-      autotune::tuner::bruteforce, test_result, m.N_org, m.X_size, m.Y_size,
-      m.K_size, m.A, m.B, m.repetitions, tune_kernel_duration_temp);
+  std::vector<size_t> optimal_parameter_indices =
+      autotune::combined_kernel.tune(
+          autotune::tuner::bruteforce, test_result, m.N_org, m.X_size, m.Y_size,
+          m.K_size, m.A, m.B, m.repetitions, tune_kernel_duration_temp);
 
   std::cout << "----------------------- end tuning -----------------------"
             << std::endl;
