@@ -6,12 +6,13 @@ if [ ! -d "Vc/" ]; then
     cd Vc
     git checkout pfandedd_inlining_AVX512
     git checkout HEAD~1
-    cd ..    
-else
-    cd Vc
-    git pull
     cd ..
 fi
+# else
+#     cd Vc
+#     git pull
+#     cd ..
+# fi
 
 mkdir -p Vc/build
 cd Vc/build
