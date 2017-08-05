@@ -22,7 +22,7 @@ pkg_search_module(HPX_APPLICATION REQUIRED hpx_application)
 include_directories(src)
 include_directories(${HPX_APPLICATION_INCLUDE_DIRS})
 # ${AUTOTUNETMP_INCLUDE}
-include_directories(/home/winter/git/AutoTuneTMP/src /home/winter/git/AutoTuneTMP/dependencies/cppjit/include)
+include_directories(${AutoTuneTMP_ROOT}/src ${AutoTuneTMP_ROOT}/dependencies/cppjit/include)
 link_directories(${HPX_APPLICATION_LIBRARY_DIRS})
 link_libraries(${HPX_APPLICATION_LIBRARIES} "libhpx_iostreams.so" )
 
@@ -40,6 +40,8 @@ file(GLOB SOURCES_COMMON
   "src/variants/*.cpp"
   "src/variants/components/*.cpp")
 message("source files: " ${SOURCES_COMMON})
+
+message("hpx c flags: " ${HPX_APPLICATION_CFLAGS})
 
 file(GLOB SOURCES_MATRIX_MULTIPLY_APPLICATION "src/matrix_multiply_application/*.cpp")
 file(GLOB SOURCES_TESTS "src/tests/*.cpp")
