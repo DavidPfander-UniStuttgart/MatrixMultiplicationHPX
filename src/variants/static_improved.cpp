@@ -174,8 +174,13 @@ static_improved::create_schedule(size_t num_localities) {
                                     valid_work_to_balance_index);
 
     size_t n_new = w.N / 2;
-    std::vector<std::tuple<size_t, size_t>> offsets = {
-        {0, 0}, {0 + n_new, 0}, {0, 0 + n_new}, {0 + n_new, 0 + n_new}};
+    // std::vector<std::tuple<size_t, size_t>> offsets = {
+    //     {0, 0}, {0 + n_new, 0}, {0, 0 + n_new}, {0 + n_new, 0 + n_new}};
+    std::vector<std::tuple<size_t, size_t>> offsets;
+    offsets.emplace_back(0, 0);
+    offsets.emplace_back(0 + n_new, 0);
+    offsets.emplace_back(0, 0 + n_new);
+    offsets.emplace_back(0 + n_new, 0 + n_new);
 
     all_work[valid_max_index].emplace_back(
         w.x + std::get<0>(offsets[0]), w.y + std::get<1>(offsets[0]), n_new);

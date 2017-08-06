@@ -67,8 +67,13 @@ std::vector<double> recursive::distribute_recursively(std::uint64_t x,
     hpx::components::client<recursive> self;
     self.connect_to("/recursive#" + std::to_string(comp_locality));
 
-    std::vector<std::tuple<size_t, size_t>> offsets = {
-        {0, 0}, {0 + n_new, 0}, {0, 0 + n_new}, {0 + n_new, 0 + n_new}};
+    // std::vector<std::tuple<size_t, size_t>> offsets = {
+    //     {0, 0}, {0 + n_new, 0}, {0, 0 + n_new}, {0 + n_new, 0 + n_new}};
+    std::vector<std::tuple<size_t, size_t>> offsets;
+    offsets.emplace_back(0, 0);
+    offsets.emplace_back(0 + n_new, 0);
+    offsets.emplace_back(0, 0 + n_new);
+    offsets.emplace_back(0 + n_new, 0 + n_new);
 
     std::vector<double> C(blockSize * blockSize);
 

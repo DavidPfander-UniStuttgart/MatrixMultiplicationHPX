@@ -87,8 +87,8 @@ int main(int argc, char **argv) {
       "-I ../AutoTuneTMP/src -Isrc/variants/ "
       "-Wall -Wextra -std=c++14 -march=native -mtune=native -O3 -ffast-math "
       " -fopenmp "
-      " -I../../Vc_head_install/include "
-      "-I../../boost_1_63_0_install/include");
+      " -I../Vc_install/include "
+      "-I../boost_1_63_0_install/include");
 
   //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
   // #define L3_Y 256
