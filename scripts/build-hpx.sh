@@ -5,7 +5,7 @@ if [ ! -d "hpx/" ]; then
     git clone https://github.com/STEllAR-GROUP/hpx.git
     cd hpx
     git checkout 1.0.0
-    cd..
+    cd ..
 fi
 # else
 #     cd hpx
