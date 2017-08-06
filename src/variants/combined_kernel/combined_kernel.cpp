@@ -43,7 +43,7 @@ extern "C" bool is_valid_parameter_combination() {
 extern "C" std::vector<double>
 combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
                 std::size_t K_size, std::vector<double> &A,
-                std::vector<double> &B, size_t repetitions, double &duration) {
+                std::vector<double> &B, size_t repetitions, double &) {
 
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
@@ -99,15 +99,15 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
     // reset result before every iteration
     std::fill(C_padded.begin(), C_padded.end(), 0.0);
 
-    // blocking_pseudo_execution_policy<size_t> policy(3);
-    // // specify with ascending cache level
-    // policy.set_final_steps({L1_X, L1_Y, L1_K_STEP});
-    // policy.add_blocking({L2_X, L2_Y, L2_K_STEP}, {false, false, false});
-    // policy.add_blocking({L3_X, L3_Y, L3_K_STEP},
-    //                     {true, true, false}); // LLC blocking
+// blocking_pseudo_execution_policy<size_t> policy(3);
+// // specify with ascending cache level
+// policy.set_final_steps({L1_X, L1_Y, L1_K_STEP});
+// policy.add_blocking({L2_X, L2_Y, L2_K_STEP}, {false, false, false});
+// policy.add_blocking({L3_X, L3_Y, L3_K_STEP},
+//                     {true, true, false}); // LLC blocking
 
-    std::chrono::high_resolution_clock::time_point start =
-        std::chrono::high_resolution_clock::now();
+// std::chrono::high_resolution_clock::time_point start =
+//     std::chrono::high_resolution_clock::now();
 
 // bool first = true;
 
@@ -308,12 +308,12 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
       }
     }
 
-    std::chrono::high_resolution_clock::time_point end =
-        std::chrono::high_resolution_clock::now();
-    duration += std::chrono::duration<double>(end - start).count();
+    // std::chrono::high_resolution_clock::time_point end =
+    //     std::chrono::high_resolution_clock::now();
+    // duration += std::chrono::duration<double>(end - start).count();
   }
 
-  std::cout << "duration inner: " << duration << "s" << std::endl;
+  // std::cout << "duration inner: " << duration << "s" << std::endl;
 
   // std::cout << "C_tiled or padded:" << std::endl;
   // print_matrix_host(Y_size, X_size, C_padded);

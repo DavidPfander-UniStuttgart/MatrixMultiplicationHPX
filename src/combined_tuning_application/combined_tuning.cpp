@@ -6,6 +6,8 @@
 
 #include "autotune/autotune.hpp"
 #include "autotune/parameter.hpp"
+#include "autotune/tuners/bruteforce.hpp"
+#include "autotune/tuners/line_search.hpp"
 
 #include "reference_kernels/naive.hpp"
 // #include "reference_kernels/kernel_test.hpp"
@@ -69,7 +71,7 @@ int main(int argc, char **argv) {
   autotune::combined_kernel.set_verbose(true);
 
   autotune::combined_kernel.set_write_measurement(scenario_name +
-                                                  "_bruteforce");
+                                                  "_line_search");
 
   auto builder =
       autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
@@ -105,12 +107,16 @@ int main(int argc, char **argv) {
   // autotune::combined_kernel.add_parameter("L3_X", {"210", "420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"128", "256"});
   // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-  autotune::combined_kernel.add_parameter("L2_X", {"35", "70", "140"});
-  autotune::combined_kernel.add_parameter("L2_Y", {"32", "64", "128"});
-  autotune::combined_kernel.add_parameter("L2_K_STEP", {"64", "128", "256"});
-  autotune::combined_kernel.add_parameter("L1_X", {"10", "35", "70"});
-  autotune::combined_kernel.add_parameter("L1_Y", {"8", "16", "32"});
-  autotune::combined_kernel.add_parameter("L1_K_STEP", {"32", "64", "128"});
+  autotune::combined_kernel.add_parameter("L2_X",
+                                          {"15", "35", "70", "140", "175"});
+  autotune::combined_kernel.add_parameter("L2_Y",
+                                          {"16", "32", "64", "128", "256"});
+  autotune::combined_kernel.add_parameter("L2_K_STEP",
+                                          {"32", "64", "128", "256", "512"});
+  autotune::combined_kernel.add_parameter("L1_X", {"5", "10", "35", "70"});
+  autotune::combined_kernel.add_parameter("L1_Y", {"8", "16", "32", "64"});
+  autotune::combined_kernel.add_parameter("L1_K_STEP",
+                                          {"1", "32", "64", "128"});
 
   // autotune::combined_kernel.add_parameter("L3_X", {"420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
@@ -126,7 +132,8 @@ int main(int argc, char **argv) {
 
   double tune_kernel_duration_temp;
 
-  auto test_result = [&C_reference, N](const std::vector<double> &C) -> bool {
+  std::function<bool(const std::vector<double> &C)> test_result =
+      [&C_reference, N](const std::vector<double> &C) -> bool {
     // std::cout << "C_reference:" << std::endl;
     // print_matrix_host(N, C_reference);
     // std::cout << "C mine:" << std::endl;
@@ -146,10 +153,13 @@ int main(int argc, char **argv) {
   std::cout
       << "----------------------- starting tuning  -----------------------"
       << std::endl;
+  std::vector<size_t> line_search_initial_guess = {0, 0, 0, 0, 0, 0};
+  autotune::tuners::line_search<decltype(autotune::combined_kernel)> tuner(
+      autotune::combined_kernel, test_result, 100, 1,
+      line_search_initial_guess);
   std::vector<size_t> optimal_parameter_indices =
-      autotune::combined_kernel.tune(
-          autotune::tuner::bruteforce, test_result, m.N_org, m.X_size, m.Y_size,
-          m.K_size, m.A, m.B, m.repetitions, tune_kernel_duration_temp);
+      tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B, m.repetitions,
+                 tune_kernel_duration_temp);
 
   std::cout << "----------------------- end tuning -----------------------"
             << std::endl;
