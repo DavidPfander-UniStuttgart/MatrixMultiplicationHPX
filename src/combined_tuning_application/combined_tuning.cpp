@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 
   builder->set_include_paths(
       "-I ../AutoTuneTMP/src -Isrc/variants/ "
-      "-Wall -Wextra -std=c++14 -march=native -mtune=native -O3 -ffast-math "
+      "-Wall -Wextra -std=c++14 -march=broadwell -mtune=broadwell -O3 -ffast-math "
       " -fopenmp "
       " -I../Vc_install/include "
       "-I../boost_1_63_0_install/include");
