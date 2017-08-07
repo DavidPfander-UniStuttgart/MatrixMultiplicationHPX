@@ -7,6 +7,10 @@ if [ ! -d "MatrixMultiplicationHPX" ]; then
     git checkout autotuning
     cd ..
 fi
+
+cd MatrixMultiplicationHPX
+git pull
+cd ..
 # else
 #     cd hpx
 #     git pull

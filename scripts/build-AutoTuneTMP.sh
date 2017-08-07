@@ -8,6 +8,10 @@ if [ ! -d "AutoTuneTMP" ]; then
     git submodule update
     cd ..
 fi
+
+cd AutoTuneTMP
+git pull
+cd ..
 # else
 #     cd hpx
 #     git pull
