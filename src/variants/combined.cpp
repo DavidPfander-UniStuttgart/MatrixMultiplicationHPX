@@ -125,13 +125,10 @@ std::vector<double> combined::matrix_multiply(double &duration) {
         autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
     builder->set_verbose(true);
     builder->set_include_paths(
-        "-I /home/winter/git/AutoTuneTMP/src -I src/variants/ -I "
-        "/home/winter/hpx_install_with_symbols/include -I "
-        "/home/winter/hpx_install_with_symbols/include/hpx/external -DNDEBUG "
+        "-I ../AutoTuneTMP/src -I src/variants/ -I "
         "-std=c++14 -march=native -mtune=native -O3 -ffast-math "
-        "-DHPX_APPLICATION_EXPORTS "
-        "-DHPX_ENABLE_ASSERT_HANDLER -I/home/winter/Vc_head_install/include "
-        "-I/home/winter/boost_1_63_0_install/include");
+        "-I../Vc_install/include "
+        "-I../boost_1_63_0_install/include");
 
     //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
     autotune::combined_kernel.add_parameter("L3_X", {"420"});
