@@ -16,8 +16,9 @@ using Vc::double_v;
 #define L3_Y 256
 #define L3_K_STEP 256
 
-#define X_REG 5 // cannot be changed!
-#define Y_REG 8 // cannot be changed!
+// #define Y_REG 8 
+constexpr size_t X_REG = 5; // cannot be changed!
+constexpr size_t Y_REG = 2 * double_v::size(); // cannot be changed!
 
 using namespace index_iterator;
 
@@ -174,10 +175,10 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
                             double_v b_temp_1 = double_v(
                                 &B_padded[B_base_index + k_inner * L1_Y + y],
                                 Vc::flags::vector_aligned);
-                            double_v b_temp_2 =
-                                double_v(&B_padded[B_base_index +
-                                                   k_inner * L1_Y + (y + 4)],
-                                         Vc::flags::vector_aligned);
+                            double_v b_temp_2 = double_v(
+                                &B_padded[B_base_index + k_inner * L1_Y +
+                                          (y + double_v::size())], // 4
+                                Vc::flags::vector_aligned);
 
                             double_v a_temp_1 =
                                 A_trans[A_base_index + k_inner * L1_X +
@@ -251,45 +252,50 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
 
                           double_v res_12 =
                               double_v(&C_padded[C_base_index + (x + 0) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())], // 4
                                        Vc::flags::element_aligned);
                           res_12 += acc_12;
-                          res_12.memstore(&C_padded[C_base_index +
-                                                    (x + 0) * L1_Y + (y + 4)],
-                                          Vc::flags::element_aligned);
+                          res_12.memstore(
+                              &C_padded[C_base_index + (x + 0) * L1_Y +
+                                        (y + double_v::size())], // 4
+                              Vc::flags::element_aligned);
                           double_v res_22 =
                               double_v(&C_padded[C_base_index + (x + 1) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())], // 4
                                        Vc::flags::element_aligned);
                           res_22 += acc_22;
-                          res_22.memstore(&C_padded[C_base_index +
-                                                    (x + 1) * L1_Y + (y + 4)],
-                                          Vc::flags::element_aligned);
+                          res_22.memstore(
+                              &C_padded[C_base_index + (x + 1) * L1_Y +
+                                        (y + double_v::size())], // 4
+                              Vc::flags::element_aligned);
                           double_v res_32 =
                               double_v(&C_padded[C_base_index + (x + 2) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())], // 4
                                        Vc::flags::element_aligned);
                           res_32 += acc_32;
-                          res_32.memstore(&C_padded[C_base_index +
-                                                    (x + 2) * L1_Y + (y + 4)],
-                                          Vc::flags::element_aligned);
+                          res_32.memstore(
+                              &C_padded[C_base_index + (x + 2) * L1_Y +
+                                        (y + double_v::size())], // 4
+                              Vc::flags::element_aligned);
                           double_v res_42 =
                               double_v(&C_padded[C_base_index + (x + 3) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())], // 4
                                        Vc::flags::element_aligned);
                           res_42 += acc_42;
-                          res_42.memstore(&C_padded[C_base_index +
-                                                    (x + 3) * L1_Y + (y + 4)],
-                                          Vc::flags::element_aligned);
+                          res_42.memstore(
+                              &C_padded[C_base_index + (x + 3) * L1_Y +
+                                        (y + double_v::size())], // 4
+                              Vc::flags::element_aligned);
 
                           double_v res_52 =
                               double_v(&C_padded[C_base_index + (x + 4) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())], // 4
                                        Vc::flags::element_aligned);
                           res_52 += acc_52;
-                          res_52.memstore(&C_padded[C_base_index +
-                                                    (x + 4) * L1_Y + (y + 4)],
-                                          Vc::flags::element_aligned);
+                          res_52.memstore(
+                              &C_padded[C_base_index + (x + 4) * L1_Y +
+                                        (y + double_v::size())], // 4
+                              Vc::flags::element_aligned);
                         }
                       }
 
