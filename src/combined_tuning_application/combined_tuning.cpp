@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
   std::uint64_t N = 4096;
+
   bool transposed = false;
   size_t repetitions = 7;
   bool verbose = false;
@@ -54,10 +55,15 @@ int main(int argc, char **argv) {
   std::cout << "calculating reference solution..." << std::flush;
   // kernel_test::kernel_test m_ref(N, A, B, transposed, repetitions, verbose);
   // C_reference = m_ref.matrix_multiply();
-  kernel_tiled::kernel_tiled m_ref(N, A, B, transposed, repetitions, verbose);
-  double duration_dummy;
-  C_reference = m_ref.matrix_multiply(duration_dummy);
-  // C_reference = naive_matrix_multiply(N, A, B);
+  // kernel_tiled::kernel_tiled m_ref(N, A, B, transposed, repetitions,
+  // verbose);
+  // double duration_dummy;
+  // C_reference = m_ref.matrix_multiply(duration_dummy);
+  if (!transposed) {
+    C_reference = naive_matrix_multiply(N, A, B);
+  } else {
+    C_reference = naive_matrix_multiply_transposed(N, A, B);
+  }
   std::cout << " done" << std::endl << std::flush;
 
   // int return_value = hpx::init(argc, argv);
@@ -85,12 +91,19 @@ int main(int argc, char **argv) {
   //     "-DHPX_ENABLE_ASSERT_HANDLER -I/home/winter/Vc_head_install/include "
   //     "-I/home/winter/boost_1_63_0_install/include");
 
-  builder->set_include_paths(
-      "-I ../AutoTuneTMP/src -Isrc/variants/ "
-      "-Wall -Wextra -std=c++14 -march=broadwell -mtune=broadwell -O3 -ffast-math "
-      " -fopenmp "
-      " -I../Vc_install/include "
-      "-I../boost_1_63_0_install/include");
+  builder->set_include_paths("-I ../AutoTuneTMP/src -Isrc/variants/ "
+                             "-I../Vc_install/include "
+                             "-I../boost_1_63_0_install/include");
+  builder->set_cpp_flags("-Wall -Wextra -std=c++1z -march=native -mtune=native "
+                         "-O3 -ffast-math -fopenmp -fPIC");
+  builder->set_link_flags("-std=c++1z -shared");
+
+  // builder->set_include_paths(
+  //     "-I ../AutoTuneTMP/src -Isrc/variants/ "
+  //     "-Wall -Wextra -std=c++1z -march=native -mtune=native -O3 -ffast-math "
+  //     " -fopenmp "
+  //     " -I../Vc_install/include "
+  //     "-I../boost_1_63_0_install/include");
 
   //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
   // #define L3_Y 256
@@ -114,9 +127,9 @@ int main(int argc, char **argv) {
   autotune::combined_kernel.add_parameter("L2_K_STEP",
                                           {"32", "64", "128", "256", "512"});
   autotune::combined_kernel.add_parameter("L1_X", {"5", "10", "35", "70"});
-  autotune::combined_kernel.add_parameter("L1_Y", {"8", "16", "32", "64"});
+  autotune::combined_kernel.add_parameter("L1_Y", {"16", "32", "64", "128"});
   autotune::combined_kernel.add_parameter("L1_K_STEP",
-                                          {"1", "32", "64", "128"});
+                                          {"1", "4", "8", "16", "32"});
 
   // autotune::combined_kernel.add_parameter("L3_X", {"420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
@@ -155,8 +168,9 @@ int main(int argc, char **argv) {
       << std::endl;
   std::vector<size_t> line_search_initial_guess = {0, 0, 0, 0, 0, 0};
   autotune::tuners::line_search<decltype(autotune::combined_kernel)> tuner(
-      autotune::combined_kernel, test_result, 100, 1,
-      line_search_initial_guess);
+      autotune::combined_kernel, 50, 1, line_search_initial_guess);
+
+  tuner.setup_tests(test_result);
   std::vector<size_t> optimal_parameter_indices =
       tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B, m.repetitions,
                  tune_kernel_duration_temp);
