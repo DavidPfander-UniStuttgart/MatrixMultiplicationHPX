@@ -9,7 +9,7 @@ fi
 if [ ! -d "boost_1_63_0_install/" ]; then
     cd boost_1_63_0
     ./bootstrap.sh --prefix="$Boost_ROOT"
-    ./b2 -j8 variant=release install
+    ./b2 -j${PARALLEL_BUILD} variant=release install
     cd ..
 fi
 

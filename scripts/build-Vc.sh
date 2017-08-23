@@ -17,5 +17,5 @@ fi
 mkdir -p Vc/build
 cd Vc/build
 cmake -DCMAKE_INSTALL_PREFIX="$Vc_ROOT" -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=release ../
-make -j8 VERBOSE=1 install
+make -j${PARALLEL_BUILD} VERBOSE=1 install
 cd ../..

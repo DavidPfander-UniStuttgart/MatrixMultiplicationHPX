@@ -22,6 +22,6 @@ if [ ! -d build ] ; then
 fi
 cd build
 ../configure CC=cc CXX=CC --prefix=${JEMALLOC_ROOT}
-make -j16
+make -j${PARALLEL_BUILD}
 make install
 cd ../..

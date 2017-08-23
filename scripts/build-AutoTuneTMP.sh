@@ -25,5 +25,5 @@ cd AutoTuneTMP/build
 cmake -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 -DVc_ROOT="$Vc_ROOT" -DCMAKE_BUILD_TYPE=release ../
 
 # uses more than 4G with 4 threads (4G limit on Circle CI)
-make -j8 VERBOSE=1
+make -j${PARALLEL_BUILD} VERBOSE=1
 cd ../..
