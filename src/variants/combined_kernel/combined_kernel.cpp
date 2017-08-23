@@ -7,6 +7,7 @@
 using Vc::double_v;
 
 #include "opttmp/loop/unroll_loop.hpp"
+#include "opttmp/memory_layout/tile_array.hpp"
 #include "parameters.hpp"
 #include <chrono>
 #include <vector>
@@ -54,11 +55,11 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
                 std::size_t K_size, std::vector<double> &A,
                 std::vector<double> &B, size_t repetitions, double &) {
 
-  // create a matrix of l1 cachable submatrices, caching by tiling, no large
-  // strides even without padding
   std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(
       X_size * Y_size);
 
+  // create a matrix of l1 cachable submatrices, caching by tiling, no large
+  // strides even without padding
   std::vector<double, boost::alignment::aligned_allocator<double, 32>>
       A_trans_untiled(K_size * X_size);
   for (size_t i = 0; i < K_size; i++) {
@@ -66,7 +67,6 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
       A_trans_untiled[i * X_size + j] = A[j * K_size + i];
     }
   }
-
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
   // is also padded if padding is enabled (row padded only)
@@ -74,8 +74,8 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
       K_size * X_size);
   for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
     for (size_t l1_k = 0; l1_k < K_size / L1_K_STEP; l1_k += 1) {
-      size_t base_index = (L1_X * L1_K_STEP) *
-                          (l1_k * (X_size / L1_X) + l1_x); // look up submatrix
+      // look up submatrix
+      size_t base_index = (L1_X * L1_K_STEP) * (l1_k * (X_size / L1_X) + l1_x);
       for (size_t x = 0; x < L1_X; x++) {
         for (size_t k = 0; k < L1_K_STEP; k++) {
           A_trans[base_index + k * L1_X + x] =
@@ -84,6 +84,19 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
       }
     }
   }
+
+  // // create a matrix of l1 cachable submatrices, caching by tiling, no large
+  // // strides even without padding
+  // const size_t tile_size = 128;
+  // std::vector<memory_layout::tiling_info_dim> tiling_info_A(2);
+  // tiling_info_A[0].tile_size_dir = tile_size;
+  // tiling_info_A[0].stride = L3_X;
+  // tiling_info_A[1].tile_size_dir = tile_size;
+  // tiling_info_A[1].stride = L3_K_STEP;
+
+  // std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+  // A_trans =
+  //     memory_layout::make_tiled<2>(A_trans_untiled, tiling_info_A);
 
   // don't need padding for B, no dependency to row count
   std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_padded(
