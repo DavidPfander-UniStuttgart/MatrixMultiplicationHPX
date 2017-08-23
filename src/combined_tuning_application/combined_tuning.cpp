@@ -91,9 +91,9 @@ int main(int argc, char **argv) {
   //     "-DHPX_ENABLE_ASSERT_HANDLER -I/home/winter/Vc_head_install/include "
   //     "-I/home/winter/boost_1_63_0_install/include");
 
-  builder->set_include_paths("-I ../AutoTuneTMP/src -Isrc/variants/ "
-                             "-I../Vc_install/include "
-                             "-I../boost_1_63_0_install/include");
+  builder->set_include_paths("-IAutoTuneTMP/src -Isrc/variants/ "
+                             "-IVc_install/include "
+                             "-Iboost_1_63_0_install/include");
   builder->set_cpp_flags("-Wall -Wextra -std=c++1z -march=native -mtune=native "
                          "-O3 -ffast-math -fopenmp -fPIC");
   builder->set_link_flags("-std=c++1z -shared");

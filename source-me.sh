@@ -1,3 +1,5 @@
+export CC=gcc-7
+export CXX=g++-7
 export Vc_ROOT=$PWD/Vc_install
 export Boost_ROOT=$PWD/boost_1_63_0_install
 export BOOST_ROOT=$Boost_ROOT
