@@ -1,7 +1,7 @@
 #!/bin/bash -e
 set -x
 
-git pull
+# git pull
 
 mkdir -p build
 cd build
