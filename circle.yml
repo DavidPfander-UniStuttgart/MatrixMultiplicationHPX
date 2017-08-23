@@ -18,9 +18,6 @@ dependencies:
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 10
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 20
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 20
-        - ./scripts/build-boost.sh
-        - ./scripts/build-Vc.sh
-        - ./scripts/build-hpx.sh
 compile:
     override:
         - ./build_matrix_multiplication_tuner.sh
