@@ -7,4 +7,4 @@ source source-me.sh
 ./scripts/build-Vc.sh
 ./scripts/build-hpx.sh
 ./scripts/build-AutoTuneTMP.sh
-./scripts/build-MatrixMultiplicationHPX.sh
+./build-MatrixMultiplicationHPX.sh

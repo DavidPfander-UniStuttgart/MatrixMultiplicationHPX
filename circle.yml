@@ -2,31 +2,28 @@ machine:
     environment:
         Vc_ROOT: /home/ubuntu/Vc_install
         Boost_ROOT: /home/ubuntu/boost_1_63_0_install
+        BOOST_ROOT: /home/ubuntu/boost_1_63_0_install
         HPX_ROOT: /home/ubuntu/hpx_install
+        AutoTuneTMP_ROOT: /home/ubuntu/AutoTuneTMP
+        MatrixMultiplicationHPX_ROOT: /home/ubuntu/MatrixMultiplicationHPX_install
+        JEMALLOC_ROOT: /home/ubuntu/jemalloc_install
 
 dependencies:
     pre:
         - cat /proc/cpuinfo
         - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
         - sudo apt-get update
-        - sudo apt-get install -y gcc-6 g++-6 cmake libgoogle-perftools-dev libhwloc-dev
-        - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 10
-        - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 10
-        - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 20
-        - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 20
-        - ./circle_ci_scripts/build-boost.sh
-        - ./circle_ci_scripts/build-Vc.sh
-        - ./circle_ci_scripts/build-hpx.sh
-    cache_directories:
-        - "/home/ubuntu/MatrixMultiplicationHPX/boost_1_63_0"
-        - "/home/ubuntu/boost_1_63_0_install"
-        - "/home/ubuntu/MatrixMultiplicationHPX/Vc"
-        - "/home/ubuntu/Vc_install"
-        - "/home/ubuntu/MatrixMultiplicationHPX/hpx"
-        - "/home/ubuntu/hpx_install"
+        - sudo apt-get install -y gcc-7 g++-7 cmake libgoogle-perftools-dev libhwloc-dev
+        - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 10
+        - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 10
+        - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 20
+        - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 20
+        - ./scripts/build-boost.sh
+        - ./scripts/build-Vc.sh
+        - ./scripts/build-hpx.sh
 compile:
     override:
-        - ./circle_ci_scripts/build-MatrixMultiplicationHPX.sh
+        - ./build_matrix_multiplication_tuner.sh
 test:
     override:
         - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/boost_1_63_0_install/lib:/home/ubuntu/hpx_install/lib:/home/ubuntu/Vc_install/lib
