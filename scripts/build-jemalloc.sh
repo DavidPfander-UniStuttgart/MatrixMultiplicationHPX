@@ -22,7 +22,8 @@ if [ ! -d build ] ; then
     mkdir build
 fi
 cd build
-../configure CC=cc CXX=CC --prefix=${JEMALLOC_ROOT}
-make -j${PARALLEL_BUILD}
-make install
+echo "building jemalloc"
+../configure CC=cc CXX=CC --prefix=${JEMALLOC_ROOT} > configure_jemalloc.log 2>&1
+make -j${PARALLEL_BUILD} > make_jemalloc.log 2>&1
+make install  > make_install_jemalloc.log 2>&1
 cd ../..
