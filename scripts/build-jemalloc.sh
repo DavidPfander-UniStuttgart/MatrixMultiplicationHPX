@@ -1,5 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
 set -x
+# set -e not set, because jemalloc doc does not build successfully
 
 
 if [ ! -d jemalloc ] ; then
@@ -10,10 +11,10 @@ if [ ! -d jemalloc ] ; then
 fi
 
 cd jemalloc
-export CC=${mycc}
-export CXX=${mycxx}
-export CFLAGS=${mycflags}
-export CXXFLAGS=${mycxxflags}
+# export CC=${mycc}
+# export CXX=${mycxx}
+# export CFLAGS=${mycflags}
+# export CXXFLAGS=${mycxxflags}
 # make clean
 
 autoconf

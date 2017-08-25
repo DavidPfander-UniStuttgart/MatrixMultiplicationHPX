@@ -6,8 +6,8 @@
 #include "hpx/util/iterator_facade.hpp"
 #include <hpx/include/iostreams.hpp>
 
-#include <boost/iterator/iterator_facade.hpp>
 #include "index_iterator.hpp"
+#include <boost/iterator/iterator_facade.hpp>
 
 using namespace index_iterator;
 
@@ -15,7 +15,11 @@ namespace semi {
 
 semi::semi(size_t N, std::vector<double> &A, std::vector<double> &B,
            uint64_t block_result, uint64_t block_input)
-    : N(N), A(A), B(B), block_result(block_result), block_input(block_input) {}
+    : N(N), A(A), B(B), block_result(block_result), block_input(block_input) {
+  if (N < 4) {
+    throw "only works for matrices > 4x4 due to blocking";
+  }
+}
 
 std::vector<double> semi::matrix_multiply() {
 
@@ -57,15 +61,14 @@ std::vector<double> semi::matrix_multiply() {
   // blocking_pseudo_execution_policy<size_t> policy(3);
   // policy.add_blocking({4, 4, 4}, {true, true, false}); // L1 blocking
   // policy.set_final_steps({4, 2, block_input});
-	blocking_pseudo_execution_policy<size_t> policy(3);
-	// TODO: setup up blocking leads to errors
-	// policy.add_blocking({4, 4, 4}, {false, false, false});
-	policy.set_final_steps({4, 2, block_input});
+  blocking_pseudo_execution_policy<size_t> policy(3);
+  // TODO: setup up blocking leads to errors
+  // policy.add_blocking({4, 4, 4}, {false, false, false});
+  policy.set_final_steps({4, 2, block_input});
 
   iterate_indices<3>(policy, min, max, [N_fixed, &C_conflict, &A_conflict,
                                         &B_conflict,
                                         this](size_t x, size_t y, size_t k) {
-
     double result_component_0_0 = 0.0;
     double result_component_0_1 = 0.0;
     double result_component_1_0 = 0.0;

@@ -26,8 +26,8 @@ include_directories(${AutoTuneTMP_ROOT}/src ${AutoTuneTMP_ROOT}/dependencies/cpp
 link_directories(${HPX_APPLICATION_LIBRARY_DIRS})
 link_libraries(${HPX_APPLICATION_LIBRARIES} "libhpx_iostreams.so" )
 
-# include_directories(${Vc_ROOT}/include)
-# include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${Vc_ROOT}/include)
+include_directories(${Boost_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "-Wno-ignored-attributes ${CMAKE_CXX_FLAGS}")
 

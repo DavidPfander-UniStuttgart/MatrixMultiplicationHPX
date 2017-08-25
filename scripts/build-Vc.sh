@@ -1,5 +1,6 @@
 #!/bin/bash -e
 set -x
+set -e
 
 if [ ! -d "Vc/" ]; then
     git clone https://github.com/STEllAR-GROUP/Vc.git

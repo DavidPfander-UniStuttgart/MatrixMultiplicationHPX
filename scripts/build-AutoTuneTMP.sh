@@ -1,5 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
 set -x
+set -e
 
 if [ ! -d "AutoTuneTMP" ]; then
     git clone git@github.com:DavidPfander-UniStuttgart/AutoTuneTMP.git

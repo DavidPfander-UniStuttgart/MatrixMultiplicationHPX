@@ -1,15 +1,25 @@
-#!/bin/bash -e
+#!/bin/bash
 set -x
+set -e
 
-if [ ! -d "boost_1_63_0/" ]; then
-    wget 'http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2'
-    tar xf boost_1_63_0.tar.bz2
+if [[ ! $PARALLEL_BUILD ]]; then
+    echo "PARALLEL_BUILD not set, defaulting to 1"
+    export PARALLEL_BUILD=1
 fi
 
-if [ ! -d "boost_1_63_0_install/" ]; then
-    cd boost_1_63_0
+if [ ! -d "boost_1_65_0/" ]; then
+    wget 'http://downloads.sourceforge.net/project/boost/boost/1.65.0/boost_1_65_0.tar.bz2'
+    tar xf boost_1_65_0.tar.bz2
+
+    # configure for gcc 7
+    echo "using gcc : 7.1 : /usr/bin/g++-7  ; " > boost_1_65_0/tools/build/src/user-config.jam
+fi
+
+if [ ! -d "boost_1_65_0_install/" ]; then
+    cd boost_1_65_0
     ./bootstrap.sh --prefix="$Boost_ROOT"
-    ./b2 -j${PARALLEL_BUILD} variant=release install
+    #-d2: more verbose output
+    ./b2 -j${PARALLEL_BUILD} cxxflags="$CXX_FLAGS" variant=release -d2 install
     cd ..
 fi
 

@@ -1,4 +1,6 @@
 #!/bin/bash
+set -x
+set -e
 
 if [ -z "$1" ]; then
     echo "info: no argument for build parallelism supplied, setting to 1"
