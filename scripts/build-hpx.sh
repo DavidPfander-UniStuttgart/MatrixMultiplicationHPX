@@ -2,6 +2,11 @@
 set -x
 set -e
 
+if [[ ! $PARALLEL_BUILD ]]; then
+    echo "hpx: PARALLEL_BUILD not set, defaulting to 1"
+    export PARALLEL_BUILD=1
+fi
+
 if [ ! -d "hpx/" ]; then
     git clone https://github.com/STEllAR-GROUP/hpx.git
     # cd hpx

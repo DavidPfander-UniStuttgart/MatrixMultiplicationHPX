@@ -2,6 +2,10 @@
 set -x
 # set -e not set, because jemalloc doc does not build successfully
 
+if [[ ! $PARALLEL_BUILD ]]; then
+    echo "jemalloc: PARALLEL_BUILD not set, defaulting to 4"
+    export PARALLEL_BUILD=4
+fi
 
 if [ ! -d jemalloc ] ; then
     git clone https://github.com/jemalloc/jemalloc.git

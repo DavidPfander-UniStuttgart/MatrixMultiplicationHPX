@@ -2,6 +2,11 @@
 set -x
 set -e
 
+if [[ ! $PARALLEL_BUILD ]]; then
+    echo "Vc: PARALLEL_BUILD not set, defaulting to 4"
+    export PARALLEL_BUILD=4
+fi
+
 if [ ! -d "Vc/" ]; then
     git clone https://github.com/STEllAR-GROUP/Vc.git
     cd Vc

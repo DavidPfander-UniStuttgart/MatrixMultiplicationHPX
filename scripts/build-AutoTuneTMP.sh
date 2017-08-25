@@ -2,6 +2,11 @@
 set -x
 set -e
 
+if [[ ! $PARALLEL_BUILD ]]; then
+    echo "AutoTuneTMP: PARALLEL_BUILD not set, defaulting to 4"
+    export PARALLEL_BUILD=4
+fi
+
 if [ ! -d "AutoTuneTMP" ]; then
     git clone git@github.com:DavidPfander-UniStuttgart/AutoTuneTMP.git
     cd AutoTuneTMP
