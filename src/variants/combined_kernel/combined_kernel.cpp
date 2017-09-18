@@ -53,83 +53,102 @@ extern "C" bool is_valid_parameter_combination() {
 extern "C" std::vector<double>
 combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
                 std::size_t K_size, std::vector<double> &A,
-                std::vector<double> &B, size_t repetitions, double &) {
+                std::vector<double> &B, size_t repetitions, double &duration) {
 
   std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(
       X_size * Y_size);
 
-  // create a matrix of l1 cachable submatrices, caching by tiling, no large
-  // strides even without padding
+  // // create a matrix of l1 cachable submatrices, caching by tiling, no large
+  // // strides even without padding
+  // // is also padded if padding is enabled (row padded only)
+  // std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+  // A_trans(
+  //     K_size * X_size);
+  // for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
+  //   for (size_t l1_k = 0; l1_k < K_size / L1_K_STEP; l1_k += 1) {
+  //     // look up submatrix
+  //     size_t base_index = (L1_X * L1_K_STEP) * (l1_k * (X_size / L1_X) +
+  //     l1_x);
+  //     for (size_t x = 0; x < L1_X; x++) {
+  //       for (size_t k = 0; k < L1_K_STEP; k++) {
+  //         A_trans[base_index + k * L1_X + x] =
+  //             A[(l1_x * L1_X + x) * K_size + (l1_k * L1_K_STEP + k)];
+  //       }
+  //     }
+  //   }
+  // }
+
+  std::vector<memory_layout::tiling_info_dim> tiling_spec_A_trans(2);
+  // tiling_spec[0].tile_size_dir = L1_X;
+  // tiling_spec[0].stride = X_size;
+  // tiling_spec[1].tile_size_dir = L1_K_STEP;
+  // tiling_spec[1].stride = K_size;
+  tiling_spec_A_trans[0].tile_size_dir = L1_K_STEP;
+  tiling_spec_A_trans[0].stride = K_size;
+  tiling_spec_A_trans[1].tile_size_dir = L1_X;
+  tiling_spec_A_trans[1].stride = X_size;
+
   std::vector<double, boost::alignment::aligned_allocator<double, 32>>
-      A_trans_untiled(K_size * X_size);
+      A_trans_untiled(A.size());
   for (size_t i = 0; i < K_size; i++) {
     for (size_t j = 0; j < X_size; j++) {
       A_trans_untiled[i * X_size + j] = A[j * K_size + i];
     }
   }
-  // create a matrix of l1 cachable submatrices, caching by tiling, no large
-  // strides even without padding
-  // is also padded if padding is enabled (row padded only)
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans(
-      K_size * X_size);
-  for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
-    for (size_t l1_k = 0; l1_k < K_size / L1_K_STEP; l1_k += 1) {
-      // look up submatrix
-      size_t base_index = (L1_X * L1_K_STEP) * (l1_k * (X_size / L1_X) + l1_x);
-      for (size_t x = 0; x < L1_X; x++) {
-        for (size_t k = 0; k < L1_K_STEP; k++) {
-          A_trans[base_index + k * L1_X + x] =
-              A[(l1_x * L1_X + x) * K_size + (l1_k * L1_K_STEP + k)];
-        }
-      }
-    }
-  }
+  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans =
+      memory_layout::make_tiled<2>(A_trans_untiled, tiling_spec_A_trans);
 
-  // // create a matrix of l1 cachable submatrices, caching by tiling, no large
-  // // strides even without padding
-  // const size_t tile_size = 128;
-  // std::vector<memory_layout::tiling_info_dim> tiling_info_A(2);
-  // tiling_info_A[0].tile_size_dir = tile_size;
-  // tiling_info_A[0].stride = L3_X;
-  // tiling_info_A[1].tile_size_dir = tile_size;
-  // tiling_info_A[1].stride = L3_K_STEP;
-
+  // // don't need padding for B, no dependency to row count
   // std::vector<double, boost::alignment::aligned_allocator<double, 32>>
-  // A_trans =
-  //     memory_layout::make_tiled<2>(A_trans_untiled, tiling_info_A);
+  // B_padded(
+  //     K_size * Y_size);
+  // for (size_t l1_y = 0; l1_y < (Y_size / L1_Y); l1_y += 1) {
+  //   for (size_t l1_k = 0; l1_k < (K_size / L1_K_STEP); l1_k += 1) {
+  //     size_t base_index = (L1_Y * L1_K_STEP) *
+  //                         (l1_k * (Y_size / L1_Y) + l1_y); // look up
+  //                         submatrix
+  //     for (size_t y = 0; y < L1_Y; y++) {
+  //       for (size_t k = 0; k < L1_K_STEP; k++) {
+  //         B_padded[base_index + k * L1_Y + y] =
+  //             B[(l1_k * L1_K_STEP + k) * Y_size + (l1_y * L1_Y + y)];
+  //       }
+  //     }
+  //   }
+  // }
 
-  // don't need padding for B, no dependency to row count
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_padded(
-      K_size * Y_size);
-  for (size_t l1_y = 0; l1_y < (Y_size / L1_Y); l1_y += 1) {
-    for (size_t l1_k = 0; l1_k < (K_size / L1_K_STEP); l1_k += 1) {
-      size_t base_index = (L1_Y * L1_K_STEP) *
-                          (l1_k * (Y_size / L1_Y) + l1_y); // look up submatrix
-      for (size_t y = 0; y < L1_Y; y++) {
-        for (size_t k = 0; k < L1_K_STEP; k++) {
-          B_padded[base_index + k * L1_Y + y] =
-              B[(l1_k * L1_K_STEP + k) * Y_size + (l1_y * L1_Y + y)];
-        }
-      }
-    }
-  }
+  std::vector<memory_layout::tiling_info_dim> tiling_spec_B(2);
+  // tiling_spec[0].tile_size_dir = L1_X;
+  // tiling_spec[0].stride = X_size;
+  // tiling_spec[1].tile_size_dir = L1_K_STEP;
+  // tiling_spec[1].stride = K_size;
+  tiling_spec_B[0].tile_size_dir = L1_K_STEP;
+  tiling_spec_B[0].stride = K_size;
+  tiling_spec_B[1].tile_size_dir = L1_Y;
+  tiling_spec_B[1].stride = Y_size;
+
+  std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_copy(
+      B.size());
+  std::copy(B.begin(), B.end(), B_copy.begin());
+  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+      B_padded = memory_layout::make_tiled<2>(B_copy, tiling_spec_B);
 
   // std::vector<size_t> min = {0, 0, 0};
   // std::vector<size_t> max = {X_size, Y_size, K_size};
 
   for (size_t rep = 0; rep < repetitions; rep++) {
     // reset result before every iteration
+    // because C is zero-initialized, no explicit tiling step is required
     std::fill(C_padded.begin(), C_padded.end(), 0.0);
 
-// blocking_pseudo_execution_policy<size_t> policy(3);
-// // specify with ascending cache level
-// policy.set_final_steps({L1_X, L1_Y, L1_K_STEP});
-// policy.add_blocking({L2_X, L2_Y, L2_K_STEP}, {false, false, false});
-// policy.add_blocking({L3_X, L3_Y, L3_K_STEP},
-//                     {true, true, false}); // LLC blocking
+    // blocking_pseudo_execution_policy<size_t> policy(3);
+    // // specify with ascending cache level
+    // policy.set_final_steps({L1_X, L1_Y, L1_K_STEP});
+    // policy.add_blocking({L2_X, L2_Y, L2_K_STEP}, {false, false, false});
+    // policy.add_blocking({L3_X, L3_Y, L3_K_STEP},
+    //                     {true, true, false}); // LLC blocking
 
-// std::chrono::high_resolution_clock::time_point start =
-//     std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::time_point start =
+        std::chrono::high_resolution_clock::now();
 
 // bool first = true;
 
@@ -336,33 +355,58 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
       }
     }
 
-    // std::chrono::high_resolution_clock::time_point end =
-    //     std::chrono::high_resolution_clock::now();
-    // duration += std::chrono::duration<double>(end - start).count();
+    std::chrono::high_resolution_clock::time_point end =
+        std::chrono::high_resolution_clock::now();
+    duration += std::chrono::duration<double>(end - start).count();
   }
 
-  // std::cout << "duration inner: " << duration << "s" << std::endl;
+  std::vector<memory_layout::tiling_info_dim> tiling_spec_C(2);
+  // tiling_spec[0].tile_size_dir = L1_X;
+  // tiling_spec[0].stride = X_size;
+  // tiling_spec[1].tile_size_dir = L1_K_STEP;
+  // tiling_spec[1].stride = K_size;
+  // tiling_spec_C[0].tile_size_dir = L1_X;
+  // tiling_spec_C[0].stride = X_size;
+  // tiling_spec_C[1].tile_size_dir = L1_Y;
+  // tiling_spec_C[1].stride = Y_size;
+  tiling_spec_C[0].tile_size_dir = L1_Y;
+  tiling_spec_C[0].stride = Y_size;  
+  tiling_spec_C[1].tile_size_dir = L1_X;
+  tiling_spec_C[1].stride = X_size;
 
-  // std::cout << "C_tiled or padded:" << std::endl;
-  // print_matrix_host(Y_size, X_size, C_padded);
+
+  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+      C_untiled = memory_layout::undo_tiling<2>(C_padded, tiling_spec_C);
+
+  // std::vector<double> C_return(N_org * N_org);
+  // std::copy(C_untiled.begin(), C_untiled.end(), C_return.begin());
+
+  std::cout << "C_untiled.size(): " << C_untiled.size() << std::endl;
 
   std::vector<double> C_return(N_org * N_org);
-  // std::fill(C_return.begin(), C_return.end(), 0.0);
-
-  for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
-    for (size_t l1_y = 0; l1_y < Y_size / L1_Y; l1_y += 1) {
-      size_t base_index =
-          (L1_X * L1_Y) * (l1_x * (Y_size / L1_Y) + l1_y); // look up submatrix
-      for (size_t x = 0; x < L1_X; x++) {
-        for (size_t y = 0; y < L1_Y; y++) {
-          // skip padding
-          if (l1_x * L1_X + x < N_org && l1_y * L1_Y + y < N_org) {
-            C_return.at((l1_x * L1_X + x) * N_org + (l1_y * L1_Y + y)) =
-                C_padded.at(base_index + x * L1_Y + y);
-          }
-        }
-      }
+  std::cout << "C_return.size(): " << C_untiled.size() << std::endl;
+  for (size_t x = 0; x < N_org; x++) {
+    for (size_t y = 0; y < N_org; y++) {
+      C_return.at(x * N_org + y) = C_untiled.at(x * Y_size + y);
     }
   }
+  // std::fill(C_return.begin(), C_return.end(), 0.0);
+
+  // for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
+  //   for (size_t l1_y = 0; l1_y < Y_size / L1_Y; l1_y += 1) {
+  //     size_t base_index =
+  //         (L1_X * L1_Y) * (l1_x * (Y_size / L1_Y) + l1_y); // look up
+  //         submatrix
+  //     for (size_t x = 0; x < L1_X; x++) {
+  //       for (size_t y = 0; y < L1_Y; y++) {
+  //         // skip padding
+  //         if (l1_x * L1_X + x < N_org && l1_y * L1_Y + y < N_org) {
+  //           C_return.at((l1_x * L1_X + x) * N_org + (l1_y * L1_Y + y)) =
+  //               C_padded.at(base_index + x * L1_Y + y);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
   return C_return;
 }

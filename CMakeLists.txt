@@ -52,20 +52,17 @@ set(SOURCES_MATRIX_MULTIPLY ${SOURCES_COMMON} ${SOURCES_MATRIX_MULTIPLY_APPLICAT
 set(SOURCES_TESTS ${SOURCES_COMMON} ${SOURCES_TESTS})
 
 add_executable(matrix_multiply ${SOURCES_MATRIX_MULTIPLY})
-target_compile_options(matrix_multiply PUBLIC -std=c++1z -march=native -mtune=native)
-target_compile_options(matrix_multiply PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS})
+target_compile_options(matrix_multiply PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
 target_link_libraries(matrix_multiply PUBLIC ${HPX_APPLICATION_LDFLAGS} ${OpenMP_CXX_FLAGS})
 INSTALL_TARGETS(/bin matrix_multiply)
 
 add_executable(boost_tests ${SOURCES_TESTS})
-target_compile_options(boost_tests PUBLIC -std=c++1z -march=native -mtune=native)
-target_compile_options(boost_tests PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS})
+target_compile_options(boost_tests PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
 target_link_libraries(boost_tests PUBLIC ${HPX_APPLICATION_LDFLAGS} ${Boost_LIBRARIES} ${OpenMP_CXX_FLAGS})
 INSTALL_TARGETS(/bin boost_tests)
 
 set(SOURCES_COMBINED_TUNING ${SOURCES_COMMON} "src/combined_tuning_application/combined_tuning.cpp")
 add_executable(combined_tuning ${SOURCES_COMBINED_TUNING})
-target_compile_options(combined_tuning PUBLIC -std=c++1z -march=native -mtune=native)
-target_compile_options(combined_tuning PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS})
+target_compile_options(combined_tuning PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
 target_link_libraries(combined_tuning PUBLIC ${HPX_APPLICATION_LDFLAGS} ${OpenMP_CXX_FLAGS})
 INSTALL_TARGETS(/bin combined_tuning)

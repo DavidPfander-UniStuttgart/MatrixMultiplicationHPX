@@ -1,8 +1,8 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-#include "memory_layout/tile_array.hpp"
-#include "memory_layout/tile_view.hpp"
+#include "opttmp/memory_layout/tile_array.hpp"
+#include "opttmp/memory_layout/tile_view.hpp"
 
 template <size_t dim>
 void compare_tile(std::vector<double> &tiled_matrix,

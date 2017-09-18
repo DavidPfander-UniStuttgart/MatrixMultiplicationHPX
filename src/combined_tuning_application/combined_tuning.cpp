@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 4096;
+  std::uint64_t N = 128;
 
   bool transposed = false;
   size_t repetitions = 7;
@@ -95,8 +95,8 @@ int main(int argc, char **argv) {
                              "-IVc_install/include "
                              "-Iboost_1_63_0_install/include");
   builder->set_cpp_flags("-Wall -Wextra -std=c++1z -march=native -mtune=native "
-                         "-O3 -ffast-math -fopenmp -fPIC");
-  builder->set_link_flags("-std=c++1z -shared");
+                         "-O3 -g -ffast-math -fopenmp -fPIC");
+  builder->set_link_flags("-std=c++1z -shared -g");
 
   // builder->set_include_paths(
   //     "-I ../AutoTuneTMP/src -Isrc/variants/ "
@@ -120,26 +120,27 @@ int main(int argc, char **argv) {
   // autotune::combined_kernel.add_parameter("L3_X", {"210", "420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"128", "256"});
   // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-  autotune::combined_kernel.add_parameter("L2_X",
-                                          {"15", "35", "70", "140", "175"});
-  autotune::combined_kernel.add_parameter("L2_Y",
-                                          {"16", "32", "64", "128", "256"});
-  autotune::combined_kernel.add_parameter("L2_K_STEP",
-                                          {"32", "64", "128", "256", "512"});
-  autotune::combined_kernel.add_parameter("L1_X", {"5", "10", "35", "70"});
-  autotune::combined_kernel.add_parameter("L1_Y", {"16", "32", "64", "128"});
-  autotune::combined_kernel.add_parameter("L1_K_STEP",
-                                          {"1", "4", "8", "16", "32"});
+  // autotune::combined_kernel.add_parameter("L2_X",
+  //                                         {"15", "35", "70", "140", "175"});
+  // autotune::combined_kernel.add_parameter("L2_Y",
+  //                                         {"16", "32", "64", "128", "256"});
+  // autotune::combined_kernel.add_parameter("L2_K_STEP",
+  //                                         {"32", "64", "128", "256", "512"});
+  // autotune::combined_kernel.add_parameter("L1_X", {"5", "10", "35", "70"});
+  // autotune::combined_kernel.add_parameter("L1_Y", {"16", "32", "64", "128"});
+  // autotune::combined_kernel.add_parameter("L1_K_STEP",
+  //                                         {"1", "4", "8", "16", "32"});
 
   // autotune::combined_kernel.add_parameter("L3_X", {"420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
   // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-  // autotune::combined_kernel.add_parameter("L2_X", {"70"});
-  // autotune::combined_kernel.add_parameter("L2_Y", {"64"});
-  // autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
-  // autotune::combined_kernel.add_parameter("L1_X", {"35"});
-  // autotune::combined_kernel.add_parameter("L1_Y", {"16"});
-  // autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
+  
+  autotune::combined_kernel.add_parameter("L2_X", {"70"});
+  autotune::combined_kernel.add_parameter("L2_Y", {"64"});
+  autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
+  autotune::combined_kernel.add_parameter("L1_X", {"35"});
+  autotune::combined_kernel.add_parameter("L1_Y", {"16"});
+  autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
 
   autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
@@ -167,8 +168,9 @@ int main(int argc, char **argv) {
       << "----------------------- starting tuning  -----------------------"
       << std::endl;
   std::vector<size_t> line_search_initial_guess = {0, 0, 0, 0, 0, 0};
+  size_t line_search_steps = 1;
   autotune::tuners::line_search<decltype(autotune::combined_kernel)> tuner(
-      autotune::combined_kernel, 50, 1, line_search_initial_guess);
+      autotune::combined_kernel, line_search_steps, 1, line_search_initial_guess);
 
   tuner.setup_tests(test_result);
   std::vector<size_t> optimal_parameter_indices =
