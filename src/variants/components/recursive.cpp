@@ -84,7 +84,7 @@ std::vector<double> recursive::distribute_recursively(std::uint64_t x,
               self.get_id(), x + std::get<0>(offsets[i]),
               y + std::get<1>(offsets[i]), n_new);
       g.push_back(
-          f.then(hpx::util::unwrapped([=, &C](std::vector<double> submatrix) {
+          f.then(hpx::util::unwrapping([=, &C](std::vector<double> submatrix) {
             this->extract_submatrix(C, std::move(submatrix),
                                     std::get<0>(offsets[i]),
                                     std::get<1>(offsets[i]), n_new);

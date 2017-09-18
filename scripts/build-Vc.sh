@@ -1,5 +1,11 @@
 #!/bin/bash -e
 set -x
+set -e
+
+if [[ ! $PARALLEL_BUILD ]]; then
+    echo "Vc: PARALLEL_BUILD not set, defaulting to 4"
+    export PARALLEL_BUILD=4
+fi
 
 if [ ! -d "Vc/" ]; then
     git clone https://github.com/STEllAR-GROUP/Vc.git
@@ -16,6 +22,7 @@ fi
 
 mkdir -p Vc/build
 cd Vc/build
-cmake -DCMAKE_INSTALL_PREFIX="$Vc_ROOT" -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=release ../
-make -j${PARALLEL_BUILD} VERBOSE=1 install
+echo "building Vc"
+cmake -DCMAKE_INSTALL_PREFIX="$Vc_ROOT" -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=release ../ > cmake_Vc.log 2>&1
+make -j${PARALLEL_BUILD} VERBOSE=1 install  > make_install_Vc.log 2>&1
 cd ../..

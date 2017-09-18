@@ -18,9 +18,14 @@ dependencies:
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 10
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 20
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 20
+    cache_directories:
+        - "/home/ubuntu/Vc"
+        - "/home/ubuntu/hpx"
+        - "/home/ubuntu/AutoTuneTMP"
+        - "/home/ubuntu/boost_1_65"
 compile:
     override:
-        - ./build_matrix_multiplication_tuner.sh
+        - ./build_matrix_multiplication_tuner.sh circle
 test:
     override:
         - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/boost_1_63_0_install/lib:/home/ubuntu/hpx_install/lib:/home/ubuntu/Vc_install/lib

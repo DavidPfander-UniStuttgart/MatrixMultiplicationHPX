@@ -1,6 +1,11 @@
-#!/bin/bash -e
+#!/bin/bash
 set -x
+# set -e not set, because jemalloc doc does not build successfully
 
+if [[ ! $PARALLEL_BUILD ]]; then
+    echo "jemalloc: PARALLEL_BUILD not set, defaulting to 4"
+    export PARALLEL_BUILD=4
+fi
 
 if [ ! -d jemalloc ] ; then
     git clone https://github.com/jemalloc/jemalloc.git
@@ -10,10 +15,10 @@ if [ ! -d jemalloc ] ; then
 fi
 
 cd jemalloc
-export CC=${mycc}
-export CXX=${mycxx}
-export CFLAGS=${mycflags}
-export CXXFLAGS=${mycxxflags}
+# export CC=${mycc}
+# export CXX=${mycxx}
+# export CFLAGS=${mycflags}
+# export CXXFLAGS=${mycxxflags}
 # make clean
 
 autoconf
@@ -21,7 +26,8 @@ if [ ! -d build ] ; then
     mkdir build
 fi
 cd build
-../configure CC=cc CXX=CC --prefix=${JEMALLOC_ROOT}
-make -j${PARALLEL_BUILD}
-make install
+echo "building jemalloc"
+../configure CC=cc CXX=CC --prefix=${JEMALLOC_ROOT} > configure_jemalloc.log 2>&1
+make -j${PARALLEL_BUILD} > make_jemalloc.log 2>&1
+make install  > make_install_jemalloc.log 2>&1
 cd ../..

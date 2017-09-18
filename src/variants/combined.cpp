@@ -126,7 +126,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     builder->set_verbose(true);
     builder->set_include_paths("-IAutoTuneTMP/src -Isrc/variants/ "
                                "-IVc_install/include "
-                               "-Iboost_1_63_0_install/include");
+                               "-Iboost_1_65_0_install/include");
     builder->set_cpp_flags(
         "-Wall -Wextra -std=c++1z -march=native -mtune=native "
         "-O3 -ffast-math -fopenmp -fPIC");

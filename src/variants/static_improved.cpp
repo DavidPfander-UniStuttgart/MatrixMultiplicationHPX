@@ -265,7 +265,7 @@ std::vector<double> static_improved::matrix_multiply() {
             hpx::async<recursive::distribute_recursively_action>(
                 recursive.get_id(), w.x, w.y, w.N);
         hpx::future<void> g =
-            f.then(hpx::util::unwrapped([=](std::vector<double> submatrix) {
+            f.then(hpx::util::unwrapping([=](std::vector<double> submatrix) {
               this->insert_submatrix(submatrix, w);
             }));
 
