@@ -25,7 +25,7 @@ dependencies:
         - "/home/ubuntu/boost_1_65"
 compile:
     override:
-        - ./build_matrix_multiplication_tuner.sh circle
+        - ./build-all.sh circle
 test:
     override:
         - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/boost_1_63_0_install/lib:/home/ubuntu/hpx_install/lib:/home/ubuntu/Vc_install/lib
