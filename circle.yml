@@ -1,8 +1,7 @@
 machine:
     environment:
         Vc_ROOT: /home/ubuntu/Vc_install
-        Boost_ROOT: /home/ubuntu/boost_1_63_0_install
-        BOOST_ROOT: /home/ubuntu/boost_1_63_0_install
+        BOOST_ROOT: /home/ubuntu/boost_install
         HPX_ROOT: /home/ubuntu/hpx_install
         AutoTuneTMP_ROOT: /home/ubuntu/AutoTuneTMP
         MatrixMultiplicationHPX_ROOT: /home/ubuntu/MatrixMultiplicationHPX_install
@@ -22,12 +21,12 @@ dependencies:
         - "/home/ubuntu/Vc"
         - "/home/ubuntu/hpx"
         - "/home/ubuntu/AutoTuneTMP"
-        - "/home/ubuntu/boost_1_65"
+        - "/home/ubuntu/boost"
 compile:
     override:
         - ./build-all.sh circle
 test:
     override:
-        - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/boost_1_63_0_install/lib:/home/ubuntu/hpx_install/lib:/home/ubuntu/Vc_install/lib
+        - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/boost_install/lib:/home/ubuntu/hpx_install/lib:/home/ubuntu/Vc_install/lib
         - cd build && ./matrix_multiply --algorithm=combined --n-value=4 --transposed=false --hpx:bind=none
 
