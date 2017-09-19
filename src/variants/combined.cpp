@@ -19,9 +19,13 @@ AUTOTUNE_DEFINE_KERNEL(std::vector<double>(std::size_t, std::size_t,
                        combined_kernel)
 
 // best parameters
-#define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-#define L3_Y 256
-#define L3_K_STEP 256
+// #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
+// #define L3_Y 256
+// #define L3_K_STEP 256
+#define L3_X 70 // max 2 L3 par set to 1024 (rest 512)
+#define L3_Y 64
+#define L3_K_STEP 128
+
 #define L2_X 70 // max 2 L2 par set to 128 (rest 64)
 #define L2_Y 64
 #define L2_K_STEP 128
@@ -126,24 +130,18 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     builder->set_verbose(true);
     builder->set_include_paths("-IAutoTuneTMP/src -Isrc/variants/ "
                                "-IVc_install/include "
-                               "-Iboost_1_65_0_install/include");
+                               "-Iboost_install/include");
     builder->set_cpp_flags(
         "-Wall -Wextra -std=c++1z -march=native -mtune=native "
         "-O3 -ffast-math -fopenmp -fPIC");
     builder->set_link_flags("-std=c++1z -shared");
 
-    // builder->set_include_paths(
-    //     "-I ../AutoTuneTMP/src -I src/variants/ -I "
-    //     "-std=c++14 -march=native -mtune=native -O3 -ffast-math "
-    //     "-I../Vc_install/include "
-    //     "-I../boost_1_63_0_install/include");
-
-    //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-    autotune::combined_kernel.add_parameter("L3_X", {"420"});
-    // #define L3_Y 256
-    autotune::combined_kernel.add_parameter("L3_Y", {"256"});
-    //#define L3_K_STEP 256
-    autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
+    // //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
+    // autotune::combined_kernel.add_parameter("L3_X", {"420"});
+    // // #define L3_Y 256
+    // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
+    // //#define L3_K_STEP 256
+    // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
     //#define L2_X 70 // max 2 L2 par set to 128 (rest 64)
     autotune::combined_kernel.add_parameter("L2_X", {"70"});
     // #define L2_Y 64

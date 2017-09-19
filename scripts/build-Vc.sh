@@ -2,9 +2,8 @@
 set -x
 set -e
 
-if [[ ! $PARALLEL_BUILD ]]; then
-    echo "Vc: PARALLEL_BUILD not set, defaulting to 4"
-    export PARALLEL_BUILD=4
+if [ -z ${matrix_multiplication_source_me_sourced} ] ; then
+    source source-me.sh
 fi
 
 if [ ! -d "Vc/" ]; then

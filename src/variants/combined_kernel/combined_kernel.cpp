@@ -6,6 +6,8 @@
 #include <Vc/Vc>
 using Vc::double_v;
 
+#include "../util/util.hpp"
+
 #include "opttmp/loop/unroll_loop.hpp"
 #include "opttmp/memory_layout/tile_array.hpp"
 #include "parameters.hpp"
@@ -13,9 +15,13 @@ using Vc::double_v;
 #include <vector>
 
 // not tuned for now
-#define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-#define L3_Y 256
-#define L3_K_STEP 256
+// #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
+// #define L3_Y 256
+// #define L3_K_STEP 256
+
+#define L3_X 70 // max 2 L3 par set to 1024 (rest 512)
+#define L3_Y 64
+#define L3_K_STEP 128
 
 // #define Y_REG 8
 constexpr size_t X_REG = 5;                    // cannot be changed!
@@ -365,15 +371,19 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
   // tiling_spec[0].stride = X_size;
   // tiling_spec[1].tile_size_dir = L1_K_STEP;
   // tiling_spec[1].stride = K_size;
-  // tiling_spec_C[0].tile_size_dir = L1_X;
-  // tiling_spec_C[0].stride = X_size;
-  // tiling_spec_C[1].tile_size_dir = L1_Y;
-  // tiling_spec_C[1].stride = Y_size;
-  tiling_spec_C[0].tile_size_dir = L1_Y;
-  tiling_spec_C[0].stride = Y_size;  
-  tiling_spec_C[1].tile_size_dir = L1_X;
-  tiling_spec_C[1].stride = X_size;
+  tiling_spec_C[0].tile_size_dir = L1_X;
+  tiling_spec_C[0].stride = X_size;
+  tiling_spec_C[1].tile_size_dir = L1_Y;
+  tiling_spec_C[1].stride = Y_size;
+  // tiling_spec_C[0].tile_size_dir = L1_Y;
+  // tiling_spec_C[0].stride = Y_size;
+  // tiling_spec_C[1].tile_size_dir = L1_X;
+  // tiling_spec_C[1].stride = X_size;
 
+  // std::cout << "X_size: " << X_size << std::endl;
+  // std::cout << "Y_size: " << Y_size << std::endl;
+  // std::cout << "C_padded:" << std::endl;
+  // print_matrix_host(Y_size, X_size, C_padded);
 
   std::vector<double, boost::alignment::aligned_allocator<double, 32>>
       C_untiled = memory_layout::undo_tiling<2>(C_padded, tiling_spec_C);
@@ -381,22 +391,26 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
   // std::vector<double> C_return(N_org * N_org);
   // std::copy(C_untiled.begin(), C_untiled.end(), C_return.begin());
 
-  std::cout << "C_untiled.size(): " << C_untiled.size() << std::endl;
+  // std::cout << "C_untiled:" << std::endl;
+  // print_matrix_host(Y_size, X_size, C_untiled);
 
   std::vector<double> C_return(N_org * N_org);
-  std::cout << "C_return.size(): " << C_untiled.size() << std::endl;
   for (size_t x = 0; x < N_org; x++) {
     for (size_t y = 0; y < N_org; y++) {
-      C_return.at(x * N_org + y) = C_untiled.at(x * Y_size + y);
+      C_return.at(y * N_org + x) = C_untiled.at(y * X_size + x);
     }
   }
+
+  // std::cout << "C_return:" << std::endl;
+  // print_matrix_host(N_org, C_return);
+  
   // std::fill(C_return.begin(), C_return.end(), 0.0);
 
   // for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
   //   for (size_t l1_y = 0; l1_y < Y_size / L1_Y; l1_y += 1) {
+  //     // look up submatrix
   //     size_t base_index =
-  //         (L1_X * L1_Y) * (l1_x * (Y_size / L1_Y) + l1_y); // look up
-  //         submatrix
+  //         (L1_X * L1_Y) * (l1_x * (Y_size / L1_Y) + l1_y);
   //     for (size_t x = 0; x < L1_X; x++) {
   //       for (size_t y = 0; y < L1_Y; y++) {
   //         // skip padding

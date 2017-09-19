@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 128;
+  std::uint64_t N = 16;
 
   bool transposed = false;
   size_t repetitions = 7;
@@ -82,40 +82,13 @@ int main(int argc, char **argv) {
   auto builder =
       autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
   builder->set_verbose(true);
-  // builder->set_include_paths(
-  //     "-I /home/winter/git/AutoTuneTMP/src -I src/variants/ -I "
-  //     "/home/winter/hpx_install_with_symbols/include -I "
-  //     "/home/winter/hpx_install_with_symbols/include/hpx/external -DNDEBUG "
-  //     "-Wall -Wextra -std=c++14 -march=native -mtune=native -O3 -ffast-math "
-  //     "-DHPX_APPLICATION_EXPORTS -fopenmp "
-  //     "-DHPX_ENABLE_ASSERT_HANDLER -I/home/winter/Vc_head_install/include "
-  //     "-I/home/winter/boost_1_63_0_install/include");
 
   builder->set_include_paths("-IAutoTuneTMP/src -Isrc/variants/ "
                              "-IVc_install/include "
-                             "-Iboost_1_63_0_install/include");
+                             "-Iboost_install/include");
   builder->set_cpp_flags("-Wall -Wextra -std=c++1z -march=native -mtune=native "
                          "-O3 -g -ffast-math -fopenmp -fPIC");
   builder->set_link_flags("-std=c++1z -shared -g");
-
-  // builder->set_include_paths(
-  //     "-I ../AutoTuneTMP/src -Isrc/variants/ "
-  //     "-Wall -Wextra -std=c++1z -march=native -mtune=native -O3 -ffast-math "
-  //     " -fopenmp "
-  //     " -I../Vc_install/include "
-  //     "-I../boost_1_63_0_install/include");
-
-  //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-  // #define L3_Y 256
-  // #define L3_K_STEP 256
-  // #define L2_X 70 // max 2 L2 par set to 128 (rest 64)
-  // #define L2_Y 64
-  // #define L2_K_STEP 128
-  // #define L1_X 35 // max all L1 par set to 32
-  // #define L1_Y 16
-  // #define L1_K_STEP 64
-  // #define X_REG 5 // cannot be changed!
-  // #define Y_REG 8 // cannot be changed!
 
   // autotune::combined_kernel.add_parameter("L3_X", {"210", "420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"128", "256"});

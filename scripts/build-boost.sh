@@ -2,23 +2,23 @@
 set -x
 set -e
 
-if [[ ! $PARALLEL_BUILD ]]; then
-    echo "boost: PARALLEL_BUILD not set, defaulting to 2"
-    export PARALLEL_BUILD=2
+if [ -z ${matrix_multiplication_source_me_sourced} ] ; then
+    source source-me.sh
 fi
 
-if [ ! -d "boost_1_65_0/" ]; then
+if [ ! -d "boost" ]; then
     wget 'http://downloads.sourceforge.net/project/boost/boost/1.65.0/boost_1_65_0.tar.bz2'
     tar xf boost_1_65_0.tar.bz2
+    mv boost_1_65_0 boost
 
     # configure for gcc 7
-    echo "using gcc : 7.1 : /usr/bin/g++-7  ; " > boost_1_65_0/tools/build/src/user-config.jam
+    echo "using gcc : 7.1 : /usr/bin/g++-7  ; " > boost/tools/build/src/user-config.jam
 fi
 
-if [ ! -d "boost_1_65_0_install/" ]; then
+if [ ! -d "boost_install/" ]; then
     echo "building boost"
-    cd boost_1_65_0
-    ./bootstrap.sh --prefix="$Boost_ROOT" > bootstrap_boost.log 2>&1
+    cd boost
+    ./bootstrap.sh --prefix="$BOOST_ROOT" > bootstrap_boost.log 2>&1
     #-d2: more verbose output
     # not using a logfile as Circle CI complains about no output for 10 minutes
     # > b2_boost.log 2>&1

@@ -2,9 +2,8 @@
 set -x
 set -e
 
-if [[ ! $PARALLEL_BUILD ]]; then
-    echo "MatrixMultiplicationHPX: PARALLEL_BUILD not set, defaulting to 1"
-    export PARALLEL_BUILD=1
+if [ -z ${matrix_multiplication_source_me_sourced} ] ; then
+    source source-me.sh
 fi
 
 # git pull
