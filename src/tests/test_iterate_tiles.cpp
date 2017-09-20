@@ -5,6 +5,8 @@
 #include "opttmp/memory_layout/tile_iterator.hpp"
 #include "opttmp/memory_layout/tile_view.hpp"
 
+#include "../util/util.hpp"
+
 BOOST_AUTO_TEST_SUITE(test_iterate_tiles)
 
 BOOST_AUTO_TEST_CASE(iterate) {
@@ -123,7 +125,71 @@ BOOST_AUTO_TEST_CASE(tile_untile) {
 
   for (size_t x = 0; x < N; x++) {
     for (size_t y = 0; y < N; y++) {
-        BOOST_CHECK(m[x * N + y] - untiled_matrix[x * N + y] < 1E-15);
+      BOOST_CHECK(m[y * N + x] - untiled_matrix[y * N + x] < 1E-15);
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(tile_untile_wide_X) {
+  const size_t X = 10;
+  const size_t Y = 16;
+  std::vector<double> m(X * Y);
+  std::for_each(m.begin(), m.end(), [](double &element) {
+    static int counter = 0;
+    element = counter;
+    counter++;
+  });
+
+  std::vector<memory_layout::tiling_info_dim> tiling_info(2);
+  tiling_info[0].tile_size_dir = 2;
+  tiling_info[0].stride = Y;
+  tiling_info[1].tile_size_dir = 5;
+  tiling_info[1].stride = X;
+
+  std::vector<double> tiled_matrix =
+      memory_layout::make_tiled<2>(m, tiling_info);
+
+  std::vector<double> untiled_matrix =
+      memory_layout::undo_tiling<2>(tiled_matrix, tiling_info);
+
+  for (size_t x = 0; x < X; x++) {
+    for (size_t y = 0; y < Y; y++) {
+      BOOST_CHECK(m[y * X + x] - untiled_matrix[y * X + x] < 1E-15);
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(tile_untile_wide_Y) {
+  const size_t X = 10;
+  const size_t Y = 32;
+  std::vector<double> m(X * Y);
+  std::for_each(m.begin(), m.end(), [](double &element) {
+    static int counter = 0;
+    element = counter;
+    counter++;
+  });
+
+  std::vector<memory_layout::tiling_info_dim> tiling_info(2);
+  tiling_info[0].tile_size_dir = 2;
+  tiling_info[0].stride = Y;
+  tiling_info[1].tile_size_dir = 5;
+  tiling_info[1].stride = X;
+
+  std::cout << "m untiled:" << std::endl;
+  print_matrix_host(Y, X, m);
+
+  std::vector<double> tiled_matrix =
+      memory_layout::make_tiled<2>(m, tiling_info);
+
+  std::cout << "m tiled:" << std::endl;
+  print_matrix_host(Y, X, tiled_matrix);
+
+  std::vector<double> untiled_matrix =
+      memory_layout::undo_tiling<2>(tiled_matrix, tiling_info);
+
+  for (size_t x = 0; x < X; x++) {
+    for (size_t y = 0; y < Y; y++) {
+      BOOST_CHECK(m[y * X + x] - untiled_matrix[y * X + x] < 1E-15);
     }
   }
 }

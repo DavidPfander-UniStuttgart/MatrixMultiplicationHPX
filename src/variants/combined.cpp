@@ -18,32 +18,12 @@ AUTOTUNE_DEFINE_KERNEL(std::vector<double>(std::size_t, std::size_t,
                                            double &),
                        combined_kernel)
 
-// best parameters
-// #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-// #define L3_Y 256
-// #define L3_K_STEP 256
-#define L3_X 70 // max 2 L3 par set to 1024 (rest 512)
-#define L3_Y 64
-#define L3_K_STEP 128
-
-#define L2_X 70 // max 2 L2 par set to 128 (rest 64)
-#define L2_Y 64
-#define L2_K_STEP 128
-#define L1_X 35 // max all L1 par set to 32
-#define L1_Y 16
-#define L1_K_STEP 64
-#define X_REG 5 // cannot be changed!
-#define Y_REG 8 // cannot be changed!
-
-// #define L3_X 5 // max all L1 par set to 32
-// #define L3_Y 8
-// #define L3_K_STEP 8
-// #define L2_X 5 // max all L1 par set to 32
-// #define L2_Y 8
-// #define L2_K_STEP 8
-// #define L1_X 5 // max all L1 par set to 32
-// #define L1_Y 8
-// #define L1_K_STEP 8
+// #define L2_X 70 // max 2 L2 par set to 128 (rest 64)
+// #define L2_Y 64
+// #define L2_K_STEP 128
+// #define L1_X 35 // max all L1 par set to 32
+// #define L1_Y 16
+// #define L1_K_STEP 64
 // #define X_REG 5 // cannot be changed!
 // #define Y_REG 8 // cannot be changed!
 
@@ -51,29 +31,11 @@ using namespace index_iterator;
 
 namespace combined {
 
-void combined::verify_blocking_setup() {
-  if (!((L2_X % L1_X == 0) && (L3_X % L2_X == 0))) {
-    std::cout << "error: x direction blocking not set up correctly"
-              << std::endl;
-    throw;
-  }
-  if (!((L2_Y % L1_Y == 0) && (L3_Y % L2_Y == 0))) {
-    std::cout << "error: y direction blocking not set up correctly"
-              << std::endl;
-    throw;
-  }
-  if (!((L2_K_STEP % L1_K_STEP == 0) && (L3_K_STEP % L2_K_STEP == 0))) {
-    std::cout << "error: k direction blocking not set up correctly"
-              << std::endl;
-    throw;
-  }
-}
-
 combined::combined(size_t N, std::vector<double> &A_org,
                    std::vector<double> &B_org, uint64_t repetitions,
                    uint64_t verbose)
     : N_org(N), A(A_org), B(B_org), repetitions(repetitions), verbose(verbose) {
-  verify_blocking_setup();
+  // verify_blocking_setup();
 
   // k direction padding
   size_t k_pad = L3_K_STEP - (N % L3_K_STEP);
@@ -133,29 +95,28 @@ std::vector<double> combined::matrix_multiply(double &duration) {
                                "-Iboost_install/include");
     builder->set_cpp_flags(
         "-Wall -Wextra -std=c++1z -march=native -mtune=native "
-        "-O3 -ffast-math -fopenmp -fPIC");
+        "-O3 -g -ffast-math -fopenmp -fPIC");
     builder->set_link_flags("-std=c++1z -shared");
 
-    // //  #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
+    // max 2 L3 par set to 1024 (rest 512)
+    // static parameters, not tuned
     // autotune::combined_kernel.add_parameter("L3_X", {"420"});
-    // // #define L3_Y 256
     // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
-    // //#define L3_K_STEP 256
     // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-    //#define L2_X 70 // max 2 L2 par set to 128 (rest 64)
+
+    std::string L3_X_s = std::to_string(L3_X);
+    std::string L3_Y_s = std::to_string(L3_Y);
+    std::string L3_K_STEP_s = std::to_string(L3_K_STEP);
+    autotune::combined_kernel.add_parameter("L3_X", {L3_X_s});
+    autotune::combined_kernel.add_parameter("L3_Y", {L3_Y_s});
+    autotune::combined_kernel.add_parameter("L3_K_STEP", {L3_K_STEP_s});
+
     autotune::combined_kernel.add_parameter("L2_X", {"70"});
-    // #define L2_Y 64
     autotune::combined_kernel.add_parameter("L2_Y", {"64"});
-    // #define L2_K_STEP 128
     autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
-    // #define L1_X 35 // max all L1 par set to 32
     autotune::combined_kernel.add_parameter("L1_X", {"35"});
-    // #define L1_Y 16
     autotune::combined_kernel.add_parameter("L1_Y", {"16"});
-    // #define L1_K_STEP 64
     autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
-    // #define X_REG 5 // cannot be changed!
-    // #define Y_REG 8 // cannot be changed!
 
     std::vector<size_t> parameter_indices(
         autotune::combined_kernel.get_parameters().size(), 0);
@@ -165,6 +126,10 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     autotune::combined_kernel.create_parameter_file(parameter_indices);
 
     autotune::combined_kernel.compile();
+
+    if (!autotune::combined_kernel.is_valid_parameter_combination()) {
+      throw;
+    }
 
     std::cout << "compile finished!" << std::endl;
   } else {

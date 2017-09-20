@@ -104,9 +104,9 @@ int main(int argc, char **argv) {
   // autotune::combined_kernel.add_parameter("L1_K_STEP",
   //                                         {"1", "4", "8", "16", "32"});
 
-  // autotune::combined_kernel.add_parameter("L3_X", {"420"});
-  // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
-  // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
+  autotune::combined_kernel.add_parameter("L3_X", {"420"});
+  autotune::combined_kernel.add_parameter("L3_Y", {"256"});
+  autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
   
   autotune::combined_kernel.add_parameter("L2_X", {"70"});
   autotune::combined_kernel.add_parameter("L2_Y", {"64"});
@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
   std::cout
       << "----------------------- starting tuning  -----------------------"
       << std::endl;
-  std::vector<size_t> line_search_initial_guess = {0, 0, 0, 0, 0, 0};
+  std::vector<size_t> line_search_initial_guess = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   size_t line_search_steps = 1;
   autotune::tuners::line_search<decltype(autotune::combined_kernel)> tuner(
       autotune::combined_kernel, line_search_steps, 1, line_search_initial_guess);

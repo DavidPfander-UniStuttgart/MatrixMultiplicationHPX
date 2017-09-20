@@ -17,6 +17,7 @@
 #include "test_hpx_main.hpp"
 #include "util/util.hpp"
 
+#include <iomanip>
 
 BOOST_AUTO_TEST_SUITE(test_combined)
 
@@ -56,15 +57,18 @@ BOOST_AUTO_TEST_CASE(apply_inverse_2) {
   // Wait for hpx::finalize being called.
   hpx::stop();
 
-  // std::cout << "N: " << N << std::endl;
-  // std::cout << "C:" << std::endl;
-  // print_matrix_host(N, C);
+  std::cout << "N: " << N << std::endl;
+  std::cout << "C:" << std::endl;
+  print_matrix_host(N, C);
 
-  // std::cout << "C_reference:" << std::endl;
-  // print_matrix_host(N, C_reference);
+  std::cout << "C_reference:" << std::endl;
+  print_matrix_host(N, C_reference);
 
   for (size_t i = 0; i < N * N; i++) {
-    BOOST_CHECK_CLOSE(C[i], C_reference[i], 1E-10);
+    std::cout << std::fixed << std::setw(30) << std::setprecision(30)
+              << std::setfill('0') << "i: " << i << " C: " << C[i]
+              << " C_reference: " << C_reference[i] << std::endl;
+    BOOST_CHECK_EQUAL(C[i], C_reference[i]);
   }
 }
 

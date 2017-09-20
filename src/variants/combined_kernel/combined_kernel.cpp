@@ -19,10 +19,6 @@ using Vc::double_v;
 // #define L3_Y 256
 // #define L3_K_STEP 256
 
-#define L3_X 70 // max 2 L3 par set to 1024 (rest 512)
-#define L3_Y 64
-#define L3_K_STEP 128
-
 // #define Y_REG 8
 constexpr size_t X_REG = 5;                    // cannot be changed!
 constexpr size_t Y_REG = 2 * double_v::size(); // cannot be changed!
@@ -101,8 +97,15 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
       A_trans_untiled[i * X_size + j] = A[j * K_size + i];
     }
   }
+
+  // std::cout << "A_trans_untiled:" << std::endl;
+  // print_matrix_host(K_size, X_size, A_trans_untiled);
+
   std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans =
       memory_layout::make_tiled<2>(A_trans_untiled, tiling_spec_A_trans);
+
+  // std::cout << "A_trans (tiled):" << std::endl;
+  // print_matrix_host(K_size, X_size, A_trans);
 
   // // don't need padding for B, no dependency to row count
   // std::vector<double, boost::alignment::aligned_allocator<double, 32>>
@@ -132,11 +135,16 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
   tiling_spec_B[1].tile_size_dir = L1_Y;
   tiling_spec_B[1].stride = Y_size;
 
+  // because of allocator
   std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_copy(
       B.size());
   std::copy(B.begin(), B.end(), B_copy.begin());
+
   std::vector<double, boost::alignment::aligned_allocator<double, 32>>
       B_padded = memory_layout::make_tiled<2>(B_copy, tiling_spec_B);
+
+  // std::cout << "B_padded (tiled):" << std::endl;
+  // print_matrix_host(K_size, Y_size, B_padded);
 
   // std::vector<size_t> min = {0, 0, 0};
   // std::vector<size_t> max = {X_size, Y_size, K_size};
@@ -371,28 +379,32 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
   // tiling_spec[0].stride = X_size;
   // tiling_spec[1].tile_size_dir = L1_K_STEP;
   // tiling_spec[1].stride = K_size;
-  tiling_spec_C[0].tile_size_dir = L1_X;
-  tiling_spec_C[0].stride = X_size;
-  tiling_spec_C[1].tile_size_dir = L1_Y;
-  tiling_spec_C[1].stride = Y_size;
-  // tiling_spec_C[0].tile_size_dir = L1_Y;
-  // tiling_spec_C[0].stride = Y_size;
-  // tiling_spec_C[1].tile_size_dir = L1_X;
-  // tiling_spec_C[1].stride = X_size;
+  // tiling_spec_C[0].tile_size_dir = L1_X;
+  // tiling_spec_C[0].stride = X_size;
+  // tiling_spec_C[1].tile_size_dir = L1_Y;
+  // tiling_spec_C[1].stride = Y_size;
+  tiling_spec_C[0].tile_size_dir = L1_Y;
+  tiling_spec_C[0].stride = Y_size;
+  tiling_spec_C[1].tile_size_dir = L1_X;
+  tiling_spec_C[1].stride = X_size;
 
-  // std::cout << "X_size: " << X_size << std::endl;
-  // std::cout << "Y_size: " << Y_size << std::endl;
-  // std::cout << "C_padded:" << std::endl;
-  // print_matrix_host(Y_size, X_size, C_padded);
+  std::cout << "X_size: " << X_size << std::endl;
+  std::cout << "Y_size: " << Y_size << std::endl;
+  std::cout << "C_padded (tiled):" << std::endl;
+  print_matrix_host(Y_size, X_size, C_padded);
+
+  std::cout << "before undo_tiling" << std::endl;
 
   std::vector<double, boost::alignment::aligned_allocator<double, 32>>
       C_untiled = memory_layout::undo_tiling<2>(C_padded, tiling_spec_C);
 
+  std::cout << "after undo_tiling" << std::endl;
+
   // std::vector<double> C_return(N_org * N_org);
   // std::copy(C_untiled.begin(), C_untiled.end(), C_return.begin());
 
-  // std::cout << "C_untiled:" << std::endl;
-  // print_matrix_host(Y_size, X_size, C_untiled);
+  std::cout << "C_untiled:" << std::endl;
+  print_matrix_host(Y_size, X_size, C_untiled);
 
   std::vector<double> C_return(N_org * N_org);
   for (size_t x = 0; x < N_org; x++) {
@@ -403,7 +415,7 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
 
   // std::cout << "C_return:" << std::endl;
   // print_matrix_host(N_org, C_return);
-  
+
   // std::fill(C_return.begin(), C_return.end(), 0.0);
 
   // for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {

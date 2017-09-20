@@ -16,6 +16,14 @@ AUTOTUNE_DECLARE_KERNEL(std::vector<double>(std::size_t, std::size_t,
 
 namespace combined {
 
+// max 2 L3 par set to 1024 (rest 512)
+// constexpr uint64_t L3_X = 420;
+// constexpr uint64_t L3_Y = 256;
+// constexpr uint64_t L3_K_STEP = 256;
+constexpr uint64_t L3_X = 70;
+constexpr uint64_t L3_Y = 64;
+constexpr uint64_t L3_K_STEP = 128;
+
 class combined {
 
 public:
@@ -29,8 +37,6 @@ public:
 
   uint64_t repetitions;
   uint64_t verbose;
-
-  void verify_blocking_setup();
 
 public:
   combined(size_t N, std::vector<double> &A, std::vector<double> &B,
