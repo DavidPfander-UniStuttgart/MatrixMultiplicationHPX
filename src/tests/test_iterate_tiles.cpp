@@ -194,4 +194,50 @@ BOOST_AUTO_TEST_CASE(tile_untile_wide_Y) {
   }
 }
 
+BOOST_AUTO_TEST_CASE(untile_4_6) {
+  const size_t cols = 4;
+  const size_t rows = 6;
+  std::vector<double> tiled = {0.0,  1.0,  4.0,  5.0,  8.0,  9.0,  2.0,  3.0,
+                               6.0,  7.0,  10.0, 11.0, 12.0, 13.0, 16.0, 17.0,
+                               20.0, 21.0, 14.0, 15.0, 18.0, 19.0, 22.0, 23.0};
+
+  // std::cout << "tiled:" << std::endl;
+  // print_matrix_host(rows, cols, tiled);
+
+  std::vector<double> untiled_ref(rows * cols);
+  std::for_each(untiled_ref.begin(), untiled_ref.end(), [](double &element) {
+    static int counter = 0;
+    element = counter;
+    counter++;
+  });
+
+  std::vector<memory_layout::tiling_info_dim> tiling_info(2);
+  tiling_info[0].tile_size_dir = 3;
+  tiling_info[0].stride = rows;
+  tiling_info[1].tile_size_dir = 2;
+  tiling_info[1].stride = cols;
+
+  // std::cout << "untiled_ref:" << std::endl;
+  // print_matrix_host(rows, cols, untiled_ref);
+
+  // std::vector<double> tiled_matrix =
+  //     memory_layout::make_tiled<2>(m, tiling_info);
+
+  // std::cout << "m tiled:" << std::endl;
+  // print_matrix_host(Y, X, tiled_matrix);
+
+  std::vector<double> untiled_matrix =
+      memory_layout::undo_tiling<2>(tiled, tiling_info);
+
+  // std::cout << "untiled_matrix:" << std::endl;
+  // print_matrix_host(rows, cols, untiled_matrix);
+
+  for (size_t x = 0; x < rows; x++) {
+    for (size_t y = 0; y < cols; y++) {
+      BOOST_CHECK(untiled_ref[y * cols + x] - untiled_matrix[y * cols + x] <
+                  1E-15);
+    }
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

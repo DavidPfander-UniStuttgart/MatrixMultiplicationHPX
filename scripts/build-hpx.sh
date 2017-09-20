@@ -12,11 +12,10 @@ if [ ! -d "hpx/" ]; then
     # git checkout 1.0.0
     # cd ..
 fi
-# else
-#     cd hpx
-#     git pull
-#     cd ..
-# fi
+
+cd hpx
+git pull
+cd ..
 
 mkdir -p hpx/build
 cd hpx/build

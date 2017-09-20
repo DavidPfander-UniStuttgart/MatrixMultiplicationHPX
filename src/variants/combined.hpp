@@ -20,9 +20,12 @@ namespace combined {
 // constexpr uint64_t L3_X = 420;
 // constexpr uint64_t L3_Y = 256;
 // constexpr uint64_t L3_K_STEP = 256;
-constexpr uint64_t L3_X = 70;
-constexpr uint64_t L3_Y = 64;
-constexpr uint64_t L3_K_STEP = 128;
+constexpr uint64_t L3_X = 5;
+constexpr uint64_t L3_Y = 8;
+constexpr uint64_t L3_K_STEP = 1;
+// constexpr uint64_t L3_X = 5;
+// constexpr uint64_t L3_Y = 8;
+// constexpr uint64_t L3_K_STEP = 1;
 
 class combined {
 

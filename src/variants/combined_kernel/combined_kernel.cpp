@@ -391,7 +391,7 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
   std::cout << "X_size: " << X_size << std::endl;
   std::cout << "Y_size: " << Y_size << std::endl;
   std::cout << "C_padded (tiled):" << std::endl;
-  print_matrix_host(Y_size, X_size, C_padded);
+  print_matrix_host(X_size, Y_size, C_padded);
 
   std::cout << "before undo_tiling" << std::endl;
 
@@ -404,12 +404,12 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
   // std::copy(C_untiled.begin(), C_untiled.end(), C_return.begin());
 
   std::cout << "C_untiled:" << std::endl;
-  print_matrix_host(Y_size, X_size, C_untiled);
+  print_matrix_host(X_size, Y_size, C_untiled);
 
   std::vector<double> C_return(N_org * N_org);
-  for (size_t x = 0; x < N_org; x++) {
-    for (size_t y = 0; y < N_org; y++) {
-      C_return.at(y * N_org + x) = C_untiled.at(y * X_size + x);
+  for (size_t r = 0; r < N_org; r++) {
+    for (size_t c = 0; c < N_org; c++) {
+      C_return.at(r * N_org + c) = C_untiled.at(r * Y_size + c);
     }
   }
 

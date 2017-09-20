@@ -111,12 +111,19 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     autotune::combined_kernel.add_parameter("L3_Y", {L3_Y_s});
     autotune::combined_kernel.add_parameter("L3_K_STEP", {L3_K_STEP_s});
 
-    autotune::combined_kernel.add_parameter("L2_X", {"70"});
-    autotune::combined_kernel.add_parameter("L2_Y", {"64"});
-    autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
-    autotune::combined_kernel.add_parameter("L1_X", {"35"});
-    autotune::combined_kernel.add_parameter("L1_Y", {"16"});
-    autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
+    // autotune::combined_kernel.add_parameter("L2_X", {"70"});
+    // autotune::combined_kernel.add_parameter("L2_Y", {"64"});
+    // autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
+    // autotune::combined_kernel.add_parameter("L1_X", {"35"});
+    // autotune::combined_kernel.add_parameter("L1_Y", {"16"});
+    // autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
+
+    autotune::combined_kernel.add_parameter("L2_X", {"5"});
+    autotune::combined_kernel.add_parameter("L2_Y", {"8"});
+    autotune::combined_kernel.add_parameter("L2_K_STEP", {"1"});
+    autotune::combined_kernel.add_parameter("L1_X", {"5"});
+    autotune::combined_kernel.add_parameter("L1_Y", {"8"});
+    autotune::combined_kernel.add_parameter("L1_K_STEP", {"1"});
 
     std::vector<size_t> parameter_indices(
         autotune::combined_kernel.get_parameters().size(), 0);
