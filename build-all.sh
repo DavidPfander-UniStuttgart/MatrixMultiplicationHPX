@@ -11,6 +11,9 @@ elif [ "$1" = "circle" ]; then
     export MATRIX_MULTIPLICATION_TARGET="circle"
 fi
 
+# need this, otherwise have to push arguments to called scripts
+source source-me.sh
+
 ./scripts/build-jemalloc.sh
 ./scripts/build-boost.sh
 ./scripts/build-Vc.sh

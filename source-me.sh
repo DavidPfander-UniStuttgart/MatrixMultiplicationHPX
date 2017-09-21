@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -z "$1" || $1 != "circle" ]]; then
+if [[ -z "$1" || "$1" != "circle" ]]; then
     #use all available CPUs
     export PARALLEL_BUILD=$((`lscpu -p=cpu | wc -l`-4))
 else
