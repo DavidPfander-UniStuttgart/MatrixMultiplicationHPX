@@ -31,3 +31,7 @@ export JEMALLOC_ROOT=$PWD/jemalloc_install
 export LD_LIBRARY_PATH=$PWD/boost_install/lib:$PWD/hpx_install/lib:$PWD/Vc_install/lib
 
 export matrix_multiplication_source_me_sourced=1
+
+if [[ ! -z "$1" && "$1" = "circle" ]]; then
+    export PATH=/home/ubuntu/cmake/bin:$PATH
+fi

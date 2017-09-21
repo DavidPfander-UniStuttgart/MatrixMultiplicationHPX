@@ -14,6 +14,10 @@ fi
 # need this, otherwise have to push arguments to called scripts
 source source-me.sh
 
+if [[ ! -z "$1" && "$1" = "circle" ]]; then
+    ./scripts/build-cmake.sh
+fi
+
 ./scripts/build-jemalloc.sh
 ./scripts/build-boost.sh
 ./scripts/build-Vc.sh
