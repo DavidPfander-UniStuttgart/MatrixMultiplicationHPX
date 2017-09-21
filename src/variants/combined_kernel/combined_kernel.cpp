@@ -383,28 +383,29 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
   // tiling_spec_C[0].stride = X_size;
   // tiling_spec_C[1].tile_size_dir = L1_Y;
   // tiling_spec_C[1].stride = Y_size;
-  tiling_spec_C[0].tile_size_dir = L1_Y;
-  tiling_spec_C[0].stride = Y_size;
-  tiling_spec_C[1].tile_size_dir = L1_X;
-  tiling_spec_C[1].stride = X_size;
+  tiling_spec_C[0].tile_size_dir = L1_X;
+  tiling_spec_C[0].stride = X_size;
+  tiling_spec_C[1].tile_size_dir = L1_Y;
+  tiling_spec_C[1].stride = Y_size;
 
-  std::cout << "X_size: " << X_size << std::endl;
-  std::cout << "Y_size: " << Y_size << std::endl;
-  std::cout << "C_padded (tiled):" << std::endl;
-  print_matrix_host(X_size, Y_size, C_padded);
 
-  std::cout << "before undo_tiling" << std::endl;
+  // std::cout << "X_size: " << X_size << std::endl;
+  // std::cout << "Y_size: " << Y_size << std::endl;
+  // std::cout << "C_padded (tiled):" << std::endl;
+  // print_matrix_host(X_size, Y_size, C_padded);
+
+  // std::cout << "before undo_tiling" << std::endl;
 
   std::vector<double, boost::alignment::aligned_allocator<double, 32>>
       C_untiled = memory_layout::undo_tiling<2>(C_padded, tiling_spec_C);
 
-  std::cout << "after undo_tiling" << std::endl;
+  // std::cout << "after undo_tiling" << std::endl;
 
   // std::vector<double> C_return(N_org * N_org);
   // std::copy(C_untiled.begin(), C_untiled.end(), C_return.begin());
 
-  std::cout << "C_untiled:" << std::endl;
-  print_matrix_host(X_size, Y_size, C_untiled);
+  // std::cout << "C_untiled:" << std::endl;
+  // print_matrix_host(X_size, Y_size, C_untiled);
 
   std::vector<double> C_return(N_org * N_org);
   for (size_t r = 0; r < N_org; r++) {
