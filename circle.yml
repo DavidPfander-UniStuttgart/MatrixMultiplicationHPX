@@ -10,9 +10,9 @@ machine:
 dependencies:
     pre:
         - cat /proc/cpuinfo
-        - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
+        - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         - sudo apt-get update
-        - sudo apt-get install -y gcc-7 g++-7 cmake libgoogle-perftools-dev libhwloc-dev
+        - sudo apt-get install -y gcc-7 g++-7 libhwloc-dev
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 10
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 10
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 20
@@ -22,6 +22,7 @@ dependencies:
         - "/home/ubuntu/hpx"
         - "/home/ubuntu/AutoTuneTMP"
         - "/home/ubuntu/boost"
+        - "/home/ubuntu/cmake"
 compile:
     override:
         - ./build-all.sh circle
