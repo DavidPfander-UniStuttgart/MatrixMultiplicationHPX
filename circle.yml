@@ -12,7 +12,8 @@ dependencies:
         - cat /proc/cpuinfo
         - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         - sudo apt-get update
-        - sudo apt-get install -y gcc-7 g++-7 libhwloc-dev
+        - if [[ ! -e deb_cache ]]; then mkdir deb_cache; cd deb_cache; sudo apt-get download -y gcc-7 g++-7 libhwloc-dev; fi
+        - cd deb_cache; sudo dpkg -i *.deb
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 10
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 10
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 20
@@ -23,6 +24,7 @@ dependencies:
         - "/home/ubuntu/AutoTuneTMP"
         - "/home/ubuntu/boost"
         - "/home/ubuntu/cmake"
+        - "/home/ubuntu/deb_cache"
 compile:
     override:
         - ./build-all.sh circle
