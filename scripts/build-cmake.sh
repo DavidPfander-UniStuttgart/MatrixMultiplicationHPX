@@ -11,3 +11,6 @@ if [ ! -d cmake ] ; then
     tar xf cmake-3.9.3-Linux-x86_64.tar.gz
     mv cmake-3.9.3-Linux-x86_64 cmake
 fi
+
+ls
+echo "PATH: $PATH"
