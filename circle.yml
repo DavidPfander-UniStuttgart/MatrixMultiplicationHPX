@@ -22,7 +22,7 @@ dependencies:
         - "/home/ubuntu/AutoTuneTMP"
         - "/home/ubuntu/boost"
         - "/home/ubuntu/cmake"
-#        - "/home/ubuntu/deb_cache"
+        - "/home/ubuntu/deb_cache"
 compile:
     override:
         - ./build-all.sh circle
