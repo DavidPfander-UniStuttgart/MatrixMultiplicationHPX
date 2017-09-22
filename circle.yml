@@ -17,17 +17,17 @@ dependencies:
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 20
         - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 20
     cache_directories:
-        - "/home/ubuntu/Vc"
-        - "/home/ubuntu/hpx"
-        - "/home/ubuntu/AutoTuneTMP"
-        - "/home/ubuntu/boost"
-        - "/home/ubuntu/cmake"
-        - "/home/ubuntu/deb_cache"
+        - "/home/ubuntu/MatrixMultiplicationHPX/Vc"
+        - "/home/ubuntu/MatrixMultiplicationHPX/hpx"
+        - "/home/ubuntu/MatrixMultiplicationHPX/AutoTuneTMP"
+        - "/home/ubuntu/MatrixMultiplicationHPX/boost"
+        - "/home/ubuntu/MatrixMultiplicationHPX/cmake"
+        - "/home/ubuntu/MatrixMultiplicationHPX/deb_cache"
 compile:
     override:
         - ./build-all.sh circle
 test:
     override:
-        - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/boost_install/lib:/home/ubuntu/hpx_install/lib:/home/ubuntu/Vc_install/lib
-        - cd build && ./matrix_multiply --algorithm=combined --n-value=4 --transposed=false --hpx:bind=none
+        - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/MatrixMultiplicationHPX/boost_install/lib:/home/ubuntu/MatrixMultiplicationHPX/hpx_install/lib:/home/ubuntu/MatrixMultiplicationHPX/Vc_install/lib
+        - ./build_RelWithDebInfo/boost_tests --log_level=test_suite
 
