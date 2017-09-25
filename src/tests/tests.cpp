@@ -13,6 +13,7 @@ void start_hpx_with_threads(size_t threads) {
 #ifdef DISABLE_BIND_FOR_CIRCLE_CI
   std::stringstream s_bind;
   s_bind << " --hpx:bind=none";
+  std::cout << "info: disabling bind for Circle CI" << std::endl;
 #endif
   std::string hpx_threads(s_threads.str());
   // std::string hpx_threads = "--hpx:threads=4";
