@@ -11,11 +11,17 @@ fi
 
 echo "parallel build (-j for make): $PARALLEL_BUILD"
 
-export CC=gcc-7
-export CXX=g++-7
+
 if [[ "$MATRIX_MULTIPLICATION_TARGET" = "knl" ]]; then
-    export CXX_FLAGS="-march=knl -mtune=knl"
+    module load craype-mic-knl
+    module switch PrgEnv-cray/6.0.3 PrgEnv-gnu
+    module load CMake/3.8.1
+    export CC=gcc
+    export CXX=g++
+    export CXX_FLAGS="-fPIC -march=knl -mtune=knl -ffast-math"
 else
+    export CC=gcc-7
+    export CXX=g++-7
     export CXX_FLAGS="-march=native -mtune=native"
 fi
 export Vc_ROOT=$PWD/Vc_install

@@ -12,7 +12,9 @@ if [ ! -d "boost" ]; then
     mv boost_1_65_0 boost
 
     # configure for gcc 7
-    echo "using gcc : 7.1 : /usr/bin/g++-7  ; " > boost/tools/build/src/user-config.jam
+    if [[ "$MATRIX_MULTIPLICATION_TARGET" != "knl" ]]; then
+	echo "using gcc : 7.1 : /usr/bin/g++-7  ; " > boost/tools/build/src/user-config.jam
+    fi
 fi
 
 if [ ! -d "boost_install/" ]; then
