@@ -29,7 +29,7 @@ cd AutoTuneTMP/build
 echo "compiling AutoTuneTMP"
 # detection of Vc doesn't work with a relative path
 # > cmake_AutoTuneTMP.log 2>&1
-cmake -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -DVc_ROOT="$Vc_ROOT" -DCMAKE_BUILD_TYPE=release ../
+cmake -DVc_ROOT="$Vc_ROOT" -DCMAKE_BUILD_TYPE=release ../
 
 # uses more than 4G with 4 threads (4G limit on Circle CI)
 #   > make_AutoTuneTMP.log 2>&1

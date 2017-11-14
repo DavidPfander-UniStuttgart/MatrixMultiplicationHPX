@@ -1,33 +1,23 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(MatrixMultiplicationHPX)
+project(MatrixMultiplication)
 
 option(DISABLE_BIND_FOR_CIRCLE_CI "Circle CI containers don't support binding" OFF)
-
-if (DISABLE_BIND_FOR_CIRCLE_CI)
-  MESSAGE(WARNING "HPX is used with BIND=NONE (meant for Circle CI")
-  add_definitions(-DDISABLE_BIND_FOR_CIRCLE_CI)
-endif()
 
 find_package(PkgConfig REQUIRED)
 
 find_package(OpenMP REQUIRED)
 
-set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${HPX_ROOT}/lib/pkgconfig")
+find_package(Boost REQUIRED COMPONENTS program_options unit_test_framework)
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-
-pkg_search_module(HPX_APPLICATION REQUIRED hpx_application)
 
 include_directories(src)
-include_directories(${HPX_APPLICATION_INCLUDE_DIRS})
 # ${AUTOTUNETMP_INCLUDE}
 include_directories(${AutoTuneTMP_ROOT}/src ${AutoTuneTMP_ROOT}/dependencies/cppjit/include)
-link_directories(${HPX_APPLICATION_LIBRARY_DIRS})
-link_libraries(${HPX_APPLICATION_LIBRARIES} "libhpx_iostreams.so" )
 
 include_directories(${Vc_ROOT}/include)
 include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
 set(CMAKE_CXX_FLAGS "-Wno-ignored-attributes ${CMAKE_CXX_FLAGS}")
 
@@ -38,10 +28,8 @@ file(GLOB SOURCES_COMMON
   "src/reference_kernels/*.cpp"
   "src/util/*.cpp"
   "src/variants/*.cpp"
-  "src/variants/components/*.cpp")
+  )
 message("source files: " ${SOURCES_COMMON})
-
-message("hpx c flags: " ${HPX_APPLICATION_CFLAGS})
 
 file(GLOB SOURCES_MATRIX_MULTIPLY_APPLICATION "src/matrix_multiply_application/*.cpp")
 file(GLOB SOURCES_TESTS "src/tests/*.cpp")
@@ -52,17 +40,17 @@ set(SOURCES_MATRIX_MULTIPLY ${SOURCES_COMMON} ${SOURCES_MATRIX_MULTIPLY_APPLICAT
 set(SOURCES_TESTS ${SOURCES_COMMON} ${SOURCES_TESTS})
 
 add_executable(matrix_multiply ${SOURCES_MATRIX_MULTIPLY})
-target_compile_options(matrix_multiply PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
-target_link_libraries(matrix_multiply PUBLIC ${HPX_APPLICATION_LDFLAGS} ${OpenMP_CXX_FLAGS})
+target_compile_options(matrix_multiply PUBLIC ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
+target_link_libraries(matrix_multiply PUBLIC ${OpenMP_CXX_FLAGS} dl boost_program_options)
 INSTALL_TARGETS(/bin matrix_multiply)
 
-add_executable(boost_tests ${SOURCES_TESTS})
-target_compile_options(boost_tests PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
-target_link_libraries(boost_tests PUBLIC ${HPX_APPLICATION_LDFLAGS} ${Boost_LIBRARIES} ${OpenMP_CXX_FLAGS})
-INSTALL_TARGETS(/bin boost_tests)
+# add_executable(boost_tests ${SOURCES_TESTS})
+# target_compile_options(boost_tests PUBLIC ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
+# target_link_libraries(boost_tests PUBLIC ${Boost_LIBRARIES} ${OpenMP_CXX_FLAGS})
+# INSTALL_TARGETS(/bin boost_tests)
 
 set(SOURCES_COMBINED_TUNING ${SOURCES_COMMON} "src/combined_tuning_application/combined_tuning.cpp")
 add_executable(combined_tuning ${SOURCES_COMBINED_TUNING})
-target_compile_options(combined_tuning PUBLIC ${HPX_APPLICATION_CFLAGS} ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
-target_link_libraries(combined_tuning PUBLIC ${HPX_APPLICATION_LDFLAGS} ${OpenMP_CXX_FLAGS})
+target_compile_options(combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
+target_link_libraries(combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} dl boost_program_options)
 INSTALL_TARGETS(/bin combined_tuning)

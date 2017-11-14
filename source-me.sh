@@ -20,15 +20,16 @@ if [[ "$MATRIX_MULTIPLICATION_TARGET" = "knl" ]]; then
     export CXX=g++
     export CXX_FLAGS="-fPIC -march=knl -mtune=knl -ffast-math"
 else
-    export CC=gcc-7
-    export CXX=g++-7
+    export CC=gcc
+    export CXX=g++
     export CXX_FLAGS="-march=native -mtune=native"
 fi
 export Vc_ROOT=$PWD/Vc_install
 # export Boost_ROOT=$PWD/boost_install
 # export BOOST_ROOT=$Boost_ROOT
 export BOOST_ROOT=$PWD/boost_install
-export HPX_ROOT=$PWD/hpx_install
+# export HPX_ROOT=$PWD/hpx_install
+export VC_ROOT=$PWD/Vc_install
 # not installed!
 export AutoTuneTMP_ROOT=$PWD/AutoTuneTMP
 export MatrixMultiplicationHPX_ROOT=$PWD/MatrixMultiplicationHPX_install

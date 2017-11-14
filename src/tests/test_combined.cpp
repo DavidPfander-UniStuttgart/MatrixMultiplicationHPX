@@ -1,7 +1,7 @@
 #define BOOST_TEST_DYN_LINK
 
-#include <hpx/hpx_start.hpp>
-#include <hpx/include/iostreams.hpp>
+// #include <hpx/hpx_start.hpp>
+// #include <hpx/include/iostreams.hpp>
 
 #include "tests.hpp"
 #include <boost/test/unit_test.hpp>
@@ -14,7 +14,7 @@
 #include "reference_kernels/kernel_test.hpp"
 #include "reference_kernels/kernel_tiled.hpp"
 #include "reference_kernels/naive.hpp"
-#include "test_hpx_main.hpp"
+// #include "test_hpx_main.hpp"
 #include "util/util.hpp"
 
 #include <iomanip>
@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_SUITE(test_combined)
 
 BOOST_AUTO_TEST_CASE(apply_inverse_2) {
 
-  using namespace hpx_parameters;
+  // using namespace hpx_parameters;
 
   N = 2;
 
@@ -52,10 +52,10 @@ BOOST_AUTO_TEST_CASE(apply_inverse_2) {
   max_relative_work_difference = 0.0; // unused
 
   // Initialize HPX, run hpx_main.
-  start_hpx_with_threads(omp_get_max_threads());
+  // start_hpx_with_threads(omp_get_max_threads());
 
   // Wait for hpx::finalize being called.
-  hpx::stop();
+  // hpx::stop();
 
   // std::cout << "N: " << N << std::endl;
   // std::cout << "C:" << std::endl;
