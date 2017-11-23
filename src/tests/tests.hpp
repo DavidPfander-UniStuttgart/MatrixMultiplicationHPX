@@ -11,4 +11,4 @@ int omp_get_max_threads(void) {
 }
 #endif
 
-void start_hpx_with_threads(size_t threads);
+// void start_hpx_with_threads(size_t threads);

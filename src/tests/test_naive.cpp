@@ -4,7 +4,7 @@
 #include "util/create_identity_matrix.hpp"
 #include "util/create_random_matrix.hpp"
 
-#include "reference_kernels/naive.hpp"
+#include "variants/naive.hpp"
 #include "util/util.hpp"
 
 #include <vector>

@@ -31,14 +31,10 @@ int main(int argc, char **argv) {
   bool verbose = false;
 
   // create matrices A, B>
-  std::vector<double> A;
-  std::vector<double> B;
+  std::vector<double> A = util::create_random_matrix<double>(N);
+  std::vector<double> B = util::create_random_matrix<double>(N);
+
   std::vector<double> C_reference;
-
-  // create matrices A, B>
-  A = util::create_random_matrix<double>(N);
-  B = util::create_random_matrix<double>(N);
-
   std::cout << "calculating reference solution..." << std::flush;
   if (!transposed) {
     C_reference = naive_matrix_multiply(N, A, B);
@@ -86,7 +82,7 @@ int main(int argc, char **argv) {
   autotune::combined_kernel.add_parameter("L3_X", {"420"});
   autotune::combined_kernel.add_parameter("L3_Y", {"256"});
   autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-  
+
   autotune::combined_kernel.add_parameter("L2_X", {"70"});
   autotune::combined_kernel.add_parameter("L2_Y", {"64"});
   autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
@@ -118,9 +114,10 @@ int main(int argc, char **argv) {
   std::vector<size_t> line_search_initial_guess = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   size_t line_search_steps = 1;
   autotune::tuners::line_search<decltype(autotune::combined_kernel)> tuner(
-      autotune::combined_kernel, line_search_steps, 1, line_search_initial_guess);
+      autotune::combined_kernel, line_search_steps, 1,
+      line_search_initial_guess);
 
-  tuner.setup_tests(test_result);
+  tuner.setup_test(test_result);
   std::vector<size_t> optimal_parameter_indices =
       tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B, m.repetitions,
                  tune_kernel_duration_temp);
