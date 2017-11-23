@@ -1,7 +1,5 @@
 #include "combined.hpp"
 
-// #include <hpx/include/iostreams.hpp>
-
 #include <chrono>
 
 #include "index_iterator.hpp"
@@ -9,7 +7,6 @@
 
 #include <Vc/Vc>
 using Vc::double_v;
-#include <boost/align/aligned_allocator.hpp>
 
 AUTOTUNE_DEFINE_KERNEL(std::vector<double>(std::size_t, std::size_t,
                                            std::size_t, std::size_t,
@@ -17,15 +14,6 @@ AUTOTUNE_DEFINE_KERNEL(std::vector<double>(std::size_t, std::size_t,
                                            std::vector<double> &, size_t,
                                            double &),
                        combined_kernel)
-
-// #define L2_X 70 // max 2 L2 par set to 128 (rest 64)
-// #define L2_Y 64
-// #define L2_K_STEP 128
-// #define L1_X 35 // max all L1 par set to 32
-// #define L1_Y 16
-// #define L1_K_STEP 64
-// #define X_REG 5 // cannot be changed!
-// #define Y_REG 8 // cannot be changed!
 
 using namespace index_iterator;
 
@@ -90,13 +78,13 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     auto builder =
         autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
     builder->set_verbose(true);
-    builder->set_include_paths("-IAutoTuneTMP/src -Isrc/variants/ "
+    builder->set_include_paths("-IAutoTuneTMP_install/include -Isrc/variants/ "
                                "-IVc_install/include "
                                "-Iboost_install/include");
     builder->set_cpp_flags(
-        "-Wall -Wextra -std=c++1z -march=native -mtune=native "
+        "-Wall -Wextra -std=c++17 -march=native -mtune=native "
         "-O3 -g -ffast-math -fopenmp -fPIC");
-    builder->set_link_flags("-std=c++1z -shared");
+    builder->set_link_flags("-shared");
 
     // max 2 L3 par set to 1024 (rest 512)
     // static parameters, not tuned
@@ -117,13 +105,6 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     autotune::combined_kernel.add_parameter("L1_X", {"35"});
     autotune::combined_kernel.add_parameter("L1_Y", {"16"});
     autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
-
-    // autotune::combined_kernel.add_parameter("L2_X", {"5"});
-    // autotune::combined_kernel.add_parameter("L2_Y", {"8"});
-    // autotune::combined_kernel.add_parameter("L2_K_STEP", {"1"});
-    // autotune::combined_kernel.add_parameter("L1_X", {"5"});
-    // autotune::combined_kernel.add_parameter("L1_Y", {"8"});
-    // autotune::combined_kernel.add_parameter("L1_K_STEP", {"1"});
 
     std::vector<size_t> parameter_indices(
         autotune::combined_kernel.get_parameters().size(), 0);

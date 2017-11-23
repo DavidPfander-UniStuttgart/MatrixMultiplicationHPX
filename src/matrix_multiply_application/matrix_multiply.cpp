@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <random>
@@ -7,52 +8,17 @@
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 
-#include "reference_kernels/kernel_test.hpp"
-#include "reference_kernels/kernel_tiled.hpp"
-#include "reference_kernels/naive.hpp"
 #include "util/matrix_multiplication_exception.hpp"
 #include "util/util.hpp"
-// #include "variants/algorithms.hpp"
 #include "variants/combined.hpp"
-// #include "variants/components/multiplier.hpp"
-// #include "variants/components/recursive.hpp"
-// #include "variants/looped.hpp"
-// #include "variants/proposal.hpp"
-// #include "variants/semi.hpp"
-// #include "variants/static_improved.hpp"
+#include "variants/kernel_test.hpp"
+#include "variants/kernel_tiled.hpp"
+#include "variants/naive.hpp"
 
 boost::program_options::options_description
     desc_commandline("Usage: matrix_multiply [options]");
 
-bool display_help = false;
-
-std::vector<double> A;
-std::vector<double> B;
-std::vector<double> C;
-std::uint64_t N;
-std::string algorithm;
-std::uint64_t verbose;
-bool check;
-bool transposed;
-uint64_t block_input;
-size_t block_result;
-// initialized via program_options defaults
-
-double duration;
-uint64_t repetitions;
-// to skip printing and checking on all other nodes
-bool is_root_node;
-
-// pseudodynamic algorithm only
-std::uint64_t min_work_size;
-std::uint64_t max_work_difference;
-double max_relative_work_difference;
-
 int main(int argc, char *argv[]) {
-  // Configure application-specific options
-  //    boost::program_options::options_description desc_commandline(
-  //            "Usage: " HPX_APPLICATION_STRING " [options]");
-
   desc_commandline.add_options()(
       "n-value",
       boost::program_options::value<std::uint64_t>()->default_value(4ull),
@@ -93,32 +59,11 @@ int main(int argc, char *argv[]) {
       "pseudodynamic algorithm: maximum relative tolerated load inbalance "
       "in matrix components assigned, in percent")("help", "display help");
 
-  // std::cout << "parsing" << std::endl;
   boost::program_options::variables_map vm;
   boost::program_options::store(
       boost::program_options::parse_command_line(argc, argv, desc_commandline),
       vm);
   boost::program_options::notify(vm);
-
-  // // extract command line argument
-  // N = vm["n-value"].as<std::uint64_t>();
-  // block_result = vm["block-result"].as<std::uint64_t>();
-  // verbose = vm["verbose"].as<uint64_t>();
-  // algorithm = vm["algorithm"].as<std::string>();
-  // check = vm["check"].as<bool>();
-  // transposed = vm["transposed"].as<bool>();
-  // block_input = vm["block-input"].as<uint64_t>();
-  // repetitions = vm["repetitions"].as<uint64_t>();
-
-  // min_work_size = vm["min-work-size"].as<std::uint64_t>();
-  // max_work_difference = vm["max-work-difference"].as<std::uint64_t>();
-  // max_relative_work_difference =
-  //     vm["max-relative-work-difference"].as<double>();
-
-  // if (vm.count("help")) {
-  //   std::cout << desc_commandline << std::endl;
-  //   return 0;
-  // }
 
   if (vm.count("help")) {
     std::cout << desc_commandline << std::endl;
@@ -126,18 +71,17 @@ int main(int argc, char *argv[]) {
   }
 
   // extract command line argument
-  N = vm["n-value"].as<std::uint64_t>();
-  block_result = vm["block-result"].as<std::uint64_t>();
-  verbose = vm["verbose"].as<uint64_t>();
-  algorithm = vm["algorithm"].as<std::string>();
-  check = vm["check"].as<bool>();
-  transposed = vm["transposed"].as<bool>();
-  block_input = vm["block-input"].as<uint64_t>();
-  repetitions = vm["repetitions"].as<uint64_t>();
-
-  min_work_size = vm["min-work-size"].as<std::uint64_t>();
-  max_work_difference = vm["max-work-difference"].as<std::uint64_t>();
-  max_relative_work_difference =
+  uint64_t N = vm["n-value"].as<std::uint64_t>();
+  size_t block_result = vm["block-result"].as<std::uint64_t>();
+  uint64_t verbose = vm["verbose"].as<uint64_t>();
+  std::string algorithm = vm["algorithm"].as<std::string>();
+  bool check = vm["check"].as<bool>();
+  bool transposed = vm["transposed"].as<bool>();
+  uint64_t block_input = vm["block-input"].as<uint64_t>();
+  uint64_t repetitions = vm["repetitions"].as<uint64_t>();
+  uint64_t min_work_size = vm["min-work-size"].as<std::uint64_t>();
+  uint64_t max_work_difference = vm["max-work-difference"].as<std::uint64_t>();
+  uint64_t max_relative_work_difference =
       vm["max-relative-work-difference"].as<double>();
 
   // create matrices A, B
@@ -145,6 +89,7 @@ int main(int argc, char *argv[]) {
   std::uniform_real_distribution<double> distribution(0.0, 1.0);
   auto myRand = std::bind(distribution, generator);
 
+  std::vector<double> A;
   A.resize(N * N);
   std::generate(A.begin(), A.end(), myRand);
 
@@ -153,6 +98,7 @@ int main(int argc, char *argv[]) {
     print_matrix(N, A);
   }
 
+  std::vector<double> B;
   B.resize(N * N);
 
   if (!transposed) {
@@ -186,42 +132,41 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  std::vector<double> C;
+  double duration;
   if (algorithm.compare("kernel_test") == 0) {
-    // hpx::util::high_resolution_timer t;
+    std::cout << "using algorithm: kernel_test" << std::endl;
+    auto timer_start = std::chrono::high_resolution_clock::now();
     kernel_test::kernel_test m(N, A, B, transposed, repetitions, verbose);
     C = m.matrix_multiply();
-
-    // duration = t.elapsed();
-    // std::cout << "non-HPX [N = " << N << "] total time: " << duration << "s"
-    //           << std::endl;
-    // std::cout << "non-HPX [N = " << N
-    //           << "] average time per run: " << (duration / repetitions)
-    //           << "s (repetitions = " << repetitions << ")" << std::endl;
-
-    if (verbose >= 2) {
-      std::cout << "non-HPX matrix C:" << std::endl;
-      print_matrix_host(N, C);
-    }
+    auto timer_stop = std::chrono::high_resolution_clock::now();
+    duration = (timer_stop - timer_start).count();
   } else if (algorithm.compare("kernel_tiled") == 0) {
+    std::cout << "using algorithm: kernel_tiled" << std::endl;
     kernel_tiled::kernel_tiled m(N, A, B, transposed, repetitions, verbose);
     C = m.matrix_multiply(duration);
-
-    std::cout << "non-HPX [N = " << N << "] total time: " << duration << "s"
-              << std::endl;
-    std::cout << "non-HPX [N = " << N
-              << "] average time per run: " << (duration / repetitions)
-              << "s (repetitions = " << repetitions << ")" << std::endl;
-
-    if (verbose >= 2) {
-      std::cout << "non-HPX matrix C:" << std::endl;
-      print_matrix_host(N, C);
+  } else if (algorithm.compare("naive") == 0) {
+    std::cout << "using algorithm: naive" << std::endl;
+    auto timer_start = std::chrono::high_resolution_clock::now();
+    if (!transposed) {
+      C = naive_matrix_multiply(N, A, B);
+    } else {
+      C = naive_matrix_multiply_transposed(N, A, B);
     }
+    auto timer_stop = std::chrono::high_resolution_clock::now();
+    duration = (timer_stop - timer_start).count();
+  } else if (algorithm.compare("combined") == 0) {
+    combined::combined m(N, A, B, repetitions, verbose);
+    C = m.matrix_multiply(duration);
   } else {
     std::cout << "\"" << algorithm << "\" not a valid algorithm" << std::endl;
     return 1;
   }
 
-  // if (is_root_node) {
+  if (verbose >= 2) {
+    std::cout << "matrix C:" << std::endl;
+    print_matrix_host(N, C);
+  }
 
   double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
                  static_cast<double>(N);
@@ -231,13 +176,11 @@ int main(int argc, char *argv[]) {
             << "Gflops (average across repetitions)" << std::endl;
 
   // hpx should now be shut down, can now use CPU for (fast) checking
-
   if (check) {
     if (repetitions > 1) {
       std::cout << "info: repetitions > 1: checking only last iteration"
                 << std::endl;
     }
-    // hpx::util::high_resolution_timer t2;
     std::vector<double> Cref;
     if (!transposed) {
       Cref = naive_matrix_multiply(N, A, B);
@@ -245,13 +188,6 @@ int main(int argc, char *argv[]) {
       Cref = naive_matrix_multiply_transposed(N, A, B);
     }
     char const *fmt = "naive matMult took %1% [s]";
-    // double duration_reference = t2.elapsed();
-    // std::cout << (boost::format(fmt) % duration_reference) << std::endl;
-    // std::cout << "[N = " << N
-    //           << "] performance reference: " << (gflop /
-    //           duration_reference)
-    //           << " Gflops (reference implementation)" << std::endl;
-
     if (verbose >= 2) {
       std::cout << "matrix Cref:" << std::endl;
       print_matrix_host(N, Cref);
@@ -260,22 +196,9 @@ int main(int argc, char *argv[]) {
     // compare solutions
     bool ok = std::equal(C.begin(), C.end(), Cref.begin(), Cref.end(),
                          [](double first, double second) {
-                           //							std::cout
-                           //<<
-                           //"first:
-                           //"
-                           //<<
-                           // first
-                           //<<
-                           //"
-                           // second: " << second << std::endl;
                            if (std::abs(first - second) < 1E-10) {
-                             //								std::cout
-                             //<< "true" << std::endl;
                              return true;
                            } else {
-                             //								std::cout
-                             //<< "false" << std::endl;
                              return false;
                            }
                          });
@@ -293,8 +216,6 @@ int main(int argc, char *argv[]) {
       std::cout << "diff_matrix:" << std::endl;
       print_matrix_host(N, diff_matrix);
     }
-    // }
   }
-  // return return_value;
   return 0;
 }

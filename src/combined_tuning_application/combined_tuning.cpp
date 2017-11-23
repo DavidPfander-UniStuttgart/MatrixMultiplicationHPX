@@ -1,28 +1,15 @@
-// #include <hpx/hpx_init.hpp>
-// #include <hpx/include/actions.hpp>
-// #include <hpx/include/async.hpp>
-// #include <hpx/include/components.hpp>
-// #include <hpx/include/util.hpp>
-
 #include "autotune/autotune.hpp"
 #include "autotune/parameter.hpp"
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/line_search.hpp"
 
-#include "reference_kernels/naive.hpp"
-// #include "reference_kernels/kernel_test.hpp"
-#include "reference_kernels/kernel_tiled.hpp"
 #include "util/create_random_matrix.hpp"
 #include "util/matrix_multiplication_exception.hpp"
 #include "util/util.hpp"
 #include "variants/combined.hpp"
+#include "variants/naive.hpp"
 
 #include <random>
-
-// int hpx_main() {
-
-//   return hpx::finalize();
-// }
 
 int main(int argc, char **argv) {
 
@@ -53,20 +40,12 @@ int main(int argc, char **argv) {
   B = util::create_random_matrix<double>(N);
 
   std::cout << "calculating reference solution..." << std::flush;
-  // kernel_test::kernel_test m_ref(N, A, B, transposed, repetitions, verbose);
-  // C_reference = m_ref.matrix_multiply();
-  // kernel_tiled::kernel_tiled m_ref(N, A, B, transposed, repetitions,
-  // verbose);
-  // double duration_dummy;
-  // C_reference = m_ref.matrix_multiply(duration_dummy);
   if (!transposed) {
     C_reference = naive_matrix_multiply(N, A, B);
   } else {
     C_reference = naive_matrix_multiply_transposed(N, A, B);
   }
   std::cout << " done" << std::endl << std::flush;
-
-  // int return_value = hpx::init(argc, argv);
 
   if (transposed) {
     throw util::matrix_multiplication_exception(
@@ -86,9 +65,9 @@ int main(int argc, char **argv) {
   builder->set_include_paths("-IAutoTuneTMP/src -Isrc/variants/ "
                              "-IVc_install/include "
                              "-Iboost_install/include");
-  builder->set_cpp_flags("-Wall -Wextra -std=c++1z -march=native -mtune=native "
+  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
                          "-O3 -g -ffast-math -fopenmp -fPIC");
-  builder->set_link_flags("-std=c++1z -shared -g");
+  builder->set_link_flags("-shared -g");
 
   // autotune::combined_kernel.add_parameter("L3_X", {"210", "420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"128", "256"});
@@ -121,10 +100,6 @@ int main(int argc, char **argv) {
 
   std::function<bool(const std::vector<double> &C)> test_result =
       [&C_reference, N](const std::vector<double> &C) -> bool {
-    // std::cout << "C_reference:" << std::endl;
-    // print_matrix_host(N, C_reference);
-    // std::cout << "C mine:" << std::endl;
-    // print_matrix_host(N, C);
     for (size_t i = 0; i < N * N; i++) {
       double threshold = 1E-8;
       if (fabs(C[i] - C_reference[i]) >= threshold) {
