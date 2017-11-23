@@ -1,13 +1,15 @@
 #!/bin/bash
 
-if [[ -z "$1" || "$1" != "circle" ]]; then
-    #use all available CPUs
-    export PARALLEL_BUILD=$((`lscpu -p=cpu | wc -l`-4))
-else
-    # circle uses special parallelism settings in the build scripts to maximize performance per scripts
-    # all 4 threads ins't always possible, because of memory limititations (4G)
-    export PARALLEL_BUILD=1
-fi
+export PARALLEL_BUILD=$((`lscpu -p=cpu | wc -l`-4))
+
+# if [[ -z "$1" || "$1" != "circle" ]]; then
+#     #use all available CPUs
+#     export PARALLEL_BUILD=$((`lscpu -p=cpu | wc -l`-4))
+# else
+#     # circle uses special parallelism settings in the build scripts to maximize performance per scripts
+#     # all 4 threads ins't always possible, because of memory limititations (4G)
+#     export PARALLEL_BUILD=1
+# fi
 
 echo "parallel build (-j for make): $PARALLEL_BUILD"
 
@@ -39,6 +41,7 @@ export LD_LIBRARY_PATH=$PWD/boost_install/lib:$PWD/hpx_install/lib:$PWD/Vc_insta
 
 export matrix_multiplication_source_me_sourced=1
 
-if [[ ! -z "$1" && "$1" = "circle" ]]; then
-    export PATH=$PWD/cmake/bin:$PATH
-fi
+# if [[ ! -z "$1" && "$1" = "circle" ]]; then
+#     export PATH=$PWD/cmake/bin:$PATH
+# fi
+export PATH=$PWD/cmake/bin:$PATH
