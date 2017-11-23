@@ -30,7 +30,7 @@ cd build_RelWithDebInfo
 
 # detection of Vc doesn't work with a relative path
 # cmake -DVc_ROOT="$MatrixMultiplicationHPX_ROOT" -DCMAKE_BUILD_TYPE=release ../
-cmake -DVc_ROOT=$VC_ROOT -DAutoTuneTMP_ROOT=${AutoTuneTMP_ROOT} -DCMAKE_BUILD_TYPE=RelWithDebInfo ../
+cmake -DVc_ROOT=$VC_ROOT -DCPPJIT_ROOT=${CPPJIT_ROOT} -DAUTOTUNETMP_ROOT=${AUTOTUNETMP_ROOT} -DCMAKE_BUILD_TYPE=RelWithDebInfo ../
 
 # uses more than 4G with 4 threads (4G limit on Circle CI)
 make -j${PARALLEL_BUILD} VERBOSE=1

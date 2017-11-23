@@ -30,8 +30,8 @@ export Vc_ROOT=$PWD/Vc_install
 export BOOST_ROOT=$PWD/boost_install
 # export HPX_ROOT=$PWD/hpx_install
 export VC_ROOT=$PWD/Vc_install
-# not installed!
-export AutoTuneTMP_ROOT=$PWD/AutoTuneTMP
+export CPPJIT_ROOT=$PWD/cppjit_install
+export AUTOTUNETMP_ROOT=$PWD/AutoTuneTMP_install
 export MatrixMultiplicationHPX_ROOT=$PWD/MatrixMultiplicationHPX_install
 export JEMALLOC_ROOT=$PWD/jemalloc_install
 
