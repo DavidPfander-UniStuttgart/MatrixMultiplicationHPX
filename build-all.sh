@@ -22,6 +22,7 @@ source source-me.sh
 ./scripts/build-jemalloc.sh
 ./scripts/build-boost.sh
 ./scripts/build-Vc.sh
+./scripts/build-cppjit.sh
 # ./scripts/build-hpx.sh
 ./scripts/build-AutoTuneTMP.sh
 ./build-MatrixMultiplicationHPX.sh
