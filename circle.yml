@@ -25,7 +25,7 @@ dependencies:
         - "/home/ubuntu/MatrixMultiplicationHPX/deb_cache"
 compile:
     override:
-        - ./build-all.sh
+        - ./build-all.sh circle
 test:
     override:
         - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/MatrixMultiplicationHPX/boost_install/lib:/home/ubuntu/MatrixMultiplicationHPX/hpx_install/lib:/home/ubuntu/MatrixMultiplicationHPX/Vc_install/lib
