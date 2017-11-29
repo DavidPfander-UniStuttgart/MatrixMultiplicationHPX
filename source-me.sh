@@ -1,15 +1,15 @@
 #!/bin/bash
 
-export PARALLEL_BUILD=$((`lscpu -p=cpu | wc -l`-4))
+# export PARALLEL_BUILD=$((`lscpu -p=cpu | wc -l`-4))
 
-# if [[ -z "$1" || "$1" != "circle" ]]; then
-#     #use all available CPUs
-#     export PARALLEL_BUILD=$((`lscpu -p=cpu | wc -l`-4))
-# else
-#     # circle uses special parallelism settings in the build scripts to maximize performance per scripts
-#     # all 4 threads ins't always possible, because of memory limititations (4G)
-#     export PARALLEL_BUILD=1
-# fi
+if [[ -z "$1" || "$1" != "circle" ]]; then
+    #use all available CPUs
+    export PARALLEL_BUILD=$((`lscpu -p=cpu | wc -l`-4))
+else
+    # circle uses special parallelism settings in the build scripts to maximize performance per scripts
+    # all 4 threads ins't always possible, because of memory limititations (4G)
+    export PARALLEL_BUILD=4
+fi
 
 echo "parallel build (-j for make): $PARALLEL_BUILD"
 
