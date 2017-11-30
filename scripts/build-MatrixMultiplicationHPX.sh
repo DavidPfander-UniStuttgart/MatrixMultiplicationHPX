@@ -12,7 +12,7 @@ mkdir -p build_RelWithDebInfo
 cd build_RelWithDebInfo
 
 # detection of Vc doesn't work with a relative path
-cmake -DAUTOTUNETMP_ROOT=${AUTOTUNETMP_ROOT} -DCPPJIT_ROOT=${CPPJIT_ROOT} -DCMAKE_BUILD_TYPE=RelWithDebInfo ../
+cmake -DAUTOTUNETMP_ROOT=${AUTOTUNETMP_ROOT} -DCPPJIT_ROOT=${CPPJIT_ROOT} -DBOOST_ROOT=${BOOST_ROOT} -DCMAKE_BUILD_TYPE=RelWithDebInfo ../
 
 make -j${PARALLEL_BUILD} VERBOSE=1
 cd ../
