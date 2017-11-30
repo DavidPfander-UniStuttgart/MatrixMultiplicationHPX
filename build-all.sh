@@ -16,4 +16,4 @@ fi
 # need this, otherwise have to push arguments to called scripts
 source source-me.sh
 
-./build-MatrixMultiplicationHPX.sh
+./scripts/build-MatrixMultiplicationHPX.sh
