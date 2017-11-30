@@ -33,19 +33,6 @@ fi
 # source the remaining dependencies recursively
 source $(readlink -f $(dirname "$BASH_SOURCE"))/AutoTuneTMP/source-me.sh
 
-# export Vc_ROOT=$PWD/Vc_install
-# # export Boost_ROOT=$PWD/boost_install
-# # export BOOST_ROOT=$Boost_ROOT
-# export BOOST_ROOT=$PWD/boost_install
-# # export HPX_ROOT=$PWD/hpx_install
-# export VC_ROOT=$PWD/Vc_install
-# export CPPJIT_ROOT=$PWD/cppjit_install
-# export AUTOTUNETMP_ROOT=$PWD/AutoTuneTMP/AutoTuneTMP_install
 export MatrixMultiplicationHPX_ROOT=$PWD/MatrixMultiplicationHPX_install
-# export JEMALLOC_ROOT=$PWD/jemalloc_install
-
 export LD_LIBRARY_PATH=$PWD/AutoTuneTMP/boost_install/lib:$PWD/AutoTuneTMP/Vc_install/lib
-
 export matrix_multiplication_source_me_sourced=1
-
-echo "PATH: $PATH"

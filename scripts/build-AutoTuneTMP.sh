@@ -24,7 +24,7 @@ fi
 
 # echo "compiling AutoTuneTMP"
 cd AutoTuneTMP
-./build-all.sh
+./build-all.sh $1
 cd ..
 
 # # detection of Vc doesn't work with a relative path

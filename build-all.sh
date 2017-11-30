@@ -11,7 +11,7 @@ elif [ "$1" = "circle" ]; then
     export MATRIX_MULTIPLICATION_TARGET="circle"
 fi
 
-./scripts/build-AutoTuneTMP.sh
+./scripts/build-AutoTuneTMP.sh $1
 
 # need this, otherwise have to push arguments to called scripts
 source source-me.sh
