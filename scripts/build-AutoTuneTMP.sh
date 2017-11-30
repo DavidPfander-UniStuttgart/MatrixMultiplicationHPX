@@ -8,10 +8,6 @@ fi
 
 if [ ! -d "AutoTuneTMP" ]; then
     git clone git@github.com:DavidPfander-UniStuttgart/AutoTuneTMP.git
-    cd AutoTuneTMP
-    git submodule init
-    git submodule update
-    cd ..
 fi
 
 cd AutoTuneTMP
