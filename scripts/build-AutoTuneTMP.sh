@@ -2,9 +2,9 @@
 set -x
 set -e
 
-if [ -z ${matrix_multiplication_source_me_sourced} ] ; then
-    source source-me.sh
-fi
+# if [ -z ${matrix_multiplication_source_me_sourced} ] ; then
+#     source source-me.sh
+# fi
 
 if [ ! -d "AutoTuneTMP" ]; then
     git clone git@github.com:DavidPfander-UniStuttgart/AutoTuneTMP.git
