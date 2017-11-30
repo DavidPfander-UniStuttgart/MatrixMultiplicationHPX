@@ -11,18 +11,9 @@ elif [ "$1" = "circle" ]; then
     export MATRIX_MULTIPLICATION_TARGET="circle"
 fi
 
+./scripts/build-AutoTuneTMP.sh
+
 # need this, otherwise have to push arguments to called scripts
 source source-me.sh
 
-# if [[ ! -z "$1" && "$1" = "circle" ]]; then
-#     ./scripts/build-cmake.sh
-# fi
-
-./scripts/build-cmake.sh
-./scripts/build-jemalloc.sh
-./scripts/build-boost.sh
-./scripts/build-Vc.sh
-./scripts/build-cppjit.sh
-# ./scripts/build-hpx.sh
-./scripts/build-AutoTuneTMP.sh
 ./build-MatrixMultiplicationHPX.sh
