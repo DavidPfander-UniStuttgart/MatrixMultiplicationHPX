@@ -80,7 +80,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     builder->set_verbose(true);
     builder->set_include_paths("-IAutoTuneTMP_install/include -Isrc/variants/ "
                                "-IVc_install/include "
-                               "-Iboost_install/include");
+                               "-IAutoTuneTMP/boost_install/include");
     builder->set_cpp_flags(
         "-Wall -Wextra -std=c++17 -march=native -mtune=native "
         "-O3 -g -ffast-math -fopenmp -fPIC");
