@@ -7,6 +7,9 @@ find_package(OpenMP REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options unit_test_framework)
 find_package(AutoTuneTMP NO_MODULE REQUIRED PATHS ${AUTOTUNETMP_ROOT})
 
+find_package(Vc ${Vc_FIND_VERSION} NO_MODULE PATHS ${Vc_ROOT})
+include_directories(${Vc_INCLUDE_DIR})
+
 set(SOURCES_COMMON "src/variants/kernel_test.cpp" "src/variants/kernel_tiled.cpp" "src/variants/combined.cpp")
 
 set(SOURCES_MATRIX_MULTIPLY ${SOURCES_COMMON} "src/matrix_multiply_application/matrix_multiply.cpp")
