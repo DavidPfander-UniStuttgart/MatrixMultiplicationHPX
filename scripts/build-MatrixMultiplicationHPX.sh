@@ -6,7 +6,7 @@ if [[ -z ${matrix_multiplication_source_me_sourced} ]]; then
     source source-me.sh
 fi
 
-git pull
+# git pull
 
 mkdir -p build_RelWithDebInfo
 cd build_RelWithDebInfo
