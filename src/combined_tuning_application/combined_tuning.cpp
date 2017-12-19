@@ -51,9 +51,6 @@ int main(int argc, char **argv) {
 
   autotune::combined_kernel.set_verbose(true);
 
-  autotune::combined_kernel.set_write_measurement(scenario_name +
-                                                  "_line_search");
-
   auto builder =
       autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
   builder->set_verbose(true);
@@ -79,16 +76,45 @@ int main(int argc, char **argv) {
   // autotune::combined_kernel.add_parameter("L1_K_STEP",
   //                                         {"1", "4", "8", "16", "32"});
 
-  autotune::combined_kernel.add_parameter("L3_X", {"420"});
-  autotune::combined_kernel.add_parameter("L3_Y", {"256"});
-  autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
+  // autotune::combined_kernel.add_parameter("L3_X", {"420"});
+  // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
+  // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
 
-  autotune::combined_kernel.add_parameter("L2_X", {"70"});
-  autotune::combined_kernel.add_parameter("L2_Y", {"64"});
-  autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
-  autotune::combined_kernel.add_parameter("L1_X", {"35"});
-  autotune::combined_kernel.add_parameter("L1_Y", {"16"});
-  autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
+  // autotune::combined_kernel.add_parameter("L2_X", {"70"});
+  // autotune::combined_kernel.add_parameter("L2_Y", {"64"});
+  // autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
+  // autotune::combined_kernel.add_parameter("L1_X", {"35"});
+  // autotune::combined_kernel.add_parameter("L1_Y", {"16"});
+  // autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
+
+  autotune::countable_set parameters;
+
+  autotune::fixed_set_parameter<std::string> p1("L3_X", {"210", "420"}, false);
+  parameters.add_parameter(p1);
+  autotune::fixed_set_parameter<std::string> p2("L3_Y", {"128", "256"}, false);
+  parameters.add_parameter(p2);
+  autotune::fixed_set_parameter<std::string> p3("L3_K_STEP", {"256"}, false);
+  parameters.add_parameter(p3);
+
+  autotune::fixed_set_parameter<std::string> p4(
+      "L2_X", {"15", "35", "70", "140", "175"}, false);
+  parameters.add_parameter(p4);
+  autotune::fixed_set_parameter<std::string> p5(
+      "L2_Y", {"16", "32", "64", "128", "256"}, false);
+  parameters.add_parameter(p5);
+  autotune::fixed_set_parameter<std::string> p6(
+      "L2_K_STEP", {"32", "64", "128", "256", "512"}, false);
+  parameters.add_parameter(p6);
+
+  autotune::fixed_set_parameter<std::string> p7("L1_X", {"5", "10", "35", "70"},
+                                                false);
+  parameters.add_parameter(p7);
+  autotune::fixed_set_parameter<std::string> p8(
+      "L1_Y", {"16", "32", "64", "128"}, false);
+  parameters.add_parameter(p8);
+  autotune::fixed_set_parameter<std::string> p9(
+      "L1_K_STEP", {"1", "4", "8", "16", "32"}, false);
+  parameters.add_parameter(p9);
 
   autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
@@ -111,23 +137,23 @@ int main(int argc, char **argv) {
   std::cout
       << "----------------------- starting tuning  -----------------------"
       << std::endl;
-  std::vector<size_t> line_search_initial_guess = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   size_t line_search_steps = 1;
-  autotune::tuners::line_search<decltype(autotune::combined_kernel)> tuner(
-      autotune::combined_kernel, line_search_steps, 1,
-      line_search_initial_guess);
+  autotune::tuners::line_search tuner(autotune::combined_kernel, parameters,
+                                      line_search_steps, 1);
+  tuner.set_write_measurement(scenario_name + "_line_search");
 
   tuner.setup_test(test_result);
-  std::vector<size_t> optimal_parameter_indices =
+  autotune::countable_set optimal_parameters =
       tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B, m.repetitions,
                  tune_kernel_duration_temp);
 
   std::cout << "----------------------- end tuning -----------------------"
             << std::endl;
   std::cout << "optimal parameter values:" << std::endl;
-  autotune::combined_kernel.print_values(optimal_parameter_indices);
+  optimal_parameters.print_values();
+  autotune::combined_kernel.set_parameter_values(optimal_parameters);
 
-  autotune::combined_kernel.create_parameter_file(optimal_parameter_indices);
+  // autotune::combined_kernel.create_parameter_file(optimal_parameters);
 
   autotune::combined_kernel.compile();
 
