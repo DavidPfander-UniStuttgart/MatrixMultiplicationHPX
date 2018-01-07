@@ -25,10 +25,10 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 1024;
+  std::uint64_t N = 4096;
 
   bool transposed = false;
-  size_t repetitions = 1;
+  size_t repetitions = 2;
   bool verbose = false;
 
   // create matrices A, B>
@@ -91,19 +91,26 @@ int main(int argc, char **argv) {
 
   autotune::countable_set parameters;
 
-  autotune::fixed_set_parameter<std::string> p1("L2_X", {"70"}, false);
+  // autotune::fixed_set_parameter<std::string> p1("L2_X", {"70"}, false);
+  autotune::countable_continuous_parameter p1("L2_X", 35, 5, 10, 100);
   parameters.add_parameter(p1);
-  autotune::fixed_set_parameter<std::string> p2("L2_Y", {"64"}, false);
+  // autotune::fixed_set_parameter<std::string> p2("L2_Y", {"64"}, false);
+  autotune::countable_continuous_parameter p2("L2_Y", 64, 16, 16, 128);
   parameters.add_parameter(p2);
-  autotune::fixed_set_parameter<std::string> p3("L2_K_STEP", {"128"}, false);
+  // autotune::fixed_set_parameter<std::string> p3("L2_K_STEP", {"128"}, false);
+  autotune::countable_continuous_parameter p3("L2_K_STEP", 64, 2, 32, 256,
+                                              std::multiplies<double>(),
+                                              std::divides<double>());
   parameters.add_parameter(p3);
-  autotune::fixed_set_parameter<std::string> p4("L1_X", {"35"}, false);
+  // autotune::fixed_set_parameter<std::string> p4("L1_X", {"35"}, false);
+  autotune::countable_continuous_parameter p4("L1_X", 35, 5, 10, 50);
   parameters.add_parameter(p4);
-  autotune::fixed_set_parameter<std::string> p5("L1_Y", {"16"}, false);
+  // autotune::fixed_set_parameter<std::string> p5("L1_Y", {"16"}, false);
+  autotune::countable_continuous_parameter p5("L1_Y", 64, 16, 16, 128);
   parameters.add_parameter(p5);
   // autotune::fixed_set_parameter<std::string> p6(
   //     "L1_K_STEP", {"1", "4", "8", "16", "32"}, false);
-  autotune::countable_continuous_parameter p6("L1_K_STEP", 4, 2, 2, 32,
+  autotune::countable_continuous_parameter p6("L1_K_STEP", 4, 2, 2, 256,
                                               std::multiplies<double>(),
                                               std::divides<double>());
   parameters.add_parameter(p6);
@@ -159,7 +166,7 @@ int main(int argc, char **argv) {
   std::cout
       << "----------------------- starting tuning  -----------------------"
       << std::endl;
-  size_t line_search_steps = 3;
+  size_t line_search_steps = 50;
   autotune::tuners::line_search tuner(autotune::combined_kernel, parameters,
                                       line_search_steps, 1);
   tuner.set_verbose(true);
