@@ -85,8 +85,8 @@ std::vector<double> combined::matrix_multiply(double &duration) {
                                "-IAutoTuneTMP/boost_install/include");
     builder->set_cpp_flags(
         "-Wall -Wextra -std=c++17 -march=native -mtune=native "
-        "-O3 -g -ffast-math -fopenmp -fPIC");
-    builder->set_link_flags("-shared");
+        "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
+    builder->set_link_flags("-shared -fno-gnu-unique");
 
     // max 2 L3 par set to 1024 (rest 512)
     // static parameters, not tuned
