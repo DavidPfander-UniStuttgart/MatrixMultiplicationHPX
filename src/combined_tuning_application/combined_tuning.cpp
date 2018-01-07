@@ -9,6 +9,7 @@
 #include "variants/combined.hpp"
 #include "variants/naive.hpp"
 
+#include <functional>
 #include <random>
 
 int main(int argc, char **argv) {
@@ -24,10 +25,10 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 2048;
+  std::uint64_t N = 1024;
 
   bool transposed = false;
-  size_t repetitions = 7;
+  size_t repetitions = 1;
   bool verbose = false;
 
   // create matrices A, B>
@@ -67,15 +68,15 @@ int main(int argc, char **argv) {
   // autotune::combined_kernel.add_parameter("L3_Y", {"128", "256"});
   // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
   // autotune::combined_kernel.add_parameter("L2_X",
-  //                                         {"15", "35", "70", "140", "175"});
+  //                                         {"70"});
   // autotune::combined_kernel.add_parameter("L2_Y",
-  //                                         {"16", "32", "64", "128", "256"});
+  //                                         {"64"});
   // autotune::combined_kernel.add_parameter("L2_K_STEP",
-  //                                         {"32", "64", "128", "256", "512"});
-  // autotune::combined_kernel.add_parameter("L1_X", {"5", "10", "35", "70"});
-  // autotune::combined_kernel.add_parameter("L1_Y", {"16", "32", "64", "128"});
+  //                                         {"64"});
+  // autotune::combined_kernel.add_parameter("L1_X", {"35"});
+  // autotune::combined_kernel.add_parameter("L1_Y", {"32"});
   // autotune::combined_kernel.add_parameter("L1_K_STEP",
-  //                                         {"1", "4", "8", "16", "32"});
+  //                                         {"8"});
 
   // autotune::combined_kernel.add_parameter("L3_X", {"420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
@@ -90,32 +91,52 @@ int main(int argc, char **argv) {
 
   autotune::countable_set parameters;
 
-  autotune::fixed_set_parameter<std::string> p1("L3_X", {"210", "420"}, false);
+  autotune::fixed_set_parameter<std::string> p1("L2_X", {"70"}, false);
   parameters.add_parameter(p1);
-  autotune::fixed_set_parameter<std::string> p2("L3_Y", {"128", "256"}, false);
+  autotune::fixed_set_parameter<std::string> p2("L2_Y", {"64"}, false);
   parameters.add_parameter(p2);
-  autotune::fixed_set_parameter<std::string> p3("L3_K_STEP", {"256"}, false);
+  autotune::fixed_set_parameter<std::string> p3("L2_K_STEP", {"128"}, false);
   parameters.add_parameter(p3);
-
-  autotune::fixed_set_parameter<std::string> p4(
-      "L2_X", {"15", "35", "70", "140", "175"}, false);
+  autotune::fixed_set_parameter<std::string> p4("L1_X", {"35"}, false);
   parameters.add_parameter(p4);
-  autotune::fixed_set_parameter<std::string> p5(
-      "L2_Y", {"16", "32", "64", "128", "256"}, false);
+  autotune::fixed_set_parameter<std::string> p5("L1_Y", {"16"}, false);
   parameters.add_parameter(p5);
-  autotune::fixed_set_parameter<std::string> p6(
-      "L2_K_STEP", {"32", "64", "128", "256", "512"}, false);
+  // autotune::fixed_set_parameter<std::string> p6(
+  //     "L1_K_STEP", {"1", "4", "8", "16", "32"}, false);
+  autotune::countable_continuous_parameter p6("L1_K_STEP", 4, 2, 2, 32,
+                                              std::multiplies<double>(),
+                                              std::divides<double>());
   parameters.add_parameter(p6);
 
-  autotune::fixed_set_parameter<std::string> p7("L1_X", {"5", "10", "35", "70"},
-                                                false);
-  parameters.add_parameter(p7);
-  autotune::fixed_set_parameter<std::string> p8(
-      "L1_Y", {"16", "32", "64", "128"}, false);
-  parameters.add_parameter(p8);
-  autotune::fixed_set_parameter<std::string> p9(
-      "L1_K_STEP", {"1", "4", "8", "16", "32"}, false);
-  parameters.add_parameter(p9);
+  // autotune::fixed_set_parameter<std::string> p1("L3_X", {"210", "420"},
+  // false);
+  // parameters.add_parameter(p1);
+  // autotune::fixed_set_parameter<std::string> p2("L3_Y", {"128", "256"},
+  // false);
+  // parameters.add_parameter(p2);
+  // autotune::fixed_set_parameter<std::string> p3("L3_K_STEP", {"256"}, false);
+  // parameters.add_parameter(p3);
+
+  // autotune::fixed_set_parameter<std::string> p4(
+  //     "L2_X", {"15", "35", "70", "140", "175"}, false);
+  // parameters.add_parameter(p4);
+  // autotune::fixed_set_parameter<std::string> p5(
+  //     "L2_Y", {"16", "32", "64", "128", "256"}, false);
+  // parameters.add_parameter(p5);
+  // autotune::fixed_set_parameter<std::string> p6(
+  //     "L2_K_STEP", {"32", "64", "128", "256", "512"}, false);
+  // parameters.add_parameter(p6);
+
+  // autotune::fixed_set_parameter<std::string> p7("L1_X", {"5", "10", "35",
+  // "70"},
+  //                                               false);
+  // parameters.add_parameter(p7);
+  // autotune::fixed_set_parameter<std::string> p8(
+  //     "L1_Y", {"16", "32", "64", "128"}, false);
+  // parameters.add_parameter(p8);
+  // autotune::fixed_set_parameter<std::string> p9(
+  //     "L1_K_STEP", {"1", "4", "8", "16", "32"}, false);
+  // parameters.add_parameter(p9);
 
   autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
@@ -138,7 +159,7 @@ int main(int argc, char **argv) {
   std::cout
       << "----------------------- starting tuning  -----------------------"
       << std::endl;
-  size_t line_search_steps = 20;
+  size_t line_search_steps = 3;
   autotune::tuners::line_search tuner(autotune::combined_kernel, parameters,
                                       line_search_steps, 1);
   tuner.set_verbose(true);
@@ -172,6 +193,7 @@ int main(int argc, char **argv) {
                  static_cast<double>(N);
   double gflop = flops / 1E9;
   std::cout << "inner_duration: " << inner_duration << std::endl;
-  std::cout << "[N = " << N << "] performance: " << (gflop / inner_duration)
+  std::cout << "[N = " << N
+            << "] performance: " << ((repetitions * gflop) / inner_duration)
             << "GFLOPS" << std::endl;
 }

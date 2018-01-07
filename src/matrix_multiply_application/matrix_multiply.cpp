@@ -32,13 +32,6 @@ int main(int argc, char *argv[]) {
       "how often should the operation be repeated (for averaging timings)")(
       "verbose", boost::program_options::value<uint64_t>()->default_value(0),
       "set to 1 for some status information, set to 2 more output")(
-      "block-result",
-      boost::program_options::value<std::uint64_t>()->default_value(128),
-      "block size in the result matrix (width of the band of the band matrix "
-      "multiplication), set to 0 to disable")(
-      "block-input",
-      boost::program_options::value<uint64_t>()->default_value(128),
-      "chunks the band of the band matrix multiplication")(
       "check", boost::program_options::value<bool>()->default_value(false),
       "check result against a naive and slow matrix-multiplication "
       "implementation")(
@@ -46,18 +39,7 @@ int main(int argc, char *argv[]) {
       boost::program_options::value<std::string>()->default_value(
           "naive"), // TODO: truncate
       "select algorithm: single, pseudodynamic, algorithms, looped, semi, "
-      "combined, kernel_test, kernel_tiled")(
-      "min-work-size",
-      boost::program_options::value<std::uint64_t>()->default_value(256),
-      "pseudodynamic algorithm: minimum work package size per node")(
-      "max-work-difference",
-      boost::program_options::value<std::uint64_t>()->default_value(10000),
-      "pseudodynamic algorithm: maximum tolerated load inbalance in matrix "
-      "components assigned")(
-      "max-relative-work-difference",
-      boost::program_options::value<double>()->default_value(0.05),
-      "pseudodynamic algorithm: maximum relative tolerated load inbalance "
-      "in matrix components assigned, in percent")("help", "display help");
+      "combined, kernel_test, kernel_tiled")("help", "display help");
 
   boost::program_options::variables_map vm;
   boost::program_options::store(
@@ -72,17 +54,11 @@ int main(int argc, char *argv[]) {
 
   // extract command line argument
   uint64_t N = vm["n-value"].as<std::uint64_t>();
-  size_t block_result = vm["block-result"].as<std::uint64_t>();
   uint64_t verbose = vm["verbose"].as<uint64_t>();
   std::string algorithm = vm["algorithm"].as<std::string>();
   bool check = vm["check"].as<bool>();
   bool transposed = vm["transposed"].as<bool>();
-  uint64_t block_input = vm["block-input"].as<uint64_t>();
   uint64_t repetitions = vm["repetitions"].as<uint64_t>();
-  uint64_t min_work_size = vm["min-work-size"].as<std::uint64_t>();
-  uint64_t max_work_difference = vm["max-work-difference"].as<std::uint64_t>();
-  uint64_t max_relative_work_difference =
-      vm["max-relative-work-difference"].as<double>();
 
   // create matrices A, B
   std::default_random_engine generator;
@@ -187,7 +163,7 @@ int main(int argc, char *argv[]) {
     } else {
       Cref = naive_matrix_multiply_transposed(N, A, B);
     }
-    char const *fmt = "naive matMult took %1% [s]";
+    // char const *fmt = "naive matMult took %1% [s]";
     if (verbose >= 2) {
       std::cout << "matrix Cref:" << std::endl;
       print_matrix_host(N, Cref);
