@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 16;
+  std::uint64_t N = 2048;
 
   bool transposed = false;
   size_t repetitions = 7;
@@ -55,12 +55,13 @@ int main(int argc, char **argv) {
       autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
   builder->set_verbose(true);
 
-  builder->set_include_paths("-IAutoTuneTMP/src -Isrc/variants/ "
-                             "-IVc_install/include "
-                             "-Iboost_install/include");
+  builder->set_include_paths(
+      "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
+      "-IVc_install/include "
+      "-Iboost_install/include");
   builder->set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
-                         "-O3 -g -ffast-math -fopenmp -fPIC");
-  builder->set_link_flags("-shared -g");
+                         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
+  builder->set_link_flags("-shared -g -fno-gnu-unique");
 
   // autotune::combined_kernel.add_parameter("L3_X", {"210", "420"});
   // autotune::combined_kernel.add_parameter("L3_Y", {"128", "256"});
@@ -137,9 +138,10 @@ int main(int argc, char **argv) {
   std::cout
       << "----------------------- starting tuning  -----------------------"
       << std::endl;
-  size_t line_search_steps = 1;
+  size_t line_search_steps = 20;
   autotune::tuners::line_search tuner(autotune::combined_kernel, parameters,
                                       line_search_steps, 1);
+  tuner.set_verbose(true);
   tuner.set_write_measurement(scenario_name + "_line_search");
 
   tuner.setup_test(test_result);
@@ -165,4 +167,11 @@ int main(int argc, char **argv) {
   } else {
     std::cout << "optimal parameters FAILED test!" << std::endl;
   }
+
+  double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+                 static_cast<double>(N);
+  double gflop = flops / 1E9;
+  std::cout << "inner_duration: " << inner_duration << std::endl;
+  std::cout << "[N = " << N << "] performance: " << (gflop / inner_duration)
+            << "GFLOPS" << std::endl;
 }

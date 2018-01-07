@@ -80,7 +80,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     auto builder =
         autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
     builder->set_verbose(true);
-    builder->set_include_paths("-IAutoTuneTMP_install/include -Isrc/variants/ "
+    builder->set_include_paths("-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
                                "-IVc_install/include "
                                "-IAutoTuneTMP/boost_install/include");
     builder->set_cpp_flags(
