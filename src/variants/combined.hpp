@@ -17,15 +17,9 @@ AUTOTUNE_DECLARE_KERNEL(std::vector<double>(std::size_t, std::size_t,
 namespace combined {
 
 // max 2 L3 par set to 1024 (rest 512)
-constexpr uint64_t L3_X = 420;
+constexpr uint64_t L3_X = 200;
 constexpr uint64_t L3_Y = 256;
 constexpr uint64_t L3_K_STEP = 256;
-// constexpr uint64_t L3_X = 20;
-// constexpr uint64_t L3_Y = 32;
-// constexpr uint64_t L3_K_STEP = 1;
-// constexpr uint64_t L3_X = 5;
-// constexpr uint64_t L3_Y = 8;
-// constexpr uint64_t L3_K_STEP = 1;
 
 class combined {
 

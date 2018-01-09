@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 4096;
+  std::uint64_t N = 256;
 
   bool transposed = false;
   size_t repetitions = 2;
@@ -58,62 +58,51 @@ int main(int argc, char **argv) {
 
   builder->set_include_paths(
       "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
-      "-IVc_install/include "
-      "-Iboost_install/include");
+      "-IAutoTuneTMP/Vc_install/include "
+      "-IAutoTuneTMP/boost_install/include");
   builder->set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
                          "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
   builder->set_link_flags("-shared -g -fno-gnu-unique");
 
-  // autotune::combined_kernel.add_parameter("L3_X", {"210", "420"});
-  // autotune::combined_kernel.add_parameter("L3_Y", {"128", "256"});
-  // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-  // autotune::combined_kernel.add_parameter("L2_X",
-  //                                         {"70"});
-  // autotune::combined_kernel.add_parameter("L2_Y",
-  //                                         {"64"});
-  // autotune::combined_kernel.add_parameter("L2_K_STEP",
-  //                                         {"64"});
-  // autotune::combined_kernel.add_parameter("L1_X", {"35"});
-  // autotune::combined_kernel.add_parameter("L1_Y", {"32"});
-  // autotune::combined_kernel.add_parameter("L1_K_STEP",
-  //                                         {"8"});
-
-  // autotune::combined_kernel.add_parameter("L3_X", {"420"});
-  // autotune::combined_kernel.add_parameter("L3_Y", {"256"});
-  // autotune::combined_kernel.add_parameter("L3_K_STEP", {"256"});
-
-  // autotune::combined_kernel.add_parameter("L2_X", {"70"});
-  // autotune::combined_kernel.add_parameter("L2_Y", {"64"});
-  // autotune::combined_kernel.add_parameter("L2_K_STEP", {"128"});
-  // autotune::combined_kernel.add_parameter("L1_X", {"35"});
-  // autotune::combined_kernel.add_parameter("L1_Y", {"16"});
-  // autotune::combined_kernel.add_parameter("L1_K_STEP", {"64"});
-
   autotune::countable_set parameters;
 
-  // autotune::fixed_set_parameter<std::string> p1("L2_X", {"70"}, false);
-  autotune::countable_continuous_parameter p1("L2_X", 35, 5, 10, 100);
+  autotune::fixed_set_parameter<std::string> p1(
+      "L3_X", {std::to_string(combined::L3_X)}, false);
+  autotune::fixed_set_parameter<std::string> p2(
+      "L3_Y", {std::to_string(combined::L3_Y)}, false);
+  autotune::fixed_set_parameter<std::string> p3(
+      "L3_K_STEP", {std::to_string(combined::L3_K_STEP)}, false);
+
+  // definitions from combined.hpp
+  // constexpr uint64_t L3_X = 420;
+  // constexpr uint64_t L3_Y = 256;
+  // constexpr uint64_t L3_K_STEP = 256;
+
+  // TODO: improvement: only L1 has to be divisible by matrix size?
+
+  autotune::countable_continuous_parameter p4("L2_X", 50, 10, 40, 100);
+  autotune::countable_continuous_parameter p5("L2_Y", 64, 2, 16, 128,
+                                              std::multiplies<double>(),
+                                              std::divides<double>());
+  autotune::countable_continuous_parameter p6("L2_K_STEP", 64, 2, 32, 256,
+                                              std::multiplies<double>(),
+                                              std::divides<double>());
+  autotune::countable_continuous_parameter p7("L1_X", 35, 5, 10, 50);
+  autotune::countable_continuous_parameter p8("L1_Y", 64, 2, 16, 128,
+                                              std::multiplies<double>(),
+                                              std::divides<double>());
+  autotune::countable_continuous_parameter p9("L1_K_STEP", 4, 2, 2, 256,
+                                              std::multiplies<double>(),
+                                              std::divides<double>());
   parameters.add_parameter(p1);
-  // autotune::fixed_set_parameter<std::string> p2("L2_Y", {"64"}, false);
-  autotune::countable_continuous_parameter p2("L2_Y", 64, 16, 16, 128);
   parameters.add_parameter(p2);
-  // autotune::fixed_set_parameter<std::string> p3("L2_K_STEP", {"128"}, false);
-  autotune::countable_continuous_parameter p3("L2_K_STEP", 64, 2, 32, 256,
-                                              std::multiplies<double>(),
-                                              std::divides<double>());
   parameters.add_parameter(p3);
-  // autotune::fixed_set_parameter<std::string> p4("L1_X", {"35"}, false);
-  autotune::countable_continuous_parameter p4("L1_X", 35, 5, 10, 50);
   parameters.add_parameter(p4);
-  // autotune::fixed_set_parameter<std::string> p5("L1_Y", {"16"}, false);
-  autotune::countable_continuous_parameter p5("L1_Y", 64, 16, 16, 128);
   parameters.add_parameter(p5);
-  // autotune::fixed_set_parameter<std::string> p6(
-  //     "L1_K_STEP", {"1", "4", "8", "16", "32"}, false);
-  autotune::countable_continuous_parameter p6("L1_K_STEP", 4, 2, 2, 256,
-                                              std::multiplies<double>(),
-                                              std::divides<double>());
   parameters.add_parameter(p6);
+  parameters.add_parameter(p7);
+  parameters.add_parameter(p8);
+  parameters.add_parameter(p9);
 
   // autotune::fixed_set_parameter<std::string> p1("L3_X", {"210", "420"},
   // false);
