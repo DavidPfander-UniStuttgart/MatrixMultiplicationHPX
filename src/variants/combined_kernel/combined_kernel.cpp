@@ -177,9 +177,9 @@ combined_kernel(std::size_t N_org, std::size_t X_size, std::size_t Y_size,
 
     // bool first = true;
 
-    std::cout << "L3_X: " << L3_X << std::endl;
-    std::cout << "L3_Y: " << L3_Y << std::endl;
-    std::cout << "L3_K_STEP: " << L3_K_STEP << std::endl;
+    // std::cout << "L3_X: " << L3_X << std::endl;
+    // std::cout << "L3_Y: " << L3_Y << std::endl;
+    // std::cout << "L3_K_STEP: " << L3_K_STEP << std::endl;
 
 #pragma omp parallel for collapse(2)
     for (size_t l3_x = 0; l3_x < X_size; l3_x += L3_X) {

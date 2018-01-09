@@ -87,11 +87,11 @@ int main(int argc, char **argv) {
   autotune::countable_continuous_parameter p6("L2_K_STEP", 64, 2, 32, 256,
                                               std::multiplies<double>(),
                                               std::divides<double>());
-  autotune::countable_continuous_parameter p7("L1_X", 35, 5, 10, 50);
-  autotune::countable_continuous_parameter p8("L1_Y", 64, 2, 16, 128,
+  autotune::countable_continuous_parameter p7("L1_X", 30, 5, 10, 40);
+  autotune::countable_continuous_parameter p8("L1_Y", 64, 2, 16, 64,
                                               std::multiplies<double>(),
                                               std::divides<double>());
-  autotune::countable_continuous_parameter p9("L1_K_STEP", 4, 2, 2, 256,
+  autotune::countable_continuous_parameter p9("L1_K_STEP", 8, 2, 4, 256,
                                               std::multiplies<double>(),
                                               std::divides<double>());
   parameters.add_parameter(p1);
