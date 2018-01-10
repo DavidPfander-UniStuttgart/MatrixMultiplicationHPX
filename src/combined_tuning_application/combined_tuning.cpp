@@ -7,10 +7,13 @@
 #include "util/matrix_multiplication_exception.hpp"
 #include "util/util.hpp"
 #include "variants/combined.hpp"
+#include "variants/kernel_tiled.hpp"
 #include "variants/naive.hpp"
 
 #include <functional>
 #include <random>
+
+#include <omp.h>
 
 int main(int argc, char **argv) {
 
@@ -25,7 +28,7 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 256;
+  std::uint64_t N = 4096;
 
   bool transposed = false;
   size_t repetitions = 2;
@@ -36,12 +39,19 @@ int main(int argc, char **argv) {
   std::vector<double> B = util::create_random_matrix<double>(N);
 
   std::vector<double> C_reference;
-  std::cout << "calculating reference solution..." << std::flush;
-  if (!transposed) {
-    C_reference = naive_matrix_multiply(N, A, B);
-  } else {
-    C_reference = naive_matrix_multiply_transposed(N, A, B);
+  {
+    kernel_tiled::kernel_tiled m_tiled(N, A, B, transposed, repetitions,
+                                       verbose);
+    std::cout << "calculating reference solution..." << std::flush;
+    double duration_reference;
+    C_reference = m_tiled.matrix_multiply(duration_reference);
   }
+
+  // if (!transposed) {
+  //   C_reference = naive_matrix_multiply(N, A, B);
+  // } else {
+  //   C_reference = naive_matrix_multiply_transposed(N, A, B);
+  // }
   std::cout << " done" << std::endl << std::flush;
 
   if (transposed) {
@@ -66,12 +76,12 @@ int main(int argc, char **argv) {
 
   autotune::countable_set parameters;
 
-  autotune::fixed_set_parameter<std::string> p1(
-      "L3_X", {std::to_string(combined::L3_X)}, false);
-  autotune::fixed_set_parameter<std::string> p2(
-      "L3_Y", {std::to_string(combined::L3_Y)}, false);
-  autotune::fixed_set_parameter<std::string> p3(
-      "L3_K_STEP", {std::to_string(combined::L3_K_STEP)}, false);
+  // autotune::fixed_set_parameter<std::string> p1(
+  //     "L3_X", {std::to_string(combined::L3_X)}, false);
+  // autotune::fixed_set_parameter<std::string> p2(
+  //     "L3_Y", {std::to_string(combined::L3_Y)}, false);
+  // autotune::fixed_set_parameter<std::string> p3(
+  //     "L3_K_STEP", {std::to_string(combined::L3_K_STEP)}, false);
 
   // definitions from combined.hpp
   // constexpr uint64_t L3_X = 420;
@@ -80,7 +90,7 @@ int main(int argc, char **argv) {
 
   // TODO: improvement: only L1 has to be divisible by matrix size?
 
-  autotune::countable_continuous_parameter p4("L2_X", 50, 10, 40, 100);
+  autotune::countable_continuous_parameter p4("L2_X", 60, 10, 40, 100);
   autotune::countable_continuous_parameter p5("L2_Y", 64, 2, 16, 128,
                                               std::multiplies<double>(),
                                               std::divides<double>());
@@ -90,18 +100,35 @@ int main(int argc, char **argv) {
   autotune::countable_continuous_parameter p7("L1_X", 30, 5, 10, 40);
   autotune::countable_continuous_parameter p8(
       "L1_Y", 64, 2, 16, 64, std::multiplies<double>(), std::divides<double>());
-  autotune::countable_continuous_parameter p9("L1_K_STEP", 8, 2, 4, 256,
+  autotune::countable_continuous_parameter p9("L1_K_STEP", 32, 2, 16, 256,
                                               std::multiplies<double>(),
                                               std::divides<double>());
-  parameters.add_parameter(p1);
-  parameters.add_parameter(p2);
-  parameters.add_parameter(p3);
+
+  size_t openmp_threads = omp_get_max_threads();
+  std::vector<size_t> thread_values;
+  thread_values.push_back(openmp_threads);
+  for (size_t i = 0; i < 1; i++) { // 4-way HT assumed max
+    // for (size_t i = 0; i < 3; i++) {  // 4-way HT assumed max
+    if (openmp_threads % 2 == 0) {
+      openmp_threads /= 2;
+      thread_values.push_back(openmp_threads);
+    } else {
+      break;
+    }
+  }
+  autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS",
+                                            thread_values);
+
+  // parameters.add_parameter(p1);
+  // parameters.add_parameter(p2);
+  // parameters.add_parameter(p3);
   parameters.add_parameter(p4);
   parameters.add_parameter(p5);
   parameters.add_parameter(p6);
   parameters.add_parameter(p7);
   parameters.add_parameter(p8);
   parameters.add_parameter(p9);
+  parameters.add_parameter(p10);
 
   // autotune::fixed_set_parameter<std::string> p1("L3_X", {"210", "420"},
   // false);
@@ -171,7 +198,7 @@ int main(int argc, char **argv) {
           return false;
         }
         // if (L1_X % X_REG != 0) {
-	if (ps.get_by_name("L1_X") < ps.get_by_name("Y_REG")) {
+        if (ps.get_by_name("L1_X") < ps.get_by_name("Y_REG")) {
           std::cout << "error: L1_X does not divide X_REG" << std::endl;
           return false;
         }
@@ -202,7 +229,10 @@ int main(int argc, char **argv) {
 
   tuner.setup_test(test_result);
   autotune::countable_set optimal_parameters =
-      tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B, m.repetitions,
+      // tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B,
+      // m.repetitions,
+      //            tune_kernel_duration_temp);
+      tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
                  tune_kernel_duration_temp);
 
   std::cout << "----------------------- end tuning -----------------------"
