@@ -88,9 +88,8 @@ int main(int argc, char **argv) {
                                               std::multiplies<double>(),
                                               std::divides<double>());
   autotune::countable_continuous_parameter p7("L1_X", 30, 5, 10, 40);
-  autotune::countable_continuous_parameter p8("L1_Y", 64, 2, 16, 64,
-                                              std::multiplies<double>(),
-                                              std::divides<double>());
+  autotune::countable_continuous_parameter p8(
+      "L1_Y", 64, 2, 16, 64, std::multiplies<double>(), std::divides<double>());
   autotune::countable_continuous_parameter p9("L1_K_STEP", 8, 2, 4, 256,
                                               std::multiplies<double>(),
                                               std::divides<double>());
@@ -160,6 +159,46 @@ int main(int argc, char **argv) {
                                       line_search_steps, 1);
   tuner.set_verbose(true);
   tuner.set_write_measurement(scenario_name + "_line_search");
+
+  tuner.set_validate_parameters_functor(
+      [](autotune::countable_set &ps) -> bool {
+        if (ps.get_by_name("L1_X") < ps.get_by_name("X_REG")) {
+          std::cout << "error: L1_X < X_REG, L1_X too small" << std::endl;
+          return false;
+        }
+        if (ps.get_by_name("L1_Y") < ps.get_by_name("Y_REG")) {
+          std::cout << "error: L1_Y < Y_REG, L1_Y too small" << std::endl;
+          return false;
+        }
+        // if (L1_X % X_REG != 0) {
+	if (ps.get_by_name("L1_X") < ps.get_by_name("Y_REG")) {
+          std::cout << "error: L1_X does not divide X_REG" << std::endl;
+          return false;
+        }
+        if (L1_Y % Y_REG != 0) {
+          std::cout << "error: L1_Y does not divide Y_REG" << std::endl;
+          return false;
+        }
+        if (!((L2_X % L1_X == 0) && (L3_X % L2_X == 0))) {
+          // if (L2_X % L1_X != 0) {
+          std::cout << "error: x direction blocking not set up correctly"
+                    << std::endl;
+          return false;
+        }
+        if (!((L2_Y % L1_Y == 0) && (L3_Y % L2_Y == 0))) {
+          // if (L2_Y % L1_Y != 0) {
+          std::cout << "error: y direction blocking not set up correctly"
+                    << std::endl;
+          return false;
+        }
+        if (!((L2_K_STEP % L1_K_STEP == 0) && (L3_K_STEP % L2_K_STEP == 0))) {
+          // if (L2_K_STEP % L1_K_STEP != 0) {
+          std::cout << "error: k direction blocking not set up correctly"
+                    << std::endl;
+          return false;
+        }
+        return true;
+      });
 
   tuner.setup_test(test_result);
   autotune::countable_set optimal_parameters =
