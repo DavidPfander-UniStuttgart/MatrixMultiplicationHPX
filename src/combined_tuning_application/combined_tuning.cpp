@@ -1,7 +1,10 @@
 #include "autotune/autotune.hpp"
 #include "autotune/parameter.hpp"
 #include "autotune/tuners/bruteforce.hpp"
+#include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/line_search.hpp"
+#include "autotune/tuners/monte_carlo.hpp"
+#include "autotune/tuners/neighborhood_search.hpp"
 
 #include "util/create_random_matrix.hpp"
 #include "util/matrix_multiplication_exception.hpp"
@@ -74,22 +77,6 @@ int main(int argc, char **argv) {
                          "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
   builder->set_link_flags("-shared -g -fno-gnu-unique");
 
-  autotune::countable_set parameters;
-
-  // autotune::fixed_set_parameter<std::string> p1(
-  //     "L3_X", {std::to_string(combined::L3_X)}, false);
-  // autotune::fixed_set_parameter<std::string> p2(
-  //     "L3_Y", {std::to_string(combined::L3_Y)}, false);
-  // autotune::fixed_set_parameter<std::string> p3(
-  //     "L3_K_STEP", {std::to_string(combined::L3_K_STEP)}, false);
-
-  // definitions from combined.hpp
-  // constexpr uint64_t L3_X = 420;
-  // constexpr uint64_t L3_Y = 256;
-  // constexpr uint64_t L3_K_STEP = 256;
-
-  // TODO: improvement: only L1 has to be divisible by matrix size?
-
   autotune::countable_continuous_parameter p4("L2_X", 60, 10, 40, 100);
   autotune::countable_continuous_parameter p5("L2_Y", 64, 2, 16, 128,
                                               std::multiplies<double>(),
@@ -119,6 +106,7 @@ int main(int argc, char **argv) {
   autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS",
                                             thread_values);
 
+  autotune::countable_set parameters;
   // parameters.add_parameter(p1);
   // parameters.add_parameter(p2);
   // parameters.add_parameter(p3);
@@ -130,35 +118,17 @@ int main(int argc, char **argv) {
   parameters.add_parameter(p9);
   parameters.add_parameter(p10);
 
-  // autotune::fixed_set_parameter<std::string> p1("L3_X", {"210", "420"},
-  // false);
+  autotune::randomizable_set randomizable_parameters;
   // parameters.add_parameter(p1);
-  // autotune::fixed_set_parameter<std::string> p2("L3_Y", {"128", "256"},
-  // false);
   // parameters.add_parameter(p2);
-  // autotune::fixed_set_parameter<std::string> p3("L3_K_STEP", {"256"}, false);
   // parameters.add_parameter(p3);
-
-  // autotune::fixed_set_parameter<std::string> p4(
-  //     "L2_X", {"15", "35", "70", "140", "175"}, false);
-  // parameters.add_parameter(p4);
-  // autotune::fixed_set_parameter<std::string> p5(
-  //     "L2_Y", {"16", "32", "64", "128", "256"}, false);
-  // parameters.add_parameter(p5);
-  // autotune::fixed_set_parameter<std::string> p6(
-  //     "L2_K_STEP", {"32", "64", "128", "256", "512"}, false);
-  // parameters.add_parameter(p6);
-
-  // autotune::fixed_set_parameter<std::string> p7("L1_X", {"5", "10", "35",
-  // "70"},
-  //                                               false);
-  // parameters.add_parameter(p7);
-  // autotune::fixed_set_parameter<std::string> p8(
-  //     "L1_Y", {"16", "32", "64", "128"}, false);
-  // parameters.add_parameter(p8);
-  // autotune::fixed_set_parameter<std::string> p9(
-  //     "L1_K_STEP", {"1", "4", "8", "16", "32"}, false);
-  // parameters.add_parameter(p9);
+  randomizable_parameters.add_parameter(p4);
+  randomizable_parameters.add_parameter(p5);
+  randomizable_parameters.add_parameter(p6);
+  randomizable_parameters.add_parameter(p7);
+  randomizable_parameters.add_parameter(p8);
+  randomizable_parameters.add_parameter(p9);
+  randomizable_parameters.add_parameter(p10);
 
   autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
@@ -178,47 +148,231 @@ int main(int argc, char **argv) {
     return true;
   };
 
-  std::cout
-      << "----------------------- starting tuning  -----------------------"
-      << std::endl;
-  size_t line_search_steps = 50;
-  autotune::tuners::line_search tuner(autotune::combined_kernel, parameters,
-                                      line_search_steps, 1);
-  tuner.set_verbose(true);
-  tuner.set_write_measurement(scenario_name + "_line_search");
+  // {
+  //   std::cout
+  //       << "----------------- starting tuning with line search ------------ "
+  //       << std::endl;
+  //   size_t line_search_steps = 50;
+  //   autotune::tuners::line_search tuner(autotune::combined_kernel,
+  //   parameters,
+  //                                       line_search_steps, 1);
+  //   tuner.set_verbose(true);
+  //   tuner.set_write_measurement(scenario_name + "_line_search");
 
-  tuner.setup_test(test_result);
-  autotune::countable_set optimal_parameters =
-      // tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B,
-      // m.repetitions,
-      //            tune_kernel_duration_temp);
-      tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                 tune_kernel_duration_temp);
+  //   tuner.setup_test(test_result);
+  //   autotune::countable_set optimal_parameters =
+  //       // tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B,
+  //       // m.repetitions,
+  //       //            tune_kernel_duration_temp);
+  //       tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
+  //                  tune_kernel_duration_temp);
 
-  std::cout << "----------------------- end tuning -----------------------"
-            << std::endl;
-  std::cout << "optimal parameter values:" << std::endl;
-  optimal_parameters.print_values();
-  autotune::combined_kernel.set_parameter_values(optimal_parameters);
+  //   std::cout << "----------------------- end tuning -----------------------"
+  //             << std::endl;
+  //   std::cout << "optimal parameter values (line search):" << std::endl;
+  //   optimal_parameters.print_values();
+  //   autotune::combined_kernel.set_parameter_values(optimal_parameters);
+  //   autotune::combined_kernel.compile();
 
-  // autotune::combined_kernel.create_parameter_file(optimal_parameters);
+  //   double inner_duration;
+  //   std::vector<double> C = m.matrix_multiply(inner_duration);
+  //   bool test_ok = test_result(C);
+  //   if (test_ok) {
+  //     std::cout << "optimal parameters test ok!" << std::endl;
+  //   } else {
+  //     std::cout << "optimal parameters FAILED test!" << std::endl;
+  //   }
 
-  autotune::combined_kernel.compile();
+  //   double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+  //                  static_cast<double>(N);
+  //   double gflop = flops / 1E9;
+  //   std::cout << "optimal inner_duration (line search): " << inner_duration
+  //             << std::endl;
+  //   std::cout << "[N = " << N
+  //             << "] performance: " << ((repetitions * gflop) /
+  //             inner_duration)
+  //             << "GFLOPS" << std::endl;
+  // }
 
-  double inner_duration;
-  std::vector<double> C = m.matrix_multiply(inner_duration);
-  bool test_ok = test_result(C);
-  if (test_ok) {
-    std::cout << "optimal parameters test ok!" << std::endl;
-  } else {
-    std::cout << "optimal parameters FAILED test!" << std::endl;
+  // // tune with line search
+  // {
+  //   std::cout
+  //       << "----------------- starting tuning with line search ------------ "
+  //       << std::endl;
+  //   size_t line_search_steps = 50;
+  //   autotune::tuners::line_search tuner(autotune::combined_kernel,
+  //   parameters,
+  //                                       line_search_steps, 1);
+  //   tuner.set_verbose(true);
+  //   tuner.set_write_measurement(scenario_name + "_line_search");
+
+  //   tuner.setup_test(test_result);
+  //   autotune::countable_set optimal_parameters =
+  //       // tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B,
+  //       // m.repetitions,
+  //       //            tune_kernel_duration_temp);
+  //       tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
+  //                  tune_kernel_duration_temp);
+
+  //   std::cout << "----------------------- end tuning -----------------------"
+  //             << std::endl;
+  //   std::cout << "optimal parameter values (line search):" << std::endl;
+  //   optimal_parameters.print_values();
+  //   autotune::combined_kernel.set_parameter_values(optimal_parameters);
+  //   autotune::combined_kernel.compile();
+
+  //   double inner_duration;
+  //   std::vector<double> C = m.matrix_multiply(inner_duration);
+  //   bool test_ok = test_result(C);
+  //   if (test_ok) {
+  //     std::cout << "optimal parameters test ok!" << std::endl;
+  //   } else {
+  //     std::cout << "optimal parameters FAILED test!" << std::endl;
+  //   }
+
+  //   double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+  //                  static_cast<double>(N);
+  //   double gflop = flops / 1E9;
+  //   std::cout << "optimal inner_duration (line search): " << inner_duration
+  //             << std::endl;
+  //   std::cout << "[N = " << N
+  //             << "] performance: " << ((repetitions * gflop) /
+  //             inner_duration)
+  //             << "GFLOPS" << std::endl;
+  // }
+
+  // // tune with neighborhood search
+  // {
+  //   std::cout << "----------------- starting tuning with neighborhood search
+  //   "
+  //                "------------ "
+  //             << std::endl;
+  //   size_t search_steps = 50;
+  //   autotune::tuners::neighborhood_search tuner(autotune::combined_kernel,
+  //                                               parameters, search_steps);
+  //   tuner.set_verbose(true);
+  //   tuner.set_write_measurement(scenario_name + "_neighborhood_search");
+
+  //   tuner.setup_test(test_result);
+  //   autotune::countable_set optimal_parameters =
+  //       // tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B,
+  //       // m.repetitions,
+  //       //            tune_kernel_duration_temp);
+  //       tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
+  //                  tune_kernel_duration_temp);
+
+  //   std::cout << "----------------------- end tuning -----------------------"
+  //             << std::endl;
+  //   std::cout << "optimal parameter values (neighborhood search):" <<
+  //   std::endl;
+  //   optimal_parameters.print_values();
+  //   autotune::combined_kernel.set_parameter_values(optimal_parameters);
+  //   autotune::combined_kernel.compile();
+
+  //   double inner_duration;
+  //   std::vector<double> C = m.matrix_multiply(inner_duration);
+  //   bool test_ok = test_result(C);
+  //   if (test_ok) {
+  //     std::cout << "optimal parameters test ok!" << std::endl;
+  //   } else {
+  //     std::cout << "optimal parameters FAILED test!" << std::endl;
+  //   }
+
+  //   double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+  //                  static_cast<double>(N);
+  //   double gflop = flops / 1E9;
+  //   std::cout << "optimal inner_duration (neighborhood search): "
+  //             << inner_duration << std::endl;
+  //   std::cout << "[N = " << N
+  //             << "] performance: " << ((repetitions * gflop) /
+  //             inner_duration)
+  //             << "GFLOPS" << std::endl;
+  // }
+
+  // // tune with neighborhood search
+  // {
+  //   std::cout << "----------------- starting tuning with bruteforce search "
+  //                "------------ "
+  //             << std::endl;
+  //   autotune::tuners::bruteforce tuner(autotune::combined_kernel,
+  //   parameters);
+  //   tuner.set_verbose(true);
+  //   tuner.set_write_measurement(scenario_name + "_bruteforce_search");
+
+  //   tuner.setup_test(test_result);
+  //   autotune::countable_set optimal_parameters =
+  //       // tuner.tune(m.N_org, m.X_size, m.Y_size, m.K_size, m.A, m.B,
+  //       // m.repetitions,
+  //       //            tune_kernel_duration_temp);
+  //       tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
+  //                  tune_kernel_duration_temp);
+
+  //   std::cout << "----------------------- end tuning -----------------------"
+  //             << std::endl;
+  //   std::cout << "optimal parameter values (bruteforce search):" <<
+  //   std::endl;
+  //   optimal_parameters.print_values();
+  //   autotune::combined_kernel.set_parameter_values(optimal_parameters);
+  //   autotune::combined_kernel.compile();
+
+  //   double inner_duration;
+  //   std::vector<double> C = m.matrix_multiply(inner_duration);
+  //   bool test_ok = test_result(C);
+  //   if (test_ok) {
+  //     std::cout << "optimal parameters test ok!" << std::endl;
+  //   } else {
+  //     std::cout << "optimal parameters FAILED test!" << std::endl;
+  //   }
+
+  //   double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+  //                  static_cast<double>(N);
+  //   double gflop = flops / 1E9;
+  //   std::cout << "optimal inner_duration (bruteforce search): "
+  //             << inner_duration << std::endl;
+  //   std::cout << "[N = " << N
+  //             << "] performance: " << ((repetitions * gflop) /
+  //             inner_duration)
+  //             << "GFLOPS" << std::endl;
+  // }
+
+  // tune with monte carlo search
+  {
+    std::cout << "----------------- starting tuning with monte_carlo search "
+                 "------------ "
+              << std::endl;
+    size_t search_steps = 50;
+    autotune::tuners::monte_carlo tuner(autotune::combined_kernel,
+                                        randomizable_parameters, search_steps);
+    tuner.set_verbose(true);
+    tuner.set_write_measurement(scenario_name + "_monte_carlo_search");
+
+    tuner.setup_test(test_result);
+    autotune::randomizable_set optimal_parameters = tuner.tune(
+        m.N_org, m.A_org, m.B_org, m.repetitions, tune_kernel_duration_temp);
+
+    std::cout << "----------------------- end tuning -----------------------"
+              << std::endl;
+    std::cout << "optimal parameter values (monte carlo search):" << std::endl;
+    optimal_parameters.print_values();
+    autotune::combined_kernel.set_parameter_values(optimal_parameters);
+    autotune::combined_kernel.compile();
+
+    double inner_duration;
+    std::vector<double> C = m.matrix_multiply(inner_duration);
+    bool test_ok = test_result(C);
+    if (test_ok) {
+      std::cout << "optimal parameters test ok!" << std::endl;
+    } else {
+      std::cout << "optimal parameters FAILED test!" << std::endl;
+    }
+
+    double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+                   static_cast<double>(N);
+    double gflop = flops / 1E9;
+    std::cout << "optimal inner_duration (neighborhood search): "
+              << inner_duration << std::endl;
+    std::cout << "[N = " << N
+              << "] performance: " << ((repetitions * gflop) / inner_duration)
+              << "GFLOPS" << std::endl;
   }
-
-  double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
-                 static_cast<double>(N);
-  double gflop = flops / 1E9;
-  std::cout << "inner_duration: " << inner_duration << std::endl;
-  std::cout << "[N = " << N
-            << "] performance: " << ((repetitions * gflop) / inner_duration)
-            << "GFLOPS" << std::endl;
 }
