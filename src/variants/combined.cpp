@@ -55,6 +55,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     size_t openmp_threads = omp_get_max_threads();
     autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS",
                                               {openmp_threads});
+    // autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS", {1});
 
     parameters.add_parameter(p4);
     parameters.add_parameter(p5);

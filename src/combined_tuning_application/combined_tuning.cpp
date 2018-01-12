@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
   std::uint64_t N = 4096;
+  // std::uint64_t N = 256;
 
   bool transposed = false;
   size_t repetitions = 2;
@@ -78,18 +79,13 @@ int main(int argc, char **argv) {
   builder->set_link_flags("-shared -g -fno-gnu-unique");
 
   autotune::countable_continuous_parameter p4("L2_X", 60, 10, 40, 100);
-  autotune::countable_continuous_parameter p5("L2_Y", 64, 2, 16, 128,
-                                              std::multiplies<double>(),
-                                              std::divides<double>());
+  autotune::countable_continuous_parameter p5("L2_Y", 64, 2, 16, 128, true);
   autotune::countable_continuous_parameter p6("L2_K_STEP", 64, 2, 32, 256,
-                                              std::multiplies<double>(),
-                                              std::divides<double>());
+                                              true);
   autotune::countable_continuous_parameter p7("L1_X", 30, 5, 10, 40);
-  autotune::countable_continuous_parameter p8(
-      "L1_Y", 64, 2, 16, 64, std::multiplies<double>(), std::divides<double>());
+  autotune::countable_continuous_parameter p8("L1_Y", 64, 2, 16, 64, true);
   autotune::countable_continuous_parameter p9("L1_K_STEP", 32, 2, 16, 256,
-                                              std::multiplies<double>(),
-                                              std::divides<double>());
+                                              true);
 
   size_t openmp_threads = omp_get_max_threads();
   std::vector<size_t> thread_values;
@@ -147,6 +143,39 @@ int main(int argc, char **argv) {
     }
     return true;
   };
+
+  auto precompile_validate_parameter_functor =
+      [](autotune::parameter_value_set &parameters) -> bool {
+    int64_t L1_X = stol(parameters["L1_X"]);
+    int64_t L1_Y = stol(parameters["L1_Y"]);
+    int64_t L1_K_STEP = stol(parameters["L1_K_STEP"]);
+    int64_t L2_X = stol(parameters["L2_X"]);
+    int64_t L2_Y = stol(parameters["L2_Y"]);
+    int64_t L2_K_STEP = stol(parameters["L2_K_STEP"]);
+
+    if (L2_X % L1_X != 0) {
+      std::cout << "error in precompile check: x direction blocking error: "
+                   "L2_X % L1_X != 0"
+                << std::endl;
+      return false;
+    }
+    if (L2_Y % L1_Y != 0) {
+      std::cout << "error in precompile check: y direction blocking error: "
+                   "L2_Y % L1_Y != 0"
+                << std::endl;
+      return false;
+    }
+    if (L2_K_STEP % L1_K_STEP != 0) {
+      std::cout << "error in precompile check: k direction blocking error: "
+                   "L2_K_STEP % L1_K_STEP != 0 "
+                << std::endl;
+      return false;
+    }
+    return true;
+  };
+
+  autotune::combined_kernel.set_precompile_validate_parameter_functor(
+      precompile_validate_parameter_functor);
 
   // {
   //   std::cout
@@ -340,7 +369,7 @@ int main(int argc, char **argv) {
     std::cout << "----------------- starting tuning with monte_carlo search "
                  "------------ "
               << std::endl;
-    size_t search_steps = 50;
+    size_t search_steps = 1000;
     autotune::tuners::monte_carlo tuner(autotune::combined_kernel,
                                         randomizable_parameters, search_steps);
     tuner.set_verbose(true);
@@ -369,7 +398,7 @@ int main(int argc, char **argv) {
     double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
                    static_cast<double>(N);
     double gflop = flops / 1E9;
-    std::cout << "optimal inner_duration (neighborhood search): "
+    std::cout << "optimal inner_duration (monte carlo search): "
               << inner_duration << std::endl;
     std::cout << "[N = " << N
               << "] performance: " << ((repetitions * gflop) / inner_duration)
