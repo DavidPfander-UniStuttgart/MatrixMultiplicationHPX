@@ -22,9 +22,9 @@ using Vc::double_v;
 // #define L3_K_STEP 256
 
 // #define Y_REG 8
-constexpr size_t X_REG = 5; // cannot be changed!
-constexpr size_t Y_BASE_WIDTH = 2;
-constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // cannot be changed!
+constexpr size_t X_REG = 2;
+constexpr size_t Y_BASE_WIDTH = 4;
+constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 
 using namespace index_iterator;
@@ -202,11 +202,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
                 for (size_t x = 0; x < L1_X; x += X_REG) {
                   for (size_t y = 0; y < L1_Y; y += Y_REG) {
 
-                    reg_array acc_1 = 0.0;
-                    reg_array acc_2 = 0.0;
-                    reg_array acc_3 = 0.0;
-                    reg_array acc_4 = 0.0;
-                    reg_array acc_5 = 0.0;
+                    std::array<reg_array, X_REG> acc;
 
                     for (size_t k_inner = 0; k_inner < L1_K_STEP;
                          k_inner += 1) {
@@ -216,54 +212,25 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
                           Vc::flags::vector_aligned);
 
                       // loads from A_trans are broadcasts!
-                      double_v a_temp_1 =
-                          A_trans[A_base_index + k_inner * L1_X + (x + 0)];
-                      double_v a_temp_2 =
-                          A_trans[A_base_index + k_inner * L1_X + (x + 1)];
-                      double_v a_temp_3 =
-                          A_trans[A_base_index + k_inner * L1_X + (x + 2)];
-                      double_v a_temp_4 =
-                          A_trans[A_base_index + k_inner * L1_X + (x + 3)];
-                      double_v a_temp_5 =
-                          A_trans[A_base_index + k_inner * L1_X + (x + 4)];
+                      std::array<double_v, X_REG> a_temp;
+                      for (size_t r = 0; r < X_REG; r++) {
+                        a_temp[r] =
+                            A_trans[A_base_index + k_inner * L1_X + (x + r)];
+                      }
 
-                      acc_1 += a_temp_1 * b_temp;
-                      acc_2 += a_temp_2 * b_temp;
-                      acc_3 += a_temp_3 * b_temp;
-                      acc_4 += a_temp_4 * b_temp;
-                      acc_5 += a_temp_5 * b_temp;
+                      for (size_t r = 0; r < X_REG; r++) {
+                        acc[r] += a_temp[r] * b_temp;
+                      }
                     }
 
-                    reg_array res_1(
-                        &C_padded[C_base_index + (x + 0) * L1_Y + y],
-                        Vc::flags::element_aligned);
-                    res_1 += acc_1;
-                    res_1.memstore(&C_padded[C_base_index + (x + 0) * L1_Y + y],
+                    for (size_t r = 0; r < X_REG; r++) {
+                      reg_array res(
+                          &C_padded[C_base_index + (x + r) * L1_Y + y],
+                          Vc::flags::element_aligned);
+                      res += acc[r];
+                      res.memstore(&C_padded[C_base_index + (x + r) * L1_Y + y],
                                    Vc::flags::element_aligned);
-                    reg_array res_2(
-                        &C_padded[C_base_index + (x + 1) * L1_Y + y],
-                        Vc::flags::element_aligned);
-                    res_2 += acc_2;
-                    res_2.memstore(&C_padded[C_base_index + (x + 1) * L1_Y + y],
-                                   Vc::flags::element_aligned);
-                    reg_array res_3(
-                        &C_padded[C_base_index + (x + 2) * L1_Y + y],
-                        Vc::flags::element_aligned);
-                    res_3 += acc_3;
-                    res_3.memstore(&C_padded[C_base_index + (x + 2) * L1_Y + y],
-                                   Vc::flags::element_aligned);
-                    reg_array res_4(
-                        &C_padded[C_base_index + (x + 3) * L1_Y + y],
-                        Vc::flags::element_aligned);
-                    res_4 += acc_4;
-                    res_4.memstore(&C_padded[C_base_index + (x + 3) * L1_Y + y],
-                                   Vc::flags::element_aligned);
-                    reg_array res_5(
-                        &C_padded[C_base_index + (x + 4) * L1_Y + y],
-                        Vc::flags::element_aligned);
-                    res_5 += acc_5;
-                    res_5.memstore(&C_padded[C_base_index + (x + 4) * L1_Y + y],
-                                   Vc::flags::element_aligned);
+                    }
                   }
                 }
               }
