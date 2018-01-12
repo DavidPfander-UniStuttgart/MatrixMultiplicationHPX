@@ -179,9 +179,41 @@ int main(int argc, char **argv) {
     }
     return true;
   };
-
   autotune::combined_kernel.set_precompile_validate_parameter_functor(
       precompile_validate_parameter_functor);
+
+  auto parameter_adjustment_functor =
+      [](autotune::parameter_value_set &parameters,
+         const std::string &changed) -> bool {
+    int64_t X_REG = stol(parameters["X_REG"]);
+    int64_t Y_BASE_WIDTH = stol(parameters["Y_BASE_WIDTH"]);
+    int64_t L1_X = stol(parameters["L1_X"]);
+    int64_t L1_Y = stol(parameters["L1_Y"]);
+    int64_t L1_K_STEP = stol(parameters["L1_K_STEP"]);
+    int64_t L2_X = stol(parameters["L2_X"]);
+    int64_t L2_Y = stol(parameters["L2_Y"]);
+    int64_t L2_K_STEP = stol(parameters["L2_K_STEP"]);
+
+    if (L2_X % L1_X != 0) {
+      std::cout << "error in precompile check: x direction blocking error: "
+                   "L2_X % L1_X != 0"
+                << std::endl;
+      return false;
+    }
+    if (L2_Y % L1_Y != 0) {
+      std::cout << "error in precompile check: y direction blocking error: "
+                   "L2_Y % L1_Y != 0"
+                << std::endl;
+      return false;
+    }
+    if (L2_K_STEP % L1_K_STEP != 0) {
+      std::cout << "error in precompile check: k direction blocking error: "
+                   "L2_K_STEP % L1_K_STEP != 0 "
+                << std::endl;
+      return false;
+    }
+    return true;
+  };
 
   // {
   //   std::cout

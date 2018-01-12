@@ -46,13 +46,13 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     builder->set_link_flags("-shared -fno-gnu-unique");
 
     autotune::countable_set parameters;
-    autotune::fixed_set_parameter<std::string> p4("L2_X", {"80"}, false);
+    autotune::fixed_set_parameter<std::string> p4("L2_X", {"64"}, false);
     autotune::fixed_set_parameter<std::string> p5("L2_Y", {"128"}, false);
-    autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"32"}, false);
-    autotune::fixed_set_parameter<std::string> p7("L1_X", {"10"}, false);
+    autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"64"}, false);
+    autotune::fixed_set_parameter<std::string> p7("L1_X", {"16"}, false);
     autotune::fixed_set_parameter<std::string> p8("L1_Y", {"16"}, false);
-    autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"32"}, false);
-    autotune::fixed_set_parameter<std::string> p10("X_REG", {"5"}, false);
+    autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"64"}, false);
+    autotune::fixed_set_parameter<std::string> p10("X_REG", {"4"}, false);
     autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"},
                                                    false);
     size_t openmp_threads = omp_get_max_threads();
