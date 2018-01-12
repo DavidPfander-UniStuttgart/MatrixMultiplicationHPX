@@ -21,9 +21,8 @@ using Vc::double_v;
 // #define L3_Y 256
 // #define L3_K_STEP 256
 
-// #define Y_REG 8
-constexpr size_t X_REG = 2;
-constexpr size_t Y_BASE_WIDTH = 4;
+// constexpr size_t X_REG = 2;
+// constexpr size_t Y_BASE_WIDTH = 4;
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 

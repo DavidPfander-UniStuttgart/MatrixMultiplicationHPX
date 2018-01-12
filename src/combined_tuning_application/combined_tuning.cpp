@@ -86,6 +86,8 @@ int main(int argc, char **argv) {
   autotune::countable_continuous_parameter p8("L1_Y", 64, 2, 16, 64, true);
   autotune::countable_continuous_parameter p9("L1_K_STEP", 32, 2, 16, 256,
                                               true);
+  autotune::fixed_set_parameter<std::string> p10("X_REG", {"5"}, false);
+  autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"}, false);
 
   size_t openmp_threads = omp_get_max_threads();
   std::vector<size_t> thread_values;
@@ -99,7 +101,7 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS",
+  autotune::fixed_set_parameter<size_t> p12("KERNEL_OMP_THREADS",
                                             thread_values);
 
   autotune::countable_set parameters;
@@ -113,6 +115,8 @@ int main(int argc, char **argv) {
   parameters.add_parameter(p8);
   parameters.add_parameter(p9);
   parameters.add_parameter(p10);
+  parameters.add_parameter(p11);
+  parameters.add_parameter(p12);
 
   autotune::randomizable_set randomizable_parameters;
   // parameters.add_parameter(p1);
@@ -125,6 +129,8 @@ int main(int argc, char **argv) {
   randomizable_parameters.add_parameter(p8);
   randomizable_parameters.add_parameter(p9);
   randomizable_parameters.add_parameter(p10);
+  randomizable_parameters.add_parameter(p11);
+  randomizable_parameters.add_parameter(p12);
 
   autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 

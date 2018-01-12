@@ -52,8 +52,11 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     autotune::fixed_set_parameter<std::string> p7("L1_X", {"10"}, false);
     autotune::fixed_set_parameter<std::string> p8("L1_Y", {"16"}, false);
     autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"32"}, false);
+    autotune::fixed_set_parameter<std::string> p10("X_REG", {"5"}, false);
+    autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"},
+                                                   false);
     size_t openmp_threads = omp_get_max_threads();
-    autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS",
+    autotune::fixed_set_parameter<size_t> p12("KERNEL_OMP_THREADS",
                                               {openmp_threads});
     // autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS", {1});
 
@@ -64,6 +67,8 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     parameters.add_parameter(p8);
     parameters.add_parameter(p9);
     parameters.add_parameter(p10);
+    parameters.add_parameter(p11);
+    parameters.add_parameter(p12);
 
     autotune::combined_kernel.set_parameter_values(parameters);
     autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
