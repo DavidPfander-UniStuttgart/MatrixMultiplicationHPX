@@ -124,7 +124,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
 
   pad_matrices(N_org, A_org, B_org, X_size, Y_size, K_size, A, B);
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> C_padded(
       X_size * Y_size);
 
   std::vector<memory_layout::tiling_info_dim> tiling_spec_A_trans(2);
@@ -133,7 +133,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   tiling_spec_A_trans[1].tile_size_dir = L1_X;
   tiling_spec_A_trans[1].stride = X_size;
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       A_trans_untiled(A.size());
   for (size_t i = 0; i < K_size; i++) {
     for (size_t j = 0; j < X_size; j++) {
@@ -144,7 +144,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   // std::cout << "A_trans_untiled:" << std::endl;
   // print_matrix_host(K_size, X_size, A_trans_untiled);
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans =
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_trans =
       memory_layout::make_tiled<2>(A_trans_untiled, tiling_spec_A_trans);
 
   // std::cout << "A_trans (tiled):" << std::endl;
@@ -157,11 +157,11 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   tiling_spec_B[1].stride = Y_size;
 
   // because of allocator
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_copy(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> B_copy(
       B.size());
   std::copy(B.begin(), B.end(), B_copy.begin());
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       B_padded = memory_layout::make_tiled<2>(B_copy, tiling_spec_B);
 
   for (size_t rep = 0; rep < repetitions; rep++) {
@@ -250,7 +250,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   tiling_spec_C[1].tile_size_dir = L1_Y;
   tiling_spec_C[1].stride = Y_size;
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       C_untiled = memory_layout::undo_tiling<2>(C_padded, tiling_spec_C);
 
   std::vector<double> C_return(N_org * N_org);
