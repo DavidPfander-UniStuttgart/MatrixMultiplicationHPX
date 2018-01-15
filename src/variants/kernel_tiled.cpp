@@ -113,6 +113,8 @@ kernel_tiled::kernel_tiled(size_t N, std::vector<double> &A_org,
 
 std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
 
+  duration = 0.0;
+
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
   std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(
