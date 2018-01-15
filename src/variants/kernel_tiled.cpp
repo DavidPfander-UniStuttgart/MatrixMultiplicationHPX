@@ -301,11 +301,11 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
 
                             double_v b_temp_1 = double_v(
                                 &B_padded[B_base_index + k_inner * L1_Y + y],
-                                Vc::flags::vector_aligned);
+                                Vc::flags::element_aligned);
                             double_v b_temp_2 =
                                 double_v(&B_padded[B_base_index +
                                                    k_inner * L1_Y + (y + 4)],
-                                         Vc::flags::vector_aligned);
+                                         Vc::flags::element_aligned);
 
                             double_v a_temp_1 =
                                 A_trans[A_base_index + k_inner * L1_X +
