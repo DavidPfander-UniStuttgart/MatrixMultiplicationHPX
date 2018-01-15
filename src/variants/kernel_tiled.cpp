@@ -117,14 +117,14 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
 
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> C_padded(
       X_size * Y_size);
   std::fill(C_padded.begin(), C_padded.end(), 0.0);
 
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
   // is also padded if padding is enabled (row padded only)
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_trans(
       K_size * X_size);
   for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
     for (size_t l1_k = 0; l1_k < K_size / L1_K_STEP; l1_k += 1) {
@@ -140,7 +140,7 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
   }
 
   // don't need padding for B, no dependency to row count
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_padded(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> B_padded(
       K_size * Y_size);
   for (size_t l1_y = 0; l1_y < (Y_size / L1_Y); l1_y += 1) {
     for (size_t l1_k = 0; l1_k < (K_size / L1_K_STEP); l1_k += 1) {
