@@ -16,25 +16,32 @@ using Vc::double_v;
 
 #include <opttmp/vectorization/register_tiling.hpp>
 
-// // not tuned for now
-// #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-// #define L3_Y 256
-// #define L3_K_STEP 256
-
-// constexpr size_t X_REG = 2;
-// constexpr size_t Y_BASE_WIDTH = 4;
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 
 using namespace index_iterator;
 
 extern "C" bool is_valid_parameter_combination() {
+
   if (L1_X < X_REG) {
     std::cout << "error: L1_X < X_REG, L1_X too small" << std::endl;
     return false;
   }
+  if (L2_X < L1_X) {
+    std::cout << "error: L2_X < L1_X, L2_X too small" << std::endl;
+    return false;
+  }
   if (L1_Y < Y_REG) {
     std::cout << "error: L1_Y < Y_REG, L1_Y too small" << std::endl;
+    return false;
+  }
+  if (L2_Y < L1_Y) {
+    std::cout << "error: L2_Y < L1_Y, L2_Y too small" << std::endl;
+    return false;
+  }
+  if (L2_K_STEP < L1_K_STEP) {
+    std::cout << "error: L2_K_STEP < L1_K_STEP, L2_K_STEP too small"
+              << std::endl;
     return false;
   }
   if (L1_X % X_REG != 0) {
@@ -124,7 +131,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
 
   pad_matrices(N_org, A_org, B_org, X_size, Y_size, K_size, A, B);
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> C_padded(
       X_size * Y_size);
 
   std::vector<memory_layout::tiling_info_dim> tiling_spec_A_trans(2);
@@ -133,7 +140,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   tiling_spec_A_trans[1].tile_size_dir = L1_X;
   tiling_spec_A_trans[1].stride = X_size;
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       A_trans_untiled(A.size());
   for (size_t i = 0; i < K_size; i++) {
     for (size_t j = 0; j < X_size; j++) {
@@ -144,7 +151,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   // std::cout << "A_trans_untiled:" << std::endl;
   // print_matrix_host(K_size, X_size, A_trans_untiled);
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans =
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_trans =
       memory_layout::make_tiled<2>(A_trans_untiled, tiling_spec_A_trans);
 
   // std::cout << "A_trans (tiled):" << std::endl;
@@ -157,11 +164,11 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   tiling_spec_B[1].stride = Y_size;
 
   // because of allocator
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_copy(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> B_copy(
       B.size());
   std::copy(B.begin(), B.end(), B_copy.begin());
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       B_padded = memory_layout::make_tiled<2>(B_copy, tiling_spec_B);
 
   for (size_t rep = 0; rep < repetitions; rep++) {
@@ -250,7 +257,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   tiling_spec_C[1].tile_size_dir = L1_Y;
   tiling_spec_C[1].stride = Y_size;
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>>
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       C_untiled = memory_layout::undo_tiling<2>(C_padded, tiling_spec_C);
 
   std::vector<double> C_return(N_org * N_org);

@@ -113,16 +113,18 @@ kernel_tiled::kernel_tiled(size_t N, std::vector<double> &A_org,
 
 std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
 
+  duration = 0.0;
+
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> C_padded(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> C_padded(
       X_size * Y_size);
   std::fill(C_padded.begin(), C_padded.end(), 0.0);
 
   // create a matrix of l1 cachable submatrices, caching by tiling, no large
   // strides even without padding
   // is also padded if padding is enabled (row padded only)
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> A_trans(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_trans(
       K_size * X_size);
   for (size_t l1_x = 0; l1_x < X_size / L1_X; l1_x += 1) {
     for (size_t l1_k = 0; l1_k < K_size / L1_K_STEP; l1_k += 1) {
@@ -138,7 +140,7 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
   }
 
   // don't need padding for B, no dependency to row count
-  std::vector<double, boost::alignment::aligned_allocator<double, 32>> B_padded(
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> B_padded(
       K_size * Y_size);
   for (size_t l1_y = 0; l1_y < (Y_size / L1_Y); l1_y += 1) {
     for (size_t l1_k = 0; l1_k < (K_size / L1_K_STEP); l1_k += 1) {
@@ -299,11 +301,11 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
 
                             double_v b_temp_1 = double_v(
                                 &B_padded[B_base_index + k_inner * L1_Y + y],
-                                Vc::flags::vector_aligned);
+                                Vc::flags::element_aligned);
                             double_v b_temp_2 =
                                 double_v(&B_padded[B_base_index +
                                                    k_inner * L1_Y + (y + 4)],
-                                         Vc::flags::vector_aligned);
+                                         Vc::flags::element_aligned);
 
                             double_v a_temp_1 =
                                 A_trans[A_base_index + k_inner * L1_X +

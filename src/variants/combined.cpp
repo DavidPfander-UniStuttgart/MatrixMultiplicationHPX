@@ -44,6 +44,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
         "-Wall -Wextra -std=c++17 -march=native -mtune=native "
         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
     builder->set_link_flags("-shared -fno-gnu-unique");
+    autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
     autotune::countable_set parameters;
     autotune::fixed_set_parameter<std::string> p4("L2_X", {"64"}, false);
@@ -71,7 +72,6 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     parameters.add_parameter(p12);
 
     autotune::combined_kernel.set_parameter_values(parameters);
-    autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
     autotune::combined_kernel.compile();
 
     if (!autotune::combined_kernel.is_valid_parameter_combination()) {
