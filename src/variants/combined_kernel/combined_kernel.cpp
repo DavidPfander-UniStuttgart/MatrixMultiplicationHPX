@@ -16,13 +16,6 @@ using Vc::double_v;
 
 #include <opttmp/vectorization/register_tiling.hpp>
 
-// // not tuned for now
-// #define L3_X 420 // max 2 L3 par set to 1024 (rest 512)
-// #define L3_Y 256
-// #define L3_K_STEP 256
-
-// constexpr size_t X_REG = 2;
-// constexpr size_t Y_BASE_WIDTH = 4;
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 
