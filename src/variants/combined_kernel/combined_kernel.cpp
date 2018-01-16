@@ -22,12 +22,26 @@ using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 using namespace index_iterator;
 
 extern "C" bool is_valid_parameter_combination() {
+
   if (L1_X < X_REG) {
     std::cout << "error: L1_X < X_REG, L1_X too small" << std::endl;
     return false;
   }
+  if (L2_X < L1_X) {
+    std::cout << "error: L2_X < L1_X, L2_X too small" << std::endl;
+    return false;
+  }
   if (L1_Y < Y_REG) {
     std::cout << "error: L1_Y < Y_REG, L1_Y too small" << std::endl;
+    return false;
+  }
+  if (L2_Y < L1_Y) {
+    std::cout << "error: L2_Y < L1_Y, L2_Y too small" << std::endl;
+    return false;
+  }
+  if (L2_K_STEP < L1_K_STEP) {
+    std::cout << "error: L2_K_STEP < L1_K_STEP, L2_K_STEP too small"
+              << std::endl;
     return false;
   }
   if (L1_X % X_REG != 0) {
