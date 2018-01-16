@@ -5,6 +5,7 @@
 #include "autotune/tuners/line_search.hpp"
 #include "autotune/tuners/monte_carlo.hpp"
 #include "autotune/tuners/neighborhood_search.hpp"
+#include "autotune/tuners/full_neighborhood_search.hpp"
 
 #include "util/create_random_matrix.hpp"
 #include "util/matrix_multiplication_exception.hpp"
@@ -434,6 +435,73 @@ int main(int argc, char **argv) {
                      static_cast<double>(N);
       double gflop = flops / 1E9;
       std::cout << "optimal inner_duration (neighborhood search): "
+                << inner_duration << std::endl;
+      std::cout << "[N = " << N
+                << "] performance: " << ((repetitions * gflop) / inner_duration)
+                << "GFLOPS" << std::endl;
+    }
+    for (size_t parameter_index = 0; parameter_index < parameters.size();
+         parameter_index++) {
+      auto &p = parameters[parameter_index];
+      p->set_initial();
+    }
+  }
+
+  // tune with full neighborhood search
+  {
+    std::cout
+        << "----------------- starting tuning with full neighborhood search"
+           "-----------------"
+        << std::endl;
+
+    size_t restarts = 5;
+    size_t search_steps = 50;
+    for (size_t restart = 0; restart < restarts; restart++) {
+      bool valid_start_found = false;
+      while (!valid_start_found) {
+        for (size_t parameter_index = 0; parameter_index < parameters.size();
+             parameter_index++) {
+          auto &p = parameters[parameter_index];
+          p->set_random_value();
+        }
+        autotune::parameter_value_set parameter_values =
+            autotune::to_parameter_values(parameters);
+        if (precompile_validate_parameter_functor(parameter_values)) {
+          valid_start_found = true;
+        }
+      }
+
+      autotune::tuners::full_neighborhood_search tuner(
+          autotune::combined_kernel, parameters, search_steps);
+      tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
+      tuner.set_verbose(true);
+      tuner.set_write_measurement(scenario_name + "_full_neighborhood_search_" +
+                                  std::to_string(restart));
+      tuner.setup_test(test_result);
+      autotune::countable_set optimal_parameters = tuner.tune(
+          m.N_org, m.A_org, m.B_org, m.repetitions, tune_kernel_duration_temp);
+
+      std::cout << "----------------------- end tuning -----------------------"
+                << std::endl;
+      std::cout << "optimal parameter values (full neighborhood search):"
+                << std::endl;
+      optimal_parameters.print_values();
+      autotune::combined_kernel.set_parameter_values(optimal_parameters);
+      autotune::combined_kernel.compile();
+
+      double inner_duration;
+      std::vector<double> C = m.matrix_multiply(inner_duration);
+      bool test_ok = test_result(C);
+      if (test_ok) {
+        std::cout << "optimal parameters test ok!" << std::endl;
+      } else {
+        std::cout << "optimal parameters FAILED test!" << std::endl;
+      }
+
+      double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+                     static_cast<double>(N);
+      double gflop = flops / 1E9;
+      std::cout << "optimal inner_duration (full neighborhood search): "
                 << inner_duration << std::endl;
       std::cout << "[N = " << N
                 << "] performance: " << ((repetitions * gflop) / inner_duration)
