@@ -559,7 +559,7 @@ int main(int argc, char **argv) {
     std::cout << "----------------- starting tuning with monte_carlo search"
                  "------------ "
               << std::endl;
-    size_t search_steps = 100;
+    size_t search_steps = 500;
     autotune::tuners::monte_carlo tuner(autotune::combined_kernel,
                                         randomizable_parameters, search_steps);
     tuner.set_verbose(true);
