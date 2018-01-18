@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
     std::cout << "calculating reference solution..." << std::flush;
     double duration_reference;
     C_reference = m_tiled.matrix_multiply(duration_reference);
+    // C_reference = naive_matrix_multiply(N, A, B);
   }
 
   // if (!transposed) {
