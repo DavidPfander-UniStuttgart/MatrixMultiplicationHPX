@@ -323,6 +323,7 @@ int main(int argc, char **argv) {
     size_t line_search_steps = 50;
     size_t restarts = 5;
     for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
       while (!valid_start_found) {
         for (size_t parameter_index = 0; parameter_index < parameters.size();
@@ -388,6 +389,7 @@ int main(int argc, char **argv) {
     size_t restarts = 5;
     size_t search_steps = 50;
     for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
       while (!valid_start_found) {
         for (size_t parameter_index = 0; parameter_index < parameters.size();
@@ -454,6 +456,7 @@ int main(int argc, char **argv) {
     size_t restarts = 5;
     size_t search_steps = 50;
     for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
       while (!valid_start_found) {
         for (size_t parameter_index = 0; parameter_index < parameters.size();
