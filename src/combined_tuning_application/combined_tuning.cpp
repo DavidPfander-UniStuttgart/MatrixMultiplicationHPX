@@ -33,16 +33,16 @@ int main(int argc, char **argv) {
 
   // figure out native vector width
   auto builder_hw_query =
-      autotune::hardware_query_kernel.get_builder_as<cppjit::builder::gcc>();
-  builder_hw_query->set_verbose(true);
-  builder_hw_query->set_include_paths(
+      autotune::hardware_query_kernel.get_builder<cppjit::builder::gcc>();
+  builder_hw_query.set_verbose(true);
+  builder_hw_query.set_include_paths(
       "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
       "-IAutoTuneTMP/Vc_install/include "
       "-IAutoTuneTMP/boost_install/include");
-  builder_hw_query->set_cpp_flags(
+  builder_hw_query.set_cpp_flags(
       "-Wall -Wextra -std=c++17 -march=native -mtune=native "
       "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
-  builder_hw_query->set_link_flags("-shared -fno-gnu-unique");
+  builder_hw_query.set_link_flags("-shared -fno-gnu-unique");
   autotune::hardware_query_kernel.set_source_dir(
       "src/variants/hardware_query_kernel");
   size_t native_vector_width = autotune::hardware_query_kernel();
@@ -90,17 +90,16 @@ int main(int argc, char **argv) {
   autotune::combined_kernel.set_kernel_duration_functor(
       [&duration_kernel]() { return duration_kernel; });
 
-  auto builder =
-      autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(true);
+  auto &builder = autotune::combined_kernel.get_builder<cppjit::builder::gcc>();
+  builder.set_verbose(true);
 
-  builder->set_include_paths(
+  builder.set_include_paths(
       "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
       "-IAutoTuneTMP/Vc_install/include "
       "-IAutoTuneTMP/boost_install/include");
-  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
-                         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
-  builder->set_link_flags("-shared -g -fno-gnu-unique");
+  builder.set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
+                        "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
+  builder.set_link_flags("-shared -g -fno-gnu-unique");
 
   autotune::countable_continuous_parameter p1("X_REG", 5, 1, 1, 5);        // 5
   autotune::countable_continuous_parameter p2("Y_BASE_WIDTH", 2, 1, 1, 5); // 5

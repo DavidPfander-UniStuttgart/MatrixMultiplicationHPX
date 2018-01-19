@@ -33,17 +33,17 @@ std::vector<double> combined::matrix_multiply(double &duration) {
 
   if (!autotune::combined_kernel.is_compiled()) {
 
-    auto builder =
-        autotune::combined_kernel.get_builder_as<cppjit::builder::gcc>();
-    builder->set_verbose(true);
-    builder->set_include_paths(
+    auto &builder =
+        autotune::combined_kernel.get_builder<cppjit::builder::gcc>();
+    builder.set_verbose(true);
+    builder.set_include_paths(
         "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
         "-IAutoTuneTMP/Vc_install/include "
         "-IAutoTuneTMP/boost_install/include");
-    builder->set_cpp_flags(
+    builder.set_cpp_flags(
         "-Wall -Wextra -std=c++17 -march=native -mtune=native "
         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
-    builder->set_link_flags("-shared -fno-gnu-unique");
+    builder.set_link_flags("-shared -fno-gnu-unique");
     autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
     autotune::countable_set parameters;
