@@ -24,8 +24,9 @@
 #define L1_Y 16
 #define L1_K_STEP 64
 #define X_REG 5 // cannot be changed!
-#define Y_REG 8 // cannot be changed!
+// #define Y_REG 8 // cannot be changed!
 #define K_REG 1 // cannot be changed!
+constexpr size_t Y_REG = 2 * Vc::double_v::size();
 
 // 4x12 approach kernel tuning
 // #define L3_X 32 // max 2 L3 par set to 1024 (rest 512)
@@ -304,7 +305,7 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
                                 Vc::flags::element_aligned);
                             double_v b_temp_2 =
                                 double_v(&B_padded[B_base_index +
-                                                   k_inner * L1_Y + (y + 4)],
+                                                   k_inner * L1_Y + (y + double_v::size())],
                                          Vc::flags::element_aligned);
 
                             double_v a_temp_1 =
@@ -416,45 +417,45 @@ std::vector<double> kernel_tiled::matrix_multiply(double &duration) {
 
                           double_v res_12 =
                               double_v(&C_padded[C_base_index + (x + 0) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())],
                                        Vc::flags::element_aligned);
                           res_12 += acc_12;
                           res_12.memstore(&C_padded[C_base_index +
-                                                    (x + 0) * L1_Y + (y + 4)],
+                                                    (x + 0) * L1_Y + (y + double_v::size())],
                                           Vc::flags::element_aligned);
                           double_v res_22 =
                               double_v(&C_padded[C_base_index + (x + 1) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())],
                                        Vc::flags::element_aligned);
                           res_22 += acc_22;
                           res_22.memstore(&C_padded[C_base_index +
-                                                    (x + 1) * L1_Y + (y + 4)],
+                                                    (x + 1) * L1_Y + (y + double_v::size())],
                                           Vc::flags::element_aligned);
                           double_v res_32 =
                               double_v(&C_padded[C_base_index + (x + 2) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())],
                                        Vc::flags::element_aligned);
                           res_32 += acc_32;
                           res_32.memstore(&C_padded[C_base_index +
-                                                    (x + 2) * L1_Y + (y + 4)],
+                                                    (x + 2) * L1_Y + (y + double_v::size())],
                                           Vc::flags::element_aligned);
                           double_v res_42 =
                               double_v(&C_padded[C_base_index + (x + 3) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())],
                                        Vc::flags::element_aligned);
                           res_42 += acc_42;
                           res_42.memstore(&C_padded[C_base_index +
-                                                    (x + 3) * L1_Y + (y + 4)],
+                                                    (x + 3) * L1_Y + (y + double_v::size())],
                                           Vc::flags::element_aligned);
 
                           // has to be commented out for 4x12 approach
                           double_v res_52 =
                               double_v(&C_padded[C_base_index + (x + 4) * L1_Y +
-                                                 (y + 4)],
+                                                 (y + double_v::size())],
                                        Vc::flags::element_aligned);
                           res_52 += acc_52;
                           res_52.memstore(&C_padded[C_base_index +
-                                                    (x + 4) * L1_Y + (y + 4)],
+                                                    (x + 4) * L1_Y + (y + double_v::size())],
                                           Vc::flags::element_aligned);
 
                           // has to be commented in for 4x12 approach

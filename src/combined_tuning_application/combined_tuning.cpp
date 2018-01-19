@@ -17,11 +17,17 @@
 #include <functional>
 #include <random>
 
+#include <chrono>
 #include <omp.h>
 
 AUTOTUNE_DECLARE_DEFINE_KERNEL(uint64_t(), hardware_query_kernel)
 
+std::ofstream tuner_duration_file;
+
 int main(int argc, char **argv) {
+
+  tuner_duration_file.open("tuner_duration.csv");
+  tuner_duration_file << "tuner, duration" << std::endl;
 
   if (argc < 2) {
     std::cerr << "Error: no scenario name given!" << std::endl;
@@ -69,6 +75,7 @@ int main(int argc, char **argv) {
     std::cout << "calculating reference solution..." << std::flush;
     double duration_reference;
     C_reference = m_tiled.matrix_multiply(duration_reference);
+    // C_reference = naive_matrix_multiply(N, A, B);
   }
 
   // if (!transposed) {
@@ -321,6 +328,7 @@ int main(int argc, char **argv) {
     size_t line_search_steps = 50;
     size_t restarts = 5;
     for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
       while (!valid_start_found) {
         for (size_t parameter_index = 0; parameter_index < parameters.size();
@@ -343,8 +351,19 @@ int main(int argc, char **argv) {
                                   std::to_string(restart));
 
       tuner.setup_test(test_result);
-      autotune::countable_set optimal_parameters =
-          tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+
+      autotune::countable_set optimal_parameters;
+      {
+        std::chrono::high_resolution_clock::time_point start =
+            std::chrono::high_resolution_clock::now();
+        optimal_parameters = tuner.tune(m.N_org, m.A_org, m.B_org,
+                                        m.repetitions, duration_kernel);
+        std::chrono::high_resolution_clock::time_point end =
+            std::chrono::high_resolution_clock::now();
+        double tuning_duration =
+            std::chrono::duration<double>(end - start).count();
+        tuner_duration_file << "line_search, " << tuning_duration << std::endl;
+      }
 
       std::cout << "----------------------- end tuning -----------------------"
                 << std::endl;
@@ -386,6 +405,7 @@ int main(int argc, char **argv) {
     size_t restarts = 5;
     size_t search_steps = 50;
     for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
       while (!valid_start_found) {
         for (size_t parameter_index = 0; parameter_index < parameters.size();
@@ -407,8 +427,20 @@ int main(int argc, char **argv) {
       tuner.set_write_measurement(scenario_name + "_neighborhood_search_" +
                                   std::to_string(restart));
       tuner.setup_test(test_result);
-      autotune::countable_set optimal_parameters =
-          tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+
+      autotune::countable_set optimal_parameters;
+      {
+        std::chrono::high_resolution_clock::time_point start =
+            std::chrono::high_resolution_clock::now();
+        optimal_parameters = tuner.tune(m.N_org, m.A_org, m.B_org,
+                                        m.repetitions, duration_kernel);
+        std::chrono::high_resolution_clock::time_point end =
+            std::chrono::high_resolution_clock::now();
+        double tuning_duration =
+            std::chrono::duration<double>(end - start).count();
+        tuner_duration_file << "neighborhood_search, " << tuning_duration
+                            << std::endl;
+      }
 
       std::cout << "----------------------- end tuning -----------------------"
                 << std::endl;
@@ -452,6 +484,7 @@ int main(int argc, char **argv) {
     size_t restarts = 5;
     size_t search_steps = 50;
     for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
       while (!valid_start_found) {
         for (size_t parameter_index = 0; parameter_index < parameters.size();
@@ -473,8 +506,20 @@ int main(int argc, char **argv) {
       tuner.set_write_measurement(scenario_name + "_full_neighborhood_search_" +
                                   std::to_string(restart));
       tuner.setup_test(test_result);
-      autotune::countable_set optimal_parameters =
-          tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+
+      autotune::countable_set optimal_parameters;
+      {
+        std::chrono::high_resolution_clock::time_point start =
+            std::chrono::high_resolution_clock::now();
+        optimal_parameters = tuner.tune(m.N_org, m.A_org, m.B_org,
+                                        m.repetitions, duration_kernel);
+        std::chrono::high_resolution_clock::time_point end =
+            std::chrono::high_resolution_clock::now();
+        double tuning_duration =
+            std::chrono::duration<double>(end - start).count();
+        tuner_duration_file << "full_neighborhood_search, " << tuning_duration
+                            << std::endl;
+      }
 
       std::cout << "----------------------- end tuning -----------------------"
                 << std::endl;
@@ -566,8 +611,20 @@ int main(int argc, char **argv) {
     tuner.set_parameter_adjustment_functor(
         parameter_adjustment_functor_randomizable);
     tuner.setup_test(test_result);
-    autotune::randomizable_set optimal_parameters =
-        tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+
+    autotune::randomizable_set optimal_parameters;
+    {
+      std::chrono::high_resolution_clock::time_point start =
+          std::chrono::high_resolution_clock::now();
+      optimal_parameters =
+          tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+      std::chrono::high_resolution_clock::time_point end =
+          std::chrono::high_resolution_clock::now();
+      double tuning_duration =
+          std::chrono::duration<double>(end - start).count();
+      tuner_duration_file << "mone_carlo_search, " << tuning_duration
+                          << std::endl;
+    }
 
     std::cout << "----------------------- end tuning----------------------"
               << std::endl;
