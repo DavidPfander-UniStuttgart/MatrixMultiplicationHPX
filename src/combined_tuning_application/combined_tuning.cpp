@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
   }
 
   // figure out native vector width
-  auto builder_hw_query =
+  auto &builder_hw_query =
       autotune::hardware_query_kernel.get_builder<cppjit::builder::gcc>();
   builder_hw_query.set_verbose(true);
   builder_hw_query.set_include_paths(
