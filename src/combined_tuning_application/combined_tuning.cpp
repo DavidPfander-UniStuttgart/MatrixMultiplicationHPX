@@ -20,7 +20,8 @@
 #include <chrono>
 #include <omp.h>
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(uint64_t(), hardware_query_kernel)
+AUTOTUNE_KERNEL(uint64_t(), hardware_query_kernel,
+                "src/variants/hardware_query_kernel")
 
 std::ofstream tuner_duration_file;
 
@@ -49,8 +50,6 @@ int main(int argc, char **argv) {
       "-Wall -Wextra -std=c++17 -march=native -mtune=native "
       "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
   builder_hw_query.set_link_flags("-shared -fno-gnu-unique");
-  autotune::hardware_query_kernel.set_source_dir(
-      "src/variants/hardware_query_kernel");
   size_t native_vector_width = autotune::hardware_query_kernel();
   std::cout << "native_vector_width: " << native_vector_width << std::endl;
 

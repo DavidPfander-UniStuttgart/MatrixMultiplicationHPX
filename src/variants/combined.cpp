@@ -15,7 +15,7 @@ using Vc::double_v;
 AUTOTUNE_DEFINE_KERNEL(std::vector<double>(std::size_t, std::vector<double> &,
                                            std::vector<double> &, size_t,
                                            double &),
-                       combined_kernel)
+                       combined_kernel, "src/variants/combined_kernel")
 
 using namespace index_iterator;
 
@@ -44,7 +44,6 @@ std::vector<double> combined::matrix_multiply(double &duration) {
         "-Wall -Wextra -std=c++17 -march=native -mtune=native "
         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
     builder.set_link_flags("-shared -fno-gnu-unique");
-    autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
     autotune::countable_set parameters;
     autotune::fixed_set_parameter<std::string> p4("L2_X", {"64"}, false);
