@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(iterate) {
     counter++;
   });
 
-  std::vector<memory_layout::tiling_info_dim> tiling_info(2);
+  memory_layout::tiling_configuration tiling_info(2);
   tiling_info[0].tile_size_dir = tile_size;
   tiling_info[0].stride = untiled_stride;
   tiling_info[1].tile_size_dir = tile_size;
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(tile_untile) {
     counter++;
   });
 
-  std::vector<memory_layout::tiling_info_dim> tiling_info(2);
+  memory_layout::tiling_configuration tiling_info(2);
   tiling_info[0].tile_size_dir = tile_size;
   tiling_info[0].stride = untiled_stride;
   tiling_info[1].tile_size_dir = tile_size;
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(tile_untile_wide_X) {
     counter++;
   });
 
-  std::vector<memory_layout::tiling_info_dim> tiling_info(2);
+  memory_layout::tiling_configuration tiling_info(2);
   tiling_info[0].tile_size_dir = 2;
   tiling_info[0].stride = Y;
   tiling_info[1].tile_size_dir = 5;
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(tile_untile_wide_Y) {
     counter++;
   });
 
-  std::vector<memory_layout::tiling_info_dim> tiling_info(2);
+  memory_layout::tiling_configuration tiling_info(2);
   tiling_info[0].tile_size_dir = 2;
   tiling_info[0].stride = Y;
   tiling_info[1].tile_size_dir = 5;
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(untile_4_6) {
     counter++;
   });
 
-  std::vector<memory_layout::tiling_info_dim> tiling_info(2);
+  memory_layout::tiling_configuration tiling_info(2);
   tiling_info[0].tile_size_dir = 3;
   tiling_info[0].stride = rows;
   tiling_info[1].tile_size_dir = 2;

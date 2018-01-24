@@ -134,7 +134,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   std::vector<double, boost::alignment::aligned_allocator<double, 64>> C_padded(
       X_size * Y_size);
 
-  std::vector<memory_layout::tiling_info_dim> tiling_spec_A_trans(2);
+  memory_layout::tiling_configuration tiling_spec_A_trans(2);
   tiling_spec_A_trans[0].tile_size_dir = L1_K_STEP;
   tiling_spec_A_trans[0].stride = K_size;
   tiling_spec_A_trans[1].tile_size_dir = L1_X;
@@ -157,7 +157,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   // std::cout << "A_trans (tiled):" << std::endl;
   // print_matrix_host(K_size, X_size, A_trans);
 
-  std::vector<memory_layout::tiling_info_dim> tiling_spec_B(2);
+  memory_layout::tiling_configuration tiling_spec_B(2);
   tiling_spec_B[0].tile_size_dir = L1_K_STEP;
   tiling_spec_B[0].stride = K_size;
   tiling_spec_B[1].tile_size_dir = L1_Y;
@@ -251,7 +251,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
     duration += std::chrono::duration<double>(end - start).count();
   }
 
-  std::vector<memory_layout::tiling_info_dim> tiling_spec_C(2);
+  memory_layout::tiling_configuration tiling_spec_C(2);
   tiling_spec_C[0].tile_size_dir = L1_X;
   tiling_spec_C[0].stride = X_size;
   tiling_spec_C[1].tile_size_dir = L1_Y;
