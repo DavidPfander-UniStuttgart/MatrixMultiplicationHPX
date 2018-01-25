@@ -259,9 +259,6 @@ int main(int argc, char **argv) {
     auto &l1_y =
         parameters.get_by_name<autotune::countable_continuous_parameter>(
             "L1_Y");
-    auto &l1_k_step =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L1_K_STEP");
 
     const double y_reg_value =
         y_base_width * native_vector_width;
@@ -308,9 +305,6 @@ int main(int argc, char **argv) {
     auto &l1_y =
         parameters.get_by_name<autotune::countable_continuous_parameter>(
             "L1_Y");
-    auto &l1_k_step =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L1_K_STEP");
 
     const double y_reg_value =
         y_base_width * native_vector_width;
@@ -669,6 +663,7 @@ int main(int argc, char **argv) {
         }
         autotune::combined_kernel.set_parameter_values(optimal_parameters);
       }
+      
       std::cout << "----------------------- end tuning -----------------------"
                 << std::endl;
       std::cout << "optimal parameter values (neighborhood search):"
