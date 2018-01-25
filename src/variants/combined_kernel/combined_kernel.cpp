@@ -16,6 +16,12 @@ using Vc::double_v;
 
 #include <opttmp/vectorization/register_tiling.hpp>
 
+#define L1_X (X_REG*L1_X_FACTOR)
+#define L1_Y (Y_BASE_WIDTH*L1_Y_FACTOR)
+#define L2_X (X_REG*L1_X_FACTOR*L2_X_FACTOR)
+#define L2_Y (Y_BASE_WIDTH*L1_Y_FACTOR*L2_Y_FACTOR)
+#define L2_K_STEP (L1_K_STEP*L2_K_FACTOR)
+
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 
@@ -66,6 +72,26 @@ extern "C" bool is_valid_parameter_combination() {
     std::cout
         << "error: k direction blocking error: L2_K_STEP % L1_K_STEP != 0 "
         << std::endl;
+    return false;
+  }
+  if (L1_X > 40) {
+    std::cout << "error: L1_X to large" << std::endl;
+    return false;
+  }
+  if (L1_Y > 64) {
+    std::cout << "error: L1_Y to large" << std::endl;
+    return false;
+  }
+  if (L2_X > 100) {
+    std::cout << "error: L2_X to large" << std::endl;
+    return false;
+  }
+  if (L2_Y > 128) {
+    std::cout << "error: L2_Y to large" << std::endl;
+    return false;
+  }
+  if (L2_K_STEP > 256) {
+    std::cout << "error: L2_K_STEP to large" << std::endl;
     return false;
   }
   return true;

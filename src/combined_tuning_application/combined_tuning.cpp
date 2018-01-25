@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 4096;
+  std::uint64_t N = 64;
   // std::uint64_t N = 256;
 
   bool transposed = false;
@@ -109,14 +109,21 @@ int main(int argc, char **argv) {
 
   autotune::countable_continuous_parameter p1("X_REG", 5, 1, 1, 5);        // 5
   autotune::countable_continuous_parameter p2("Y_BASE_WIDTH", 2, 1, 1, 5); // 5
-  autotune::countable_continuous_parameter p3("L1_X", 30, 5, 10, 40);      // 8
+  /*autotune::countable_continuous_parameter p3("L1_X", 30, 5, 10, 40);      // 8
   autotune::countable_continuous_parameter p4("L1_Y", 32, 8, 8, 64);       // 8
   autotune::countable_continuous_parameter p5("L1_K_STEP", 32, 16, 16,
                                               128);                     // 8
   autotune::countable_continuous_parameter p6("L2_X", 60, 10, 20, 100); // 8
   autotune::countable_continuous_parameter p7("L2_Y", 64, 16, 16, 128); // 8
   autotune::countable_continuous_parameter p8("L2_K_STEP", 64, 32, 32,
-                                              256); // 7
+                                              256); // 7*/
+  autotune::countable_continuous_parameter p3("L1_X_FACTOR", 1, 1, 1, 40);      // 8
+  autotune::countable_continuous_parameter p4("L1_Y_FACTOR", 1, 1, 1, 64);       // 8
+  autotune::countable_continuous_parameter p5("L1_K_STEP", 32, 16, 16,
+                                              128);                     // 8
+  autotune::countable_continuous_parameter p6("L2_X_FACTOR", 1, 1, 1, 100); // 8
+  autotune::countable_continuous_parameter p7("L2_Y_FACTOR", 1, 1, 1, 128); // 8
+  autotune::countable_continuous_parameter p8("L2_K_FACTOR", 1, 1, 1, 8); // 7
 
   // autotune::fixed_set_parameter<std::string> p10("X_REG", {"5"}, false);
   // autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"},
@@ -189,12 +196,24 @@ int main(int argc, char **argv) {
       [native_vector_width](autotune::parameter_value_set &parameters) -> bool {
     int64_t X_REG = stol(parameters["X_REG"]);
     int64_t Y_BASE_WIDTH = stol(parameters["Y_BASE_WIDTH"]);
-    int64_t L1_X = stol(parameters["L1_X"]);
-    int64_t L1_Y = stol(parameters["L1_Y"]);
+    //int64_t L1_X = stol(parameters["L1_X"]);
+    //int64_t L1_Y = stol(parameters["L1_Y"]);
     int64_t L1_K_STEP = stol(parameters["L1_K_STEP"]);
-    int64_t L2_X = stol(parameters["L2_X"]);
-    int64_t L2_Y = stol(parameters["L2_Y"]);
-    int64_t L2_K_STEP = stol(parameters["L2_K_STEP"]);
+    //int64_t L2_X = stol(parameters["L2_X"]);
+    //int64_t L2_Y = stol(parameters["L2_Y"]);
+    //int64_t L2_K_STEP = stol(parameters["L2_K_STEP"]);
+    
+    int64_t L1_X_FACTOR = stol(parameters["L1_X_FACTOR"]);
+    int64_t L1_Y_FACTOR = stol(parameters["L1_Y_FACTOR"]);
+    int64_t L2_X_FACTOR = stol(parameters["L2_X_FACTOR"]);
+    int64_t L2_Y_FACTOR = stol(parameters["L2_Y_FACTOR"]);
+    int64_t L2_K_FACTOR = stol(parameters["L2_K_FACTOR"]);
+    
+    int64_t L1_X = (X_REG*L1_X_FACTOR);
+    int64_t L1_Y = (Y_BASE_WIDTH*L1_Y_FACTOR);
+    int64_t L2_X = (X_REG*L1_X_FACTOR*L2_X_FACTOR);
+    int64_t L2_Y = (Y_BASE_WIDTH*L1_Y_FACTOR*L2_Y_FACTOR);
+    int64_t L2_K_STEP = (L1_K_STEP*L2_K_FACTOR);
 
     const int64_t Y_REG = Y_BASE_WIDTH * native_vector_width;
 
@@ -243,12 +262,32 @@ int main(int argc, char **argv) {
           << std::endl;
       return false;
     }
-    return true;
-  };
+    if (L1_X > 40) {
+      std::cout << "error: L1_X to large" << std::endl;
+      return false;
+    }
+    if (L1_Y > 64) {
+      std::cout << "error: L1_Y to large" << std::endl;
+      return false;
+    }
+    if (L2_X > 100) {
+      std::cout << "error: L2_X to large" << std::endl;
+      return false;
+    }
+    if (L2_Y > 128) {
+      std::cout << "error: L2_Y to large" << std::endl;
+      return false;
+    }
+    if (L2_K_STEP > 256) {
+      std::cout << "error: L2_K_STEP to large" << std::endl;
+      return false;
+    }
+      return true;
+    };
   autotune::combined_kernel.set_precompile_validate_parameter_functor(
       precompile_validate_parameter_functor);
 
-  auto parameter_group_l1_adjustment_functor =
+  /*auto parameter_group_l1_adjustment_functor =
       [native_vector_width](autotune::countable_set &parameters,
         autotune::parameter_value_set parameter_values) -> void {
     auto x_reg = stol(parameter_values["X_REG"]);
@@ -338,7 +377,7 @@ int main(int argc, char **argv) {
     l2_y.to_nearest_valid(l1_y);
 
     l2_k_step.to_nearest_valid(l1_k_step);
-  };
+  };*/
 
   // tune with line search
   {
@@ -409,7 +448,7 @@ int main(int argc, char **argv) {
       { // tune parameter group l1
         autotune::tuners::line_search tuner(autotune::combined_kernel, parameters_group_l1,
                                             line_search_steps, 1);
-        tuner.set_parameter_adjustment_functor(parameter_group_l1_adjustment_functor);
+        //tuner.set_parameter_adjustment_functor(parameter_group_l1_adjustment_functor);
         tuner.set_verbose(true);
         tuner.set_write_measurement(scenario_name + "_line_search_l1_" +
                                     std::to_string(restart));
@@ -433,7 +472,7 @@ int main(int argc, char **argv) {
       { // tune parameter group l2
         autotune::tuners::line_search tuner(autotune::combined_kernel, parameters_group_l2,
                                             line_search_steps, 1);
-        tuner.set_parameter_adjustment_functor(parameter_group_l2_adjustment_functor);
+        //tuner.set_parameter_adjustment_functor(parameter_group_l2_adjustment_functor);
         tuner.set_verbose(true);
         tuner.set_write_measurement(scenario_name + "_line_search_l2_" +
                                     std::to_string(restart));
@@ -595,7 +634,7 @@ int main(int argc, char **argv) {
       { // tune parameter group l1
         autotune::tuners::neighborhood_search tuner(autotune::combined_kernel,
                                                     parameters_group_l1, search_steps);
-        tuner.set_parameter_adjustment_functor(parameter_group_l1_adjustment_functor);
+        //tuner.set_parameter_adjustment_functor(parameter_group_l1_adjustment_functor);
         tuner.set_verbose(true);
         tuner.set_write_measurement(scenario_name + "_neighborhood_search_l1_" +
                                     std::to_string(restart));
@@ -619,7 +658,7 @@ int main(int argc, char **argv) {
       { // tune parameter group l2
         autotune::tuners::neighborhood_search tuner(autotune::combined_kernel,
                                                     parameters_group_l2, search_steps);
-        tuner.set_parameter_adjustment_functor(parameter_group_l2_adjustment_functor);
+        //tuner.set_parameter_adjustment_functor(parameter_group_l2_adjustment_functor);
         tuner.set_verbose(true);
         tuner.set_write_measurement(scenario_name + "_neighborhood_search_l2_" +
                                     std::to_string(restart));
@@ -784,7 +823,7 @@ int main(int argc, char **argv) {
       { // tune parameter group l1
         autotune::tuners::full_neighborhood_search tuner(
             autotune::combined_kernel, parameters_group_l1, search_steps);
-        tuner.set_parameter_adjustment_functor(parameter_group_l1_adjustment_functor);
+        //tuner.set_parameter_adjustment_functor(parameter_group_l1_adjustment_functor);
         tuner.set_verbose(true);
         tuner.set_write_measurement(scenario_name + "_full_neighborhood_search_l1_" +
                                     std::to_string(restart));
@@ -808,7 +847,7 @@ int main(int argc, char **argv) {
       { // tune parameter group l2
         autotune::tuners::full_neighborhood_search tuner(
             autotune::combined_kernel, parameters_group_l2, search_steps);
-        tuner.set_parameter_adjustment_functor(parameter_group_l2_adjustment_functor);
+        //tuner.set_parameter_adjustment_functor(parameter_group_l2_adjustment_functor);
         tuner.set_verbose(true);
         tuner.set_write_measurement(scenario_name + "_full_neighborhood_search_l2_" +
                                     std::to_string(restart));
@@ -980,8 +1019,8 @@ int main(int argc, char **argv) {
                                           randomizable_parameters_group_l1, search_steps);
       tuner.set_verbose(true);
       tuner.set_write_measurement(scenario_name + "_monte_carlo_search_l1_");
-      tuner.set_parameter_adjustment_functor(
-          parameter_group_l1_adjustment_functor_randomizable);
+      //tuner.set_parameter_adjustment_functor(
+      //    parameter_group_l1_adjustment_functor_randomizable);
       tuner.setup_test(test_result);
 
       autotune::randomizable_set optimal_parameters;
@@ -1004,8 +1043,8 @@ int main(int argc, char **argv) {
                                           randomizable_parameters_group_l2, search_steps);
       tuner.set_verbose(true);
       tuner.set_write_measurement(scenario_name + "_monte_carlo_search_l2_");
-      tuner.set_parameter_adjustment_functor(
-          parameter_group_l2_adjustment_functor_randomizable);
+      //tuner.set_parameter_adjustment_functor(
+      //    parameter_group_l2_adjustment_functor_randomizable);
       tuner.setup_test(test_result);
 
       autotune::randomizable_set optimal_parameters;
