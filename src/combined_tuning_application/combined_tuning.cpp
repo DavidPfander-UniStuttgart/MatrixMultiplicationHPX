@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
 
-  std::uint64_t N = 64;
+  std::uint64_t N = 4096;
   // std::uint64_t N = 256;
 
   bool transposed = false;
