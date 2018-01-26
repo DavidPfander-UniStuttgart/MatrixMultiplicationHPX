@@ -19,11 +19,11 @@ using Vc::double_v;
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 
-#define L1_X (X_REG*L1_X_FACTOR)
+/*#define L1_X (X_REG*L1_X_FACTOR)
 #define L1_Y (Y_REG*L1_Y_FACTOR)
 #define L2_X (X_REG*L1_X_FACTOR*L2_X_FACTOR)
 #define L2_Y (Y_REG*L1_Y_FACTOR*L2_Y_FACTOR)
-#define L2_K_STEP (L1_K_STEP*L2_K_FACTOR)
+#define L2_K_STEP (L1_K_STEP*L2_K_FACTOR)*/
 
 using namespace index_iterator;
 
@@ -74,7 +74,7 @@ extern "C" bool is_valid_parameter_combination() {
         << std::endl;
     return false;
   }
-  if (L1_X > 40) {
+  /*if (L1_X > 40) {
     std::cout << "error: L1_X to large" << std::endl;
     return false;
   }
@@ -93,7 +93,7 @@ extern "C" bool is_valid_parameter_combination() {
   if (L2_K_STEP > 256) {
     std::cout << "error: L2_K_STEP to large" << std::endl;
     return false;
-  }
+  }*/
   return true;
 }
 
