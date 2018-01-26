@@ -107,8 +107,8 @@ int main(int argc, char **argv) {
                         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
   builder.set_link_flags("-shared -g -fno-gnu-unique");
 
-  autotune::countable_continuous_parameter p1("X_REG", 5, 1, 1, 5);        // 5
-  autotune::countable_continuous_parameter p2("Y_BASE_WIDTH", 2, 1, 1, 5); // 5
+  autotune::countable_continuous_parameter p1("X_REG", 1, 1, 1, 5);        // 5
+  autotune::countable_continuous_parameter p2("Y_BASE_WIDTH", 1, 1, 1, 8); // 5
   /*autotune::countable_continuous_parameter p3("L1_X", 30, 5, 10, 40);      // 8
   autotune::countable_continuous_parameter p4("L1_Y", 32, 8, 8, 64);       // 8
   autotune::countable_continuous_parameter p5("L1_K_STEP", 32, 16, 16,
@@ -117,13 +117,13 @@ int main(int argc, char **argv) {
   autotune::countable_continuous_parameter p7("L2_Y", 64, 16, 16, 128); // 8
   autotune::countable_continuous_parameter p8("L2_K_STEP", 64, 32, 32,
                                               256); // 7*/
-  autotune::countable_continuous_parameter p3("L1_X_FACTOR", 1, 1, 1, 40);      // 8
-  autotune::countable_continuous_parameter p4("L1_Y_FACTOR", 1, 1, 1, 64);       // 8
-  autotune::countable_continuous_parameter p5("L1_K_STEP", 32, 16, 16,
+  autotune::countable_continuous_parameter p3("L1_X_FACTOR", 1, 1, 1, 10);      // 8
+  autotune::countable_continuous_parameter p4("L1_Y_FACTOR", 1, 1, 1, 10);       // 8
+  autotune::countable_continuous_parameter p5("L1_K_STEP", 16, 16, 16,
                                               128);                     // 8
-  autotune::countable_continuous_parameter p6("L2_X_FACTOR", 1, 1, 1, 100); // 8
-  autotune::countable_continuous_parameter p7("L2_Y_FACTOR", 1, 1, 1, 128); // 8
-  autotune::countable_continuous_parameter p8("L2_K_FACTOR", 1, 1, 1, 8); // 7
+  autotune::countable_continuous_parameter p6("L2_X_FACTOR", 1, 1, 1, 10); // 8
+  autotune::countable_continuous_parameter p7("L2_Y_FACTOR", 1, 1, 1, 10); // 8
+  autotune::countable_continuous_parameter p8("L2_K_FACTOR", 1, 1, 1, 5); // 7
 
   // autotune::fixed_set_parameter<std::string> p10("X_REG", {"5"}, false);
   // autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"},
@@ -397,25 +397,29 @@ int main(int argc, char **argv) {
         for (size_t parameter_index = 0; parameter_index < parameters_group_register.size();
              parameter_index++) {
           auto &p = parameters_group_register[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_l1.size();
              parameter_index++) {
           auto &p = parameters_group_l1[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_l2.size();
              parameter_index++) {
           auto &p = parameters_group_l2[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_other.size();
              parameter_index++) {
           auto &p = parameters_group_other[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         if (precompile_validate_parameter_functor(parameter_values)) {
@@ -583,25 +587,29 @@ int main(int argc, char **argv) {
         for (size_t parameter_index = 0; parameter_index < parameters_group_register.size();
              parameter_index++) {
           auto &p = parameters_group_register[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_l1.size();
              parameter_index++) {
           auto &p = parameters_group_l1[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_l2.size();
              parameter_index++) {
           auto &p = parameters_group_l2[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_other.size();
              parameter_index++) {
           auto &p = parameters_group_other[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         if (precompile_validate_parameter_functor(parameter_values)) {
@@ -771,25 +779,29 @@ int main(int argc, char **argv) {
         for (size_t parameter_index = 0; parameter_index < parameters_group_register.size();
              parameter_index++) {
           auto &p = parameters_group_register[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_l1.size();
              parameter_index++) {
           auto &p = parameters_group_l1[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_l2.size();
              parameter_index++) {
           auto &p = parameters_group_l2[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         for (size_t parameter_index = 0; parameter_index < parameters_group_other.size();
              parameter_index++) {
           auto &p = parameters_group_other[parameter_index];
-          p->set_random_value();
+          if (restart == 0) p->set_initial();
+          else p->set_random_value();
           parameter_values[p->get_name()] = p->get_value();
         }
         if (precompile_validate_parameter_functor(parameter_values)) {
