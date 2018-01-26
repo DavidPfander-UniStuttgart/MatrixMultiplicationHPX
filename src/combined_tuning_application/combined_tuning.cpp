@@ -211,7 +211,6 @@ int main(int argc, char **argv) {
     
     int64_t L1_X = (X_REG*L1_X_FACTOR);
     int64_t L2_X = (X_REG*L1_X_FACTOR*L2_X_FACTOR);
-    int64_t L2_Y = (Y_BASE_WIDTH*L1_Y_FACTOR*L2_Y_FACTOR);
     int64_t L2_K_STEP = (L1_K_STEP*L2_K_FACTOR);
     
     const int64_t Y_REG = Y_BASE_WIDTH * native_vector_width;
