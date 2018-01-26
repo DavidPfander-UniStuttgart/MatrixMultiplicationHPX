@@ -16,14 +16,14 @@ using Vc::double_v;
 
 #include <opttmp/vectorization/register_tiling.hpp>
 
-#define L1_X (X_REG*L1_X_FACTOR)
-#define L1_Y (Y_BASE_WIDTH*L1_Y_FACTOR)
-#define L2_X (X_REG*L1_X_FACTOR*L2_X_FACTOR)
-#define L2_Y (Y_BASE_WIDTH*L1_Y_FACTOR*L2_Y_FACTOR)
-#define L2_K_STEP (L1_K_STEP*L2_K_FACTOR)
-
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
+
+#define L1_X (X_REG*L1_X_FACTOR)
+#define L1_Y (Y_REG*L1_Y_FACTOR)
+#define L2_X (X_REG*L1_X_FACTOR*L2_X_FACTOR)
+#define L2_Y (Y_REG*L1_Y_FACTOR*L2_Y_FACTOR)
+#define L2_K_STEP (L1_K_STEP*L2_K_FACTOR)
 
 using namespace index_iterator;
 
