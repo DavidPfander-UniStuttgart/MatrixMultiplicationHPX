@@ -450,7 +450,8 @@ int main(int argc, char **argv) {
     double L2_Y = stod(parameter_values["L2_Y"]);
     double L2_K_STEP = stod(parameter_values["L2_K_STEP"]);
 
-    const double Y_REG = Y_BASE_WIDTH * native_vector_width;
+    const double Y_REG =
+        Y_BASE_WIDTH * static_cast<double>(native_vector_width);
 
     // register parameters are always correct, never changed
     L1_X = autotune::detail::round_to_nearest(L1_X, X_REG);
