@@ -286,53 +286,53 @@ int main(int argc, char **argv) {
   autotune::combined_kernel.set_precompile_validate_parameter_functor(
       precompile_validate_parameter_functor);
 
-#if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||      \
-    defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
-  auto parameter_group_l1_adjustment_functor = [native_vector_width](
-      autotune::countable_set &parameters,
-      autotune::parameter_value_set parameter_values) -> void {
-    auto x_reg = stol(parameter_values["X_REG"]);
-    auto y_base_width = stol(parameter_values["Y_BASE_WIDTH"]);
-    auto &l1_x =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L1_X");
-    auto &l1_y =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L1_Y");
+// #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||
+//     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
+// auto parameter_group_l1_adjustment_functor = [native_vector_width](
+//     autotune::countable_set &parameters,
+//     autotune::parameter_value_set parameter_values) -> void {
+//   auto x_reg = stol(parameter_values["X_REG"]);
+//   auto y_base_width = stol(parameter_values["Y_BASE_WIDTH"]);
+//   auto &l1_x =
+//       parameters.get_by_name<autotune::countable_continuous_parameter>(
+//           "L1_X");
+//   auto &l1_y =
+//       parameters.get_by_name<autotune::countable_continuous_parameter>(
+//           "L1_Y");
 
-    const double y_reg_value = y_base_width * native_vector_width;
+//   const double y_reg_value = y_base_width * native_vector_width;
 
-    // register parameters are always correct, never changed
+//   // register parameters are always correct, never changed
 
-    l1_x.to_nearest_valid(x_reg);
+//   l1_x.to_nearest_valid(x_reg);
 
-    l1_y.to_nearest_valid(y_reg_value);
-  };
-  auto parameter_group_l2_adjustment_functor = [native_vector_width](
-      autotune::countable_set &parameters,
-      autotune::parameter_value_set parameter_values) -> void {
-    auto l1_x = stol(parameter_values["L1_X"]);
-    auto l1_y = stol(parameter_values["L1_Y"]);
-    auto l1_k_step = stol(parameter_values["L1_K_STEP"]);
-    auto &l2_x =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_X");
-    auto &l2_y =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_Y");
-    auto &l2_k_step =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_K_STEP");
+//   l1_y.to_nearest_valid(y_reg_value);
+// };
+// auto parameter_group_l2_adjustment_functor = [native_vector_width](
+//     autotune::countable_set &parameters,
+//     autotune::parameter_value_set parameter_values) -> void {
+//   auto l1_x = stol(parameter_values["L1_X"]);
+//   auto l1_y = stol(parameter_values["L1_Y"]);
+//   auto l1_k_step = stol(parameter_values["L1_K_STEP"]);
+//   auto &l2_x =
+//       parameters.get_by_name<autotune::countable_continuous_parameter>(
+//           "L2_X");
+//   auto &l2_y =
+//       parameters.get_by_name<autotune::countable_continuous_parameter>(
+//           "L2_Y");
+//   auto &l2_k_step =
+//       parameters.get_by_name<autotune::countable_continuous_parameter>(
+//           "L2_K_STEP");
 
-    // register parameters are always correct, never changed
+//   // register parameters are always correct, never changed
 
-    l2_x.to_nearest_valid(l1_x);
+//   l2_x.to_nearest_valid(l1_x);
 
-    l2_y.to_nearest_valid(l1_y);
+//   l2_y.to_nearest_valid(l1_y);
 
-    l2_k_step.to_nearest_valid(l1_k_step);
-  };
-#endif
+//   l2_k_step.to_nearest_valid(l1_k_step);
+// };
+// #endif
 
 #ifdef DO_MONTE_CARLO_SPLIT
   auto parameter_group_l1_adjustment_functor_randomizable =
@@ -438,38 +438,33 @@ int main(int argc, char **argv) {
   // 7 L2_Y
   // 8 L2_K_STEP
 
-  auto parameter_values_adjust_functor =
-      [native_vector_width, p1, p2, p3, p4, p5, p6, p7,
-       p8](autotune::parameter_value_set &parameter_values) -> void {
+  auto parameter_values_adjust_functor = [native_vector_width](
+      autotune::parameter_value_set &parameter_values) -> void {
 
-    int64_t X_REG = stol(parameter_values["X_REG"]);
-    int64_t Y_BASE_WIDTH = stol(parameter_values["Y_BASE_WIDTH"]);
-    int64_t L1_X = stol(parameter_values["L1_X"]);
-    int64_t L1_Y = stol(parameter_values["L1_Y"]);
-    int64_t L1_K_STEP = stol(parameter_values["L1_K_STEP"]);
-    int64_t L2_X = stol(parameter_values["L2_X"]);
-    int64_t L2_Y = stol(parameter_values["L2_Y"]);
-    int64_t L2_K_STEP = stol(parameter_values["L2_K_STEP"]);
+    double X_REG = stod(parameter_values["X_REG"]);
+    double Y_BASE_WIDTH = stod(parameter_values["Y_BASE_WIDTH"]);
+    double L1_X = stod(parameter_values["L1_X"]);
+    double L1_Y = stod(parameter_values["L1_Y"]);
+    double L1_K_STEP = stod(parameter_values["L1_K_STEP"]);
+    double L2_X = stod(parameter_values["L2_X"]);
+    double L2_Y = stod(parameter_values["L2_Y"]);
+    double L2_K_STEP = stod(parameter_values["L2_K_STEP"]);
 
     const double Y_REG = Y_BASE_WIDTH * native_vector_width;
 
     // register parameters are always correct, never changed
-    p3.set_value(L1_X);
-    p3.to_nearest_valid(X_REG);
-    p6.set_value(L2_X);
-    p6.to_nearest_valid(p3.get_raw_value());
-    p4.set_value(L1_Y);
-    p4.to_nearest_valid(Y_REG);
-    p7.set_value(L2_Y);
-    p7.to_nearest_valid(p4.get_raw_value());
-    p8.set_value(L2_K_STEP);
-    p8.to_nearest_valid(L1_K_STEP);
+    L1_X = autotune::detail::round_to_nearest(L1_X, X_REG);
+    L2_X = autotune::detail::round_to_nearest(L2_X, L1_X);
+    L1_Y = autotune::detail::round_to_nearest(L1_Y, Y_REG);
+    L2_Y = autotune::detail::round_to_nearest(L2_Y, L1_Y);
+    L2_K_STEP = autotune::detail::round_to_nearest(L2_K_STEP, L1_K_STEP);
 
-    parameter_values[p3->get_name()] = p3->get_value();
-    parameter_values[p4->get_name()] = p4->get_value();
-    parameter_values[p6->get_name()] = p6->get_value();
-    parameter_values[p7->get_name()] = p7->get_value();
-    parameter_values[p8->get_name()] = p8->get_value();
+    parameter_values["L1_X"] = autotune::detail::truncate_trailing_zeros(L1_X);
+    parameter_values["L2_X"] = autotune::detail::truncate_trailing_zeros(L2_X);
+    parameter_values["L1_Y"] = autotune::detail::truncate_trailing_zeros(L1_Y);
+    parameter_values["L2_Y"] = autotune::detail::truncate_trailing_zeros(L2_Y);
+    parameter_values["L2_K_STEP"] =
+        autotune::detail::truncate_trailing_zeros(L2_K_STEP);
   };
 
 ///////////// end new adjust
@@ -1235,8 +1230,8 @@ int main(int argc, char **argv) {
         autotune::tuners::full_neighborhood_search tuner_l2(
             autotune::combined_kernel, parameters_group_l2, search_steps);
         tuner_l2.set_reset_result_cache(false);
-        tuner_l2.set_parameter_adjustment_functor(
-            parameter_group_l2_adjustment_functor);
+        tuner_l2.set_parameter_values_adjustment_functor(
+            parameter_values_adjust_functor);
         tuner_l2.set_verbose(true);
 
         tuner_l2.setup_test(test_result);
@@ -1244,13 +1239,15 @@ int main(int argc, char **argv) {
         autotune::tuners::full_neighborhood_search tuner_l1(
             autotune::combined_kernel, parameters_group_l1, search_steps);
         tuner_l1.set_reset_result_cache(false);
-        tuner_l1.set_parameter_adjustment_functor(
-            parameter_group_l1_adjustment_functor);
+        tuner_l1.set_parameter_values_adjustment_functor(
+            parameter_values_adjust_functor);
         tuner_l1.set_verbose(true);
         tuner_l1.setup_test(test_result);
 
         autotune::tuners::full_neighborhood_search tuner_reg(
             autotune::combined_kernel, parameters_group_register, search_steps);
+        tuner_reg.set_parameter_values_adjustment_functor(
+            parameter_values_adjust_functor);
         tuner_reg.set_reset_result_cache(false);
         tuner_reg.set_verbose(true);
         tuner_reg.setup_test(test_result);
@@ -1267,23 +1264,23 @@ int main(int argc, char **argv) {
           tuner_l2.set_write_measurement(
               scenario_name +
               std::string("_split_full_neighborhood_search_l2_") +
-              std::to_string(restart)) +
-              std::string("_") + std::string(group_restart);
+              std::to_string(restart) + std::string("_") +
+              std::to_string(group_restart));
           tuner_l1.set_write_measurement(
               scenario_name +
               std::string("_split_full_neighborhood_search_l1_") +
               std::to_string(restart) + std::string("_") +
-              std::string(group_restart));
+              std::to_string(group_restart));
           tuner_reg.set_write_measurement(
               scenario_name +
               std::string("_split_full_neighborhood_search_register_") +
               std::to_string(restart) + std::string("_") +
-              std::string(group_restart));
+              std::to_string(group_restart));
           tuner_other.set_write_measurement(
               scenario_name +
               std::string("_split_full_neighborhood_search_other_") +
               std::to_string(restart) + std::string("_") +
-              std::string(group_restart));
+              std::to_string(group_restart));
 
           { // tune parameter group l2
             std::chrono::high_resolution_clock::time_point start =
