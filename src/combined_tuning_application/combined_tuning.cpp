@@ -438,8 +438,9 @@ int main(int argc, char **argv) {
   // 7 L2_Y
   // 8 L2_K_STEP
 
-  auto parameter_values_adjust_functor = [native_vector_width](
-      autotune::parameter_value_set &parameter_values) -> void {
+  auto parameter_values_adjust_functor =
+      [native_vector_width, p3, p6, p4, p7,
+       p8](autotune::parameter_value_set &parameter_values) -> void {
 
     double X_REG = stod(parameter_values["X_REG"]);
     double Y_BASE_WIDTH = stod(parameter_values["Y_BASE_WIDTH"]);
@@ -454,11 +455,17 @@ int main(int argc, char **argv) {
         Y_BASE_WIDTH * static_cast<double>(native_vector_width);
 
     // register parameters are always correct, never changed
-    L1_X = autotune::detail::round_to_nearest(L1_X, X_REG);
-    L2_X = autotune::detail::round_to_nearest(L2_X, L1_X);
-    L1_Y = autotune::detail::round_to_nearest(L1_Y, Y_REG);
-    L2_Y = autotune::detail::round_to_nearest(L2_Y, L1_Y);
-    L2_K_STEP = autotune::detail::round_to_nearest(L2_K_STEP, L1_K_STEP);
+    // autotune::detail::round_to_nearest_bounded(current, factor, min, max);
+    L1_X = autotune::detail::round_to_nearest_bounded(L1_X, X_REG, p3.get_min(),
+                                                      p3.get_max());
+    L2_X = autotune::detail::round_to_nearest_bounded(L2_X, L1_X, p6.get_min(),
+                                                      p6.get_max());
+    L1_Y = autotune::detail::round_to_nearest_bounded(L1_Y, Y_REG, p4.get_min(),
+                                                      p4.get_max());
+    L2_Y = autotune::detail::round_to_nearest_bounded(L2_Y, L1_Y, p7.get_min(),
+                                                      p7.get_max());
+    L2_K_STEP = autotune::detail::round_to_nearest_bounded(
+        L2_K_STEP, L1_K_STEP, p8.get_min(), p8.get_max());
 
     parameter_values["L1_X"] = autotune::detail::truncate_trailing_zeros(L1_X);
     parameter_values["L2_X"] = autotune::detail::truncate_trailing_zeros(L2_X);
