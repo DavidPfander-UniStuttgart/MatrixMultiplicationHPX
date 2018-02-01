@@ -20,13 +20,13 @@
 #include <chrono>
 #include <omp.h>
 
-//#define DO_LINE_SEARCH
-//#define DO_LINE_SEARCH_SPLIT
-//#define DO_NEIGHBOR_SEARCH
-//#define DO_NEIGHBOR_SEARCH_SPLIT
+#define DO_LINE_SEARCH
+#define DO_LINE_SEARCH_SPLIT
+#define DO_NEIGHBOR_SEARCH
+#define DO_NEIGHBOR_SEARCH_SPLIT
 //#define DO_FULL_NEIGHBOR_SEARCH
 #define DO_FULL_NEIGHBOR_SEARCH_SPLIT
-//#define DO_MONTE_CARLO
+#define DO_MONTE_CARLO
 
 AUTOTUNE_KERNEL(uint64_t(), hardware_query_kernel,
                 "src/variants/hardware_query_kernel")
