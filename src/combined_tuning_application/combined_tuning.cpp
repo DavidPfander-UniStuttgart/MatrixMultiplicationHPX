@@ -64,8 +64,8 @@ int main(int argc, char **argv) {
   tuner_duration_file.open(scenario_name + "_tuner_duration.csv");
   tuner_duration_file << "tuner, duration" << std::endl;
 
-  // std::uint64_t N = 4096;
-  std::uint64_t N = 16;
+  std::uint64_t N = 4096;
+  //std::uint64_t N = 16;
 
   bool transposed = false;
   size_t repetitions = 5;
