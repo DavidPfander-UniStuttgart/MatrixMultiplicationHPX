@@ -12,9 +12,9 @@ using Vc::double_v;
 #include "opttmp/memory_layout/tile_array.hpp"
 #include "parameters.hpp"
 #include <chrono>
-#include <vector>
-
+#include <opttmp/memory_layout/tile_view.hpp>
 #include <opttmp/vectorization/register_tiling.hpp>
+#include <vector>
 
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
@@ -197,6 +197,12 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       B_padded = memory_layout::make_tiled<2>(B_copy, tiling_spec_B);
 
+  memory_layout::tiling_configuration tiling_spec_C(2);
+  tiling_spec_C[0].tile_size_dir = L1_X;
+  tiling_spec_C[0].stride = X_size;
+  tiling_spec_C[1].tile_size_dir = L1_Y;
+  tiling_spec_C[1].stride = Y_size;
+
   for (size_t rep = 0; rep < repetitions; rep++) {
     // reset result before every iteration
     // because C is zero-initialized, no explicit tiling step is required
@@ -204,6 +210,8 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
 
     std::chrono::high_resolution_clock::time_point start =
         std::chrono::high_resolution_clock::now();
+
+//#define USE_OLD_STYLE
 
 #pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS)
     for (size_t l2_x = 0; l2_x < X_size; l2_x += L2_X) {
@@ -214,10 +222,14 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
                l1_x += L1_X) {
             for (size_t l1_y = l2_y; (l1_y < l2_y + L2_Y) && (l1_y < Y_size);
                  l1_y += L1_Y) {
+#ifndef USE_OLD_STYLE
+              auto C_view = memory_layout::make_view_from_index<2>(
+                  {l1_x, l1_y}, C_padded, tiling_spec_C);
+#endif
               for (size_t l1_k = l2_k;
                    (l1_k < l2_k + L2_K_STEP) && (l1_k < K_size);
                    l1_k += L1_K_STEP) {
-
+#ifdef USE_OLD_STYLE
                 size_t l1_block_x = l1_x / L1_X;
                 size_t l1_block_y = l1_y / L1_Y;
                 size_t C_base_index =
@@ -230,6 +242,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
                 size_t B_base_index =
                     (L1_Y * L1_K_STEP) *
                     (l1_block_k * (Y_size / L1_Y) + l1_block_y);
+
                 // Register blocking
                 for (size_t x = 0; x < L1_X; x += X_REG) {
                   for (size_t y = 0; y < L1_Y; y += Y_REG) {
@@ -256,15 +269,80 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
                     }
 
                     for (size_t r = 0; r < X_REG; r++) {
-                      reg_array res(
+                      reg_array res_value(
                           &C_padded[C_base_index + (x + r) * L1_Y + y],
                           Vc::flags::element_aligned);
-                      res += acc[r];
-                      res.memstore(&C_padded[C_base_index + (x + r) * L1_Y + y],
-                                   Vc::flags::element_aligned);
+                      res_value += acc[r];
+                      res_value.memstore(
+                          &C_padded[C_base_index + (x + r) * L1_Y + y],
+                          Vc::flags::element_aligned);
                     }
                   }
                 }
+#else
+                // size_t l1_block_x = l1_x / L1_X;
+                size_t l1_block_y = l1_y / L1_Y;
+                size_t l1_block_k = l1_k / L1_K_STEP;
+                // size_t A_base_index =
+                //     (L1_X * L1_K_STEP) *
+                //     (l1_block_k * (X_size / L1_X) + l1_block_x);
+                size_t B_base_index =
+                    (L1_Y * L1_K_STEP) *
+                    (l1_block_k * (Y_size / L1_Y) + l1_block_y);
+
+                auto A_trans_view = memory_layout::make_view_from_index<2>(
+                    {l1_k, l1_x}, A_trans, tiling_spec_A_trans);
+                auto B_view = memory_layout::make_view_from_index<2>(
+                    {l1_k, l1_y}, B_padded, tiling_spec_B);
+
+                double *const b_base_ptr = B_view.pointer(0);
+
+                // Register blocking
+                for (size_t x = 0; x < L1_X; x += X_REG) {
+                  for (size_t y = 0; y < L1_Y; y += Y_REG) {
+
+                    std::array<reg_array, X_REG> acc;
+
+                    for (size_t k_inner = 0; k_inner < L1_K_STEP;
+                         k_inner += 1) {
+                      // const reg_array b_temp(B_view.pointer(k_inner * L1_Y +
+                      // y),
+                      //                        Vc::flags::vector_aligned);
+                      // const reg_array b_temp(&b_base_ptr[y + k_inner * L1_Y],
+                      //                        Vc::flags::vector_aligned);
+
+                      reg_array b_temp(
+                          &B_padded[B_base_index + k_inner * L1_Y + y],
+                          Vc::flags::vector_aligned);
+
+                      // loads from A_trans are broadcasts!
+                      std::array<double_v, X_REG> a_temp;
+                      for (size_t r = 0; r < X_REG; r++) {
+                        // a_temp[r] =
+                        //     A_trans[A_base_index + k_inner * L1_X + (x + r)];
+
+                        a_temp[r] = A_trans_view[k_inner * L1_X + (x + r)];
+                        // faster
+                        // a_temp[r] = A_trans_view(k_inner, x + r); // slower
+                      }
+
+                      for (size_t r = 0; r < X_REG; r++) {
+                        acc[r] += a_temp[r] * b_temp;
+                      }
+                    }
+
+                    for (size_t r = 0; r < X_REG; r++) {
+                      double *const res_ptr =
+                          C_view.pointer((x + r) * L1_Y + y);
+                      // double *res_ptr =
+                      //     &C_padded[C_base_index + (x + r) * L1_Y + y];
+                      reg_array res_value(res_ptr, Vc::flags::element_aligned);
+                      res_value += acc[r];
+                      res_value.memstore(res_ptr, Vc::flags::element_aligned);
+                    }
+                  }
+                }
+#endif
               }
             }
           }
@@ -276,12 +354,6 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
         std::chrono::high_resolution_clock::now();
     duration += std::chrono::duration<double>(end - start).count();
   }
-
-  memory_layout::tiling_configuration tiling_spec_C(2);
-  tiling_spec_C[0].tile_size_dir = L1_X;
-  tiling_spec_C[0].stride = X_size;
-  tiling_spec_C[1].tile_size_dir = L1_Y;
-  tiling_spec_C[1].stride = Y_size;
 
   std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       C_untiled = memory_layout::undo_tiling<2>(C_padded, tiling_spec_C);
