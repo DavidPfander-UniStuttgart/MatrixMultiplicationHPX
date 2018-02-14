@@ -295,8 +295,6 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
                 auto B_view = memory_layout::make_view_from_index<2>(
                     {l1_k, l1_y}, B_padded, tiling_spec_B);
 
-                double *const b_base_ptr = B_view.pointer(0);
-
                 // Register blocking
                 for (size_t x = 0; x < L1_X; x += X_REG) {
                   for (size_t y = 0; y < L1_Y; y += Y_REG) {
@@ -305,10 +303,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
 
                     for (size_t k_inner = 0; k_inner < L1_K_STEP;
                          k_inner += 1) {
-                      // const reg_array b_temp(B_view.pointer(k_inner * L1_Y +
-                      // y),
-                      //                        Vc::flags::vector_aligned);
-                      // const reg_array b_temp(&b_base_ptr[y + k_inner * L1_Y],
+                      // const reg_array b_temp(B_view.pointer(k_inner * L1_Y + y),
                       //                        Vc::flags::vector_aligned);
 
                       reg_array b_temp(
