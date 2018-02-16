@@ -281,14 +281,14 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
                 }
 #else
                 // size_t l1_block_x = l1_x / L1_X;
-                size_t l1_block_y = l1_y / L1_Y;
-                size_t l1_block_k = l1_k / L1_K_STEP;
+                // size_t l1_block_y = l1_y / L1_Y;
+                // size_t l1_block_k = l1_k / L1_K_STEP;
                 // size_t A_base_index =
                 //     (L1_X * L1_K_STEP) *
                 //     (l1_block_k * (X_size / L1_X) + l1_block_x);
-                size_t B_base_index =
-                    (L1_Y * L1_K_STEP) *
-                    (l1_block_k * (Y_size / L1_Y) + l1_block_y);
+                // size_t B_base_index =
+                //     (L1_Y * L1_K_STEP) *
+                //     (l1_block_k * (Y_size / L1_Y) + l1_block_y);
 
                 auto A_trans_view = memory_layout::make_view_from_index<2>(
                     {l1_k, l1_x}, A_trans, tiling_spec_A_trans);
@@ -303,12 +303,12 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
 
                     for (size_t k_inner = 0; k_inner < L1_K_STEP;
                          k_inner += 1) {
-                      // const reg_array b_temp(B_view.pointer(k_inner * L1_Y + y),
-                      //                        Vc::flags::vector_aligned);
+                      const reg_array b_temp(B_view.pointer(k_inner * L1_Y + y),
+                                             Vc::flags::vector_aligned);
 
-                      reg_array b_temp(
-                          &B_padded[B_base_index + k_inner * L1_Y + y],
-                          Vc::flags::vector_aligned);
+                      // reg_array b_temp(
+                      //     &B_padded[B_base_index + k_inner * L1_Y + y],
+                      //     Vc::flags::vector_aligned);
 
                       // loads from A_trans are broadcasts!
                       std::array<double_v, X_REG> a_temp;
