@@ -3,6 +3,7 @@
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/full_neighborhood_search.hpp"
+#include "autotune/tuners/group_tuner.hpp"
 #include "autotune/tuners/line_search.hpp"
 #include "autotune/tuners/monte_carlo.hpp"
 #include "autotune/tuners/neighborhood_search.hpp"
@@ -18,15 +19,18 @@
 #include <random>
 
 #include <chrono>
+#include <likwid.h>
 #include <omp.h>
 
-#define DO_LINE_SEARCH
-#define DO_LINE_SEARCH_SPLIT
+#define WITH_LIBLIKWID
+
+// #define DO_LINE_SEARCH
+// #define DO_LINE_SEARCH_SPLIT
 #define DO_NEIGHBOR_SEARCH
 #define DO_NEIGHBOR_SEARCH_SPLIT
-//#define DO_FULL_NEIGHBOR_SEARCH
-#define DO_FULL_NEIGHBOR_SEARCH_SPLIT
-#define DO_MONTE_CARLO
+// #define DO_FULL_NEIGHBOR_SEARCH
+// #define DO_FULL_NEIGHBOR_SEARCH_SPLIT
+// #define DO_MONTE_CARLO
 
 AUTOTUNE_KERNEL(uint64_t(), hardware_query_kernel,
                 "src/variants/hardware_query_kernel")
@@ -42,6 +46,33 @@ int main(int argc, char **argv) {
     std::cerr << "Error: two many arguments given!" << std::endl;
     return 1;
   }
+
+#ifdef WITH_LIBLIKWID
+  // use likwid to query some hardware information
+  uint64_t l1_size_bytes = 0;
+  uint64_t l2_size_bytes = 0;
+  {
+    int err = topology_init();
+    if (err < 0) {
+      std::cerr << "Unable to initialize likwid" << std::endl;
+      return 1;
+    }
+    // CpuInfo_t contains global information like name, CPU family, ...
+    CpuInfo_t info = get_cpuInfo();
+    std::cout << "using cpu name: " << info->name << std::endl;
+    // CpuTopology_t contains information about the topology of the CPUs.
+    CpuTopology_t topo = get_cpuTopology();
+    for (size_t i = 0; i < topo->numCacheLevels; i++) {
+      std::cout << "level: " << topo->cacheLevels[i].level << std::endl;
+      std::cout << "size: " << topo->cacheLevels[i].size << std::endl;
+      if (topo->cacheLevels[i].level == 1) {
+        l1_size_bytes = topo->cacheLevels[i].size;
+      } else if (topo->cacheLevels[i].level == 2) {
+        l2_size_bytes = topo->cacheLevels[i].size;
+      }
+    }
+  }
+#endif
 
   // figure out native vector width
   auto &builder_hw_query =
@@ -65,7 +96,7 @@ int main(int argc, char **argv) {
   tuner_duration_file << "tuner, duration" << std::endl;
 
   std::uint64_t N = 4096;
-  //std::uint64_t N = 16;
+  // std::uint64_t N = 16;
 
   bool transposed = false;
   size_t repetitions = 5;
@@ -208,7 +239,8 @@ int main(int argc, char **argv) {
   };
 
   auto precompile_validate_parameter_functor =
-      [native_vector_width](autotune::parameter_value_set &parameters) -> bool {
+      [native_vector_width, l2_size_bytes,
+       l1_size_bytes](autotune::parameter_value_set &parameters) -> bool {
     int64_t X_REG = stol(parameters["X_REG"]);
     int64_t Y_BASE_WIDTH = stol(parameters["Y_BASE_WIDTH"]);
     int64_t L1_X = stol(parameters["L1_X"]);
@@ -265,10 +297,45 @@ int main(int argc, char **argv) {
           << std::endl;
       return false;
     }
+
+#ifdef WITH_LIBLIKWID
+    size_t l2_memory = (L2_X * L2_K_STEP + L2_K_STEP * L2_Y + L2_X * L2_Y) * 8;
+    if (l2_memory > l2_size_bytes) {
+      std::cout << "rejected by l2 cache size requirement" << std::endl;
+      return false;
+    }
+    size_t l1_memory = (L1_X * L1_K_STEP + L1_K_STEP * L1_Y + L1_X * L1_Y) * 8;
+    if (l1_memory > l1_size_bytes) {
+      std::cout << "rejected by l1 cache size requirement" << std::endl;
+      return false;
+    }
+#endif
+
     return true;
   };
   autotune::combined_kernel.set_precompile_validate_parameter_functor(
       precompile_validate_parameter_functor);
+
+  size_t global_restarts = 3;
+  // std::vector<autotune::parameter_value_set> restart_value_sets;
+  std::vector<autotune::parameter_value_set> restart_value_sets;
+  for (size_t i = 0; i < global_restarts; i++) {
+    autotune::parameter_value_set parameter_values;
+    // find random valid start value (first round use initial value)
+    while (true) {
+      iterate_parameter_groups(
+          [&](auto &p) {
+            p->set_random_value();
+            parameter_values[p->get_name()] = p->get_value();
+          },
+          parameters_group_register, parameters_group_l1, parameters_group_l2,
+          parameters_group_other);
+      if (precompile_validate_parameter_functor(parameter_values)) {
+        restart_value_sets.push_back(parameter_values);
+        break;
+      }
+    }
+  }
 
 // #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||
 //     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
@@ -362,17 +429,17 @@ int main(int argc, char **argv) {
   };
 #endif
 
-  ///////////// new adjust
+///////////// new adjust
 
-  // 1 X_REG
-  // 2 Y_BASE_WIDTH
-  // 3 L1_X
-  // 4 L1_Y
-  // 5 L1_K_STEP
-  // 6 L2_X
-  // 7 L2_Y
-  // 8 L2_K_STEP
-#if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) || \
+// 1 X_REG
+// 2 Y_BASE_WIDTH
+// 3 L1_X
+// 4 L1_Y
+// 5 L1_K_STEP
+// 6 L2_X
+// 7 L2_Y
+// 8 L2_K_STEP
+#if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||      \
     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
   auto parameter_values_adjust_functor =
       [native_vector_width, p3, p6, p4, p7,
@@ -482,12 +549,11 @@ int main(int argc, char **argv) {
       }
 
       autotune::tuners::line_search tuner(autotune::combined_kernel, parameters,
-                                          line_search_steps, 1);
+                                          line_search_steps);
       tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
       tuner.set_verbose(true);
       tuner.set_write_measurement(scenario_name + "_line_search_" +
                                   std::to_string(restart));
-
       tuner.setup_test(test_result);
 
       autotune::countable_set optimal_parameters;
@@ -534,171 +600,85 @@ int main(int argc, char **argv) {
     }
   }
 #endif
+///////////// start splitted line search /////////////////////
 #ifdef DO_LINE_SEARCH_SPLIT
   // tune with line search with register splitting
   {
     std::cout
         << "----------------- starting tuning with line search ------------ "
         << std::endl;
-    size_t line_search_steps = 10;
-    size_t group_repeat = 3;
-    size_t restarts = 5;
+    size_t line_search_steps =
+        10; // set to 10, will iterate absolutely all values!
+    size_t group_repeat =
+        3;               // how often is the each group of parameters looked at
+    size_t restarts = 1; // number of initial random experiments
+
+    autotune::parameter_value_set original_parameters =
+        autotune::combined_kernel.get_parameter_values();
+
     for (size_t restart = 0; restart < restarts; restart++) {
       std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
-      autotune::parameter_value_set original_parameters =
-          autotune::combined_kernel.get_parameter_values();
+
       autotune::parameter_value_set parameter_values;
+      // find random valid start value (first round use initial value)
       while (!valid_start_found) {
-        for (size_t parameter_index = 0;
-             parameter_index < parameters_group_register.size();
-             parameter_index++) {
-          auto &p = parameters_group_register[parameter_index];
-          if (restart == 0)
-            p->set_initial();
-          else
-            p->set_random_value();
-          parameter_values[p->get_name()] = p->get_value();
-        }
-        for (size_t parameter_index = 0;
-             parameter_index < parameters_group_l1.size(); parameter_index++) {
-          auto &p = parameters_group_l1[parameter_index];
-          if (restart == 0)
-            p->set_initial();
-          else
-            p->set_random_value();
-          parameter_values[p->get_name()] = p->get_value();
-        }
-        for (size_t parameter_index = 0;
-             parameter_index < parameters_group_l2.size(); parameter_index++) {
-          auto &p = parameters_group_l2[parameter_index];
-          if (restart == 0)
-            p->set_initial();
-          else
-            p->set_random_value();
-          parameter_values[p->get_name()] = p->get_value();
-        }
-        for (size_t parameter_index = 0;
-             parameter_index < parameters_group_other.size();
-             parameter_index++) {
-          auto &p = parameters_group_other[parameter_index];
-          if (restart == 0)
-            p->set_initial();
-          else
-            p->set_random_value();
-          parameter_values[p->get_name()] = p->get_value();
-        }
+        iterate_parameter_groups(
+            [&](auto &p) {
+              if (restart == 0)
+                p->set_initial();
+              else
+                p->set_random_value();
+              parameter_values[p->get_name()] = p->get_value();
+            },
+            parameters_group_register, parameters_group_l1, parameters_group_l2,
+            parameters_group_other);
         if (precompile_validate_parameter_functor(parameter_values)) {
           valid_start_found = true;
         }
       }
+      // make sure that all parameters are known to the kernel
+      // TODO: should not be necessary -> improve!
       autotune::combined_kernel.set_parameter_values(parameter_values);
-      {
-        autotune::tuners::line_search tuner_l2(autotune::combined_kernel,
-                                               parameters_group_l2,
-                                               line_search_steps, 1);
-        tuner_l2.set_parameter_values_adjustment_functor(
-            parameter_values_adjust_functor);
-        tuner_l2.auto_clear(false);
-        tuner_l2.set_verbose(true);
-        tuner_l2.set_write_measurement(
-            scenario_name + "_split_line_search_l2_" + std::to_string(restart));
-        tuner_l2.setup_test(test_result);
 
-        autotune::tuners::line_search tuner_l1(autotune::combined_kernel,
-                                               parameters_group_l1,
-                                               line_search_steps, 1);
-        tuner_l1.set_parameter_values_adjustment_functor(
-            parameter_values_adjust_functor);
-        tuner_l1.auto_clear(false);
-        tuner_l1.set_verbose(true);
-        tuner_l1.set_write_measurement(
-            scenario_name + "_split_line_search_l1_" + std::to_string(restart));
-        tuner_l1.setup_test(test_result);
+      // create all tuners
+      autotune::tuners::line_search tuner_l2(
+          autotune::combined_kernel, parameters_group_l2, line_search_steps);
+      tuner_l2.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_l2.set_write_measurement(scenario_name + "_split_line_search_l2_" +
+                                     std::to_string(restart));
 
-        autotune::tuners::line_search tuner_reg(autotune::combined_kernel,
-                                                parameters_group_register,
-                                                line_search_steps, 1);
-        tuner_reg.set_parameter_values_adjustment_functor(
-            parameter_values_adjust_functor);
-        tuner_reg.auto_clear(false);
-        tuner_reg.set_verbose(true);
-        tuner_reg.set_write_measurement(scenario_name +
-                                        "_split_line_search_register_" +
+      autotune::tuners::line_search tuner_l1(
+          autotune::combined_kernel, parameters_group_l1, line_search_steps);
+      tuner_l1.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_l1.set_write_measurement(scenario_name + "_split_line_search_l1_" +
+                                     std::to_string(restart));
+
+      autotune::tuners::line_search tuner_reg(autotune::combined_kernel,
+                                              parameters_group_register,
+                                              line_search_steps);
+      tuner_reg.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_reg.set_write_measurement(scenario_name +
+                                      "_split_line_search_register_" +
+                                      std::to_string(restart));
+
+      autotune::tuners::line_search tuner_other(
+          autotune::combined_kernel, parameters_group_other, line_search_steps);
+      tuner_other.set_write_measurement(scenario_name +
+                                        "_split_line_search_other_" +
                                         std::to_string(restart));
-        tuner_reg.setup_test(test_result);
 
-        autotune::tuners::line_search tuner_other(autotune::combined_kernel,
-                                                  parameters_group_other,
-                                                  line_search_steps, 1);
-        tuner_other.auto_clear(false);
-        tuner_other.set_verbose(true);
-        tuner_other.set_write_measurement(scenario_name +
-                                          "_split_line_search_other_" +
-                                          std::to_string(restart));
-        tuner_other.setup_test(test_result);
+      autotune::tuners::group_tuner g(autotune::combined_kernel, group_repeat,
+                                      tuner_l2, tuner_l1, tuner_reg,
+                                      tuner_other);
+      g.set_verbose(true);
+      autotune::parameter_value_set optimal_parameter_values =
+          g.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+      autotune::combined_kernel.set_parameter_values(optimal_parameter_values);
 
-        for (size_t group_restart = 0; group_restart < group_repeat;
-             group_restart++) {
-          std::cout << "Group restart " << group_restart << std::endl;
-          { // tune parameter group l2
-            std::chrono::high_resolution_clock::time_point start =
-                std::chrono::high_resolution_clock::now();
-            tuner_l2.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                          duration_kernel);
-            std::chrono::high_resolution_clock::time_point end =
-                std::chrono::high_resolution_clock::now();
-            double tuning_duration =
-                std::chrono::duration<double>(end - start).count();
-            tuner_duration_file << "split_line_search_l2, " << tuning_duration
-                                << std::endl;
-            autotune::combined_kernel.set_parameter_values(
-                tuner_l2.get_optimal_parameter_values());
-          }
-          { // tune parameter group l1
-            std::chrono::high_resolution_clock::time_point start =
-                std::chrono::high_resolution_clock::now();
-            tuner_l1.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                          duration_kernel);
-            std::chrono::high_resolution_clock::time_point end =
-                std::chrono::high_resolution_clock::now();
-            double tuning_duration =
-                std::chrono::duration<double>(end - start).count();
-            tuner_duration_file << "split_line_search_l1, " << tuning_duration
-                                << std::endl;
-            autotune::combined_kernel.set_parameter_values(
-                tuner_l1.get_optimal_parameter_values());
-          }
-          { // tune parameter group register
-            std::chrono::high_resolution_clock::time_point start =
-                std::chrono::high_resolution_clock::now();
-            tuner_reg.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                           duration_kernel);
-            std::chrono::high_resolution_clock::time_point end =
-                std::chrono::high_resolution_clock::now();
-            double tuning_duration =
-                std::chrono::duration<double>(end - start).count();
-            tuner_duration_file << "split_line_search_register, "
-                                << tuning_duration << std::endl;
-            autotune::combined_kernel.set_parameter_values(
-                tuner_reg.get_optimal_parameter_values());
-          }
-          { // tune oarameter group other
-            std::chrono::high_resolution_clock::time_point start =
-                std::chrono::high_resolution_clock::now();
-            tuner_other.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                             duration_kernel);
-            std::chrono::high_resolution_clock::time_point end =
-                std::chrono::high_resolution_clock::now();
-            double tuning_duration =
-                std::chrono::duration<double>(end - start).count();
-            tuner_duration_file << "split_line_search_other, "
-                                << tuning_duration << std::endl;
-            autotune::combined_kernel.set_parameter_values(
-                tuner_other.get_optimal_parameter_values());
-          }
-        }
-      }
       std::cout << "----------------------- end tuning -----------------------"
                 << std::endl;
       std::cout << "optimal parameter values (split line search):" << std::endl;
@@ -722,32 +702,15 @@ int main(int argc, char **argv) {
       std::cout << "[N = " << N << "] performance: "
                 << ((repetitions * gflop) / duration_kernel) << "GFLOPS"
                 << std::endl;
+    }
 
-      autotune::combined_kernel.set_parameter_values(original_parameters);
-    }
-    for (size_t parameter_index = 0;
-         parameter_index < parameters_group_register.size();
-         parameter_index++) {
-      auto &p = parameters_group_register[parameter_index];
-      p->set_initial();
-    }
-    for (size_t parameter_index = 0;
-         parameter_index < parameters_group_l1.size(); parameter_index++) {
-      auto &p = parameters_group_l1[parameter_index];
-      p->set_initial();
-    }
-    for (size_t parameter_index = 0;
-         parameter_index < parameters_group_l2.size(); parameter_index++) {
-      auto &p = parameters_group_l2[parameter_index];
-      p->set_initial();
-    }
-    for (size_t parameter_index = 0;
-         parameter_index < parameters_group_other.size(); parameter_index++) {
-      auto &p = parameters_group_other[parameter_index];
-      p->set_initial();
-    }
+    autotune::combined_kernel.set_parameter_values(original_parameters);
+    iterate_parameter_groups([&](auto &p) { p->set_initial(); },
+                             parameters_group_register, parameters_group_l1,
+                             parameters_group_l2, parameters_group_other);
   }
 #endif
+////////////////////////// end splitted line search ////////////////////////////
 #ifdef DO_NEIGHBOR_SEARCH
   // tune with neighborhood search
   {
@@ -755,23 +718,25 @@ int main(int argc, char **argv) {
                  "-----------------"
               << std::endl;
 
-    size_t restarts = 5;
-    size_t search_steps = 50;
+    size_t restarts = 3;
+    size_t search_steps = 20;
     for (size_t restart = 0; restart < restarts; restart++) {
       std::cout << "restart: " << restart << std::endl;
-      bool valid_start_found = false;
-      while (!valid_start_found) {
-        for (size_t parameter_index = 0; parameter_index < parameters.size();
-             parameter_index++) {
-          auto &p = parameters[parameter_index];
-          p->set_random_value();
-        }
-        autotune::parameter_value_set parameter_values =
-            autotune::to_parameter_values(parameters);
-        if (precompile_validate_parameter_functor(parameter_values)) {
-          valid_start_found = true;
-        }
-      }
+      // bool valid_start_found = false;
+      // while (!valid_start_found) {
+      //   for (size_t parameter_index = 0; parameter_index < parameters.size();
+      //        parameter_index++) {
+      //     auto &p = parameters[parameter_index];
+      //     p->set_random_value();
+      //     // p->set_initial();
+      //   }
+      //   autotune::parameter_value_set parameter_values =
+      //       autotune::to_parameter_values(parameters);
+      //   if (precompile_validate_parameter_functor(parameter_values)) {
+      //     valid_start_found = true;
+      //   }
+      // }
+      parameters.set_values(restart_value_sets[restart]);
 
       autotune::tuners::neighborhood_search tuner(autotune::combined_kernel,
                                                   parameters, search_steps);
@@ -830,167 +795,88 @@ int main(int argc, char **argv) {
 #ifdef DO_NEIGHBOR_SEARCH_SPLIT
   // tune with neighborhood search with parameter splitting
   {
-    std::cout << "----------------- starting tuning with neighborhood search"
-                 "-----------------"
-              << std::endl;
-
-    size_t restarts = 5;
-    size_t search_steps = 10;
+    std::cout
+        << "----------------- starting tuning with line search ------------ "
+        << std::endl;
+    // set to 10, will iterate absolutely all values!
+    size_t search_steps = 4;
+    // how often is the each group of parameters looked at
     size_t group_repeat = 3;
+    size_t restarts = 3; // number of initial random experiments
+
+    autotune::parameter_value_set original_parameters =
+        autotune::combined_kernel.get_parameter_values();
+
     for (size_t restart = 0; restart < restarts; restart++) {
       std::cout << "restart: " << restart << std::endl;
-      bool valid_start_found = false;
-      autotune::parameter_value_set original_parameters =
-          autotune::combined_kernel.get_parameter_values();
-      autotune::parameter_value_set parameter_values;
-      while (!valid_start_found) {
-        for (size_t parameter_index = 0;
-             parameter_index < parameters_group_register.size();
-             parameter_index++) {
-          auto &p = parameters_group_register[parameter_index];
-          if (restart == 0)
-            p->set_initial();
-          else
-            p->set_random_value();
-          parameter_values[p->get_name()] = p->get_value();
-        }
-        for (size_t parameter_index = 0;
-             parameter_index < parameters_group_l1.size(); parameter_index++) {
-          auto &p = parameters_group_l1[parameter_index];
-          if (restart == 0)
-            p->set_initial();
-          else
-            p->set_random_value();
-          parameter_values[p->get_name()] = p->get_value();
-        }
-        for (size_t parameter_index = 0;
-             parameter_index < parameters_group_l2.size(); parameter_index++) {
-          auto &p = parameters_group_l2[parameter_index];
-          if (restart == 0)
-            p->set_initial();
-          else
-            p->set_random_value();
-          parameter_values[p->get_name()] = p->get_value();
-        }
-        for (size_t parameter_index = 0;
-             parameter_index < parameters_group_other.size();
-             parameter_index++) {
-          auto &p = parameters_group_other[parameter_index];
-          if (restart == 0)
-            p->set_initial();
-          else
-            p->set_random_value();
-          parameter_values[p->get_name()] = p->get_value();
-        }
-        if (precompile_validate_parameter_functor(parameter_values)) {
-          valid_start_found = true;
-        }
-      }
+
+      autotune::parameter_value_set parameter_values =
+          restart_value_sets[restart];
+      parameters_group_register.set_values(parameter_values);
+      parameters_group_l1.set_values(parameter_values);
+      parameters_group_l2.set_values(parameter_values);
+      parameters_group_other.set_values(parameter_values);
+
+      // autotune::parameter_value_set parameter_values;
+      // find random valid start value (first round use initial value)
+      // while (!valid_start_found) {
+      //   iterate_parameter_groups(
+      //       [&](auto &p) {
+      //         // if (restart == 0)
+      //         // p->set_initial();
+      //         // else
+      //         p->set_random_value();
+      //         parameter_values[p->get_name()] = p->get_value();
+      //       },
+      //       parameters_group_register, parameters_group_l1,
+      //       parameters_group_l2,
+      //       parameters_group_other);
+      //   if (precompile_validate_parameter_functor(parameter_values)) {
+      //     valid_start_found = true;
+      //   }
+      // }
+      // make sure that all parameters are known to the kernel
+      // TODO: should not be necessary -> improve!
       autotune::combined_kernel.set_parameter_values(parameter_values);
-      {
-        autotune::tuners::neighborhood_search tuner_l2(
-            autotune::combined_kernel, parameters_group_l2, search_steps);
-        tuner_l2.set_parameter_values_adjustment_functor(
-            parameter_values_adjust_functor);
-        tuner_l2.auto_clear(false);
-        tuner_l2.set_verbose(true);
-        tuner_l2.set_write_measurement(scenario_name +
-                                       "_split_neighborhood_search_l2_" +
-                                       std::to_string(restart));
-        tuner_l2.setup_test(test_result);
 
-        autotune::tuners::neighborhood_search tuner_l1(
-            autotune::combined_kernel, parameters_group_l1, search_steps);
-        tuner_l1.set_parameter_values_adjustment_functor(
-            parameter_values_adjust_functor);
-        tuner_l1.auto_clear(false);
-        tuner_l1.set_verbose(true);
-        tuner_l1.set_write_measurement(scenario_name +
-                                       "_split_neighborhood_search_l1_" +
-                                       std::to_string(restart));
-        tuner_l1.setup_test(test_result);
+      // create all tuners
+      autotune::tuners::neighborhood_search tuner_l2(
+          autotune::combined_kernel, parameters_group_l2, search_steps);
+      tuner_l2.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_l2.set_write_measurement(scenario_name +
+                                     "_split_neighborhood_search_l2_" +
+                                     std::to_string(restart));
 
-        autotune::tuners::neighborhood_search tuner_reg(
-            autotune::combined_kernel, parameters_group_register, search_steps);
-        tuner_reg.set_parameter_values_adjustment_functor(
-            parameter_values_adjust_functor);
-        tuner_reg.auto_clear(false);
-        tuner_reg.set_verbose(true);
-        tuner_reg.set_write_measurement(scenario_name +
-                                        "_split_neighborhood_search_register_" +
+      autotune::tuners::neighborhood_search tuner_l1(
+          autotune::combined_kernel, parameters_group_l1, search_steps);
+      tuner_l1.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_l1.set_write_measurement(scenario_name +
+                                     "_split_neighborhood_search_l1_" +
+                                     std::to_string(restart));
+
+      autotune::tuners::neighborhood_search tuner_reg(
+          autotune::combined_kernel, parameters_group_register, search_steps);
+      tuner_reg.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_reg.set_write_measurement(scenario_name +
+                                      "_split_neighborhood_search_register_" +
+                                      std::to_string(restart));
+
+      autotune::tuners::neighborhood_search tuner_other(
+          autotune::combined_kernel, parameters_group_other, search_steps);
+      tuner_other.set_write_measurement(scenario_name +
+                                        "_split_neighborhood_search_other_" +
                                         std::to_string(restart));
-        tuner_reg.setup_test(test_result);
 
-        autotune::tuners::neighborhood_search tuner_other(
-            autotune::combined_kernel, parameters_group_other, search_steps);
-        tuner_other.auto_clear(false);
-        tuner_other.set_verbose(true);
-        tuner_other.set_write_measurement(scenario_name +
-                                          "_split_neighborhood_search_other_" +
-                                          std::to_string(restart));
-        tuner_other.setup_test(test_result);
-
-        for (size_t group_restart = 0; group_restart < group_repeat;
-             group_restart++) {
-          std::cout << "Group restart " << group_restart << std::endl;
-          { // tune parameter group l2
-            std::chrono::high_resolution_clock::time_point start =
-                std::chrono::high_resolution_clock::now();
-            tuner_l2.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                          duration_kernel);
-            std::chrono::high_resolution_clock::time_point end =
-                std::chrono::high_resolution_clock::now();
-            double tuning_duration =
-                std::chrono::duration<double>(end - start).count();
-            tuner_duration_file << "split_neighborhood_search_l2, "
-                                << tuning_duration << std::endl;
-            autotune::combined_kernel.set_parameter_values(
-                tuner_l2.get_optimal_parameter_values());
-          }
-          { // tune parameter group l1
-            std::chrono::high_resolution_clock::time_point start =
-                std::chrono::high_resolution_clock::now();
-            tuner_l1.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                          duration_kernel);
-            std::chrono::high_resolution_clock::time_point end =
-                std::chrono::high_resolution_clock::now();
-            double tuning_duration =
-                std::chrono::duration<double>(end - start).count();
-            tuner_duration_file << "split_neighborhood_search_l1, "
-                                << tuning_duration << std::endl;
-            autotune::combined_kernel.set_parameter_values(
-                tuner_l1.get_optimal_parameter_values());
-          }
-          { // tune parameter group register
-            std::chrono::high_resolution_clock::time_point start =
-                std::chrono::high_resolution_clock::now();
-            tuner_reg.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                           duration_kernel);
-            std::chrono::high_resolution_clock::time_point end =
-                std::chrono::high_resolution_clock::now();
-            double tuning_duration =
-                std::chrono::duration<double>(end - start).count();
-            tuner_duration_file << "split_neighborhood_search_register, "
-                                << tuning_duration << std::endl;
-            autotune::combined_kernel.set_parameter_values(
-                tuner_reg.get_optimal_parameter_values());
-          }
-          { // tune oarameter group other
-            std::chrono::high_resolution_clock::time_point start =
-                std::chrono::high_resolution_clock::now();
-            tuner_other.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
-                             duration_kernel);
-            std::chrono::high_resolution_clock::time_point end =
-                std::chrono::high_resolution_clock::now();
-            double tuning_duration =
-                std::chrono::duration<double>(end - start).count();
-            tuner_duration_file << "split_neighborhood_search_other, "
-                                << tuning_duration << std::endl;
-            autotune::combined_kernel.set_parameter_values(
-                tuner_other.get_optimal_parameter_values());
-          }
-        }
-      }
+      autotune::tuners::group_tuner g(autotune::combined_kernel, group_repeat,
+                                      tuner_l2, tuner_l1, tuner_reg,
+                                      tuner_other);
+      g.set_verbose(true);
+      autotune::parameter_value_set optimal_parameter_values =
+          g.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+      autotune::combined_kernel.set_parameter_values(optimal_parameter_values);
 
       std::cout << "----------------------- end tuning -----------------------"
                 << std::endl;
@@ -1016,30 +902,12 @@ int main(int argc, char **argv) {
       std::cout << "[N = " << N << "] performance: "
                 << ((repetitions * gflop) / duration_kernel) << "GFLOPS"
                 << std::endl;
+    }
 
-      autotune::combined_kernel.set_parameter_values(original_parameters);
-    }
-    for (size_t parameter_index = 0;
-         parameter_index < parameters_group_register.size();
-         parameter_index++) {
-      auto &p = parameters_group_register[parameter_index];
-      p->set_initial();
-    }
-    for (size_t parameter_index = 0;
-         parameter_index < parameters_group_l1.size(); parameter_index++) {
-      auto &p = parameters_group_l1[parameter_index];
-      p->set_initial();
-    }
-    for (size_t parameter_index = 0;
-         parameter_index < parameters_group_l2.size(); parameter_index++) {
-      auto &p = parameters_group_l2[parameter_index];
-      p->set_initial();
-    }
-    for (size_t parameter_index = 0;
-         parameter_index < parameters_group_other.size(); parameter_index++) {
-      auto &p = parameters_group_other[parameter_index];
-      p->set_initial();
-    }
+    autotune::combined_kernel.set_parameter_values(original_parameters);
+    iterate_parameter_groups([&](auto &p) { p->set_initial(); },
+                             parameters_group_register, parameters_group_l1,
+                             parameters_group_l2, parameters_group_other);
   }
 #endif
 #ifdef DO_FULL_NEIGHBOR_SEARCH
@@ -1186,7 +1054,7 @@ int main(int argc, char **argv) {
       {
         autotune::tuners::full_neighborhood_search tuner_l2(
             autotune::combined_kernel, parameters_group_l2, search_steps);
-        tuner_l2.auto_clear(false);
+        tuner_l2.set_auto_clear(false);
         tuner_l2.set_parameter_values_adjustment_functor(
             parameter_values_adjust_functor);
         tuner_l2.set_verbose(true);
@@ -1195,7 +1063,7 @@ int main(int argc, char **argv) {
 
         autotune::tuners::full_neighborhood_search tuner_l1(
             autotune::combined_kernel, parameters_group_l1, search_steps);
-        tuner_l1.auto_clear(false);
+        tuner_l1.set_auto_clear(false);
         tuner_l1.set_parameter_values_adjustment_functor(
             parameter_values_adjust_functor);
         tuner_l1.set_verbose(true);
@@ -1205,13 +1073,13 @@ int main(int argc, char **argv) {
             autotune::combined_kernel, parameters_group_register, search_steps);
         tuner_reg.set_parameter_values_adjustment_functor(
             parameter_values_adjust_functor);
-        tuner_reg.auto_clear(false);
+        tuner_reg.set_auto_clear(false);
         tuner_reg.set_verbose(true);
         tuner_reg.setup_test(test_result);
 
         autotune::tuners::full_neighborhood_search tuner_other(
             autotune::combined_kernel, parameters_group_other, search_steps);
-        tuner_other.auto_clear(false);
+        tuner_other.set_auto_clear(false);
         tuner_other.set_verbose(true);
         tuner_other.setup_test(test_result);
 

@@ -30,5 +30,5 @@ set(SOURCES_COMBINED_TUNING ${SOURCES_COMMON} "src/combined_tuning_application/c
 add_executable(combined_tuning ${SOURCES_COMBINED_TUNING})
 target_compile_options(combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
 target_include_directories(combined_tuning PRIVATE src)
-target_link_libraries(combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} AutoTuneTMP::AutoTuneTMP Boost::boost Boost::program_options)
+target_link_libraries(combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} AutoTuneTMP::AutoTuneTMP Boost::boost Boost::program_options likwid)
 install(TARGETS matrix_multiply combined_tuning RUNTIME DESTINATION bin)
