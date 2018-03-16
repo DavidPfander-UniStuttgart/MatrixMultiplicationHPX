@@ -323,7 +323,6 @@ int main(int argc, char **argv) {
       return false;
     }
 
-#ifdef WITH_LIKWID
     size_t l2_memory = (L2_X * L2_K_STEP + L2_K_STEP * L2_Y + L2_X * L2_Y) * 8;
     if (l2_memory > l2_size_bytes) {
       std::cout << "rejected by l2 cache size requirement" << std::endl;
@@ -334,7 +333,6 @@ int main(int argc, char **argv) {
       std::cout << "rejected by l1 cache size requirement" << std::endl;
       return false;
     }
-#endif
 
     return true;
   };
