@@ -93,6 +93,10 @@ int main(int argc, char **argv) {
               << std::endl;
     return 1;
   }
+  std::cout << "level: " << 1 << std::endl;
+  std::cout << "size: " << l1_size_bytes << std::endl;
+  std::cout << "level: " << 2 << std::endl;
+  std::cout << "size: " << l2_size_bytes << std::endl;
 #endif
 
   // figure out native vector width
