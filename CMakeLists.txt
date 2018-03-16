@@ -10,6 +10,8 @@ find_package(AutoTuneTMP NO_MODULE REQUIRED PATHS ${AUTOTUNETMP_ROOT})
 find_package(Vc ${Vc_FIND_VERSION} NO_MODULE PATHS ${Vc_ROOT})
 include_directories(${Vc_INCLUDE_DIR})
 
+option(WITH_LIKWID "Use liblikwid to query hardware information" ON)
+
 set(SOURCES_COMMON "src/variants/kernel_test.cpp" "src/variants/kernel_tiled.cpp" "src/variants/combined.cpp")
 
 set(SOURCES_MATRIX_MULTIPLY ${SOURCES_COMMON} "src/matrix_multiply_application/matrix_multiply.cpp")
@@ -30,5 +32,9 @@ set(SOURCES_COMBINED_TUNING ${SOURCES_COMMON} "src/combined_tuning_application/c
 add_executable(combined_tuning ${SOURCES_COMBINED_TUNING})
 target_compile_options(combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
 target_include_directories(combined_tuning PRIVATE src)
-target_link_libraries(combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} AutoTuneTMP::AutoTuneTMP Boost::boost Boost::program_options likwid)
+set(COMBINED_TUNING_LIBRARIES ${OpenMP_CXX_FLAGS} AutoTuneTMP::AutoTuneTMP Boost::boost Boost::program_options)
+if(WITH_LIKWID)
+  set(COMBINED_TUNING_LIBRARIES ${COMBINED_TUNING_LIBRARIES} likwid)
+endif(WITH_LIKWID)
+target_link_libraries(combined_tuning PUBLIC ${COMBINED_TUNING_LIBRARIES})
 install(TARGETS matrix_multiply combined_tuning RUNTIME DESTINATION bin)

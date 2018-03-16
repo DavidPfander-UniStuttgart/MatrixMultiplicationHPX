@@ -22,7 +22,7 @@
 #include <likwid.h>
 #include <omp.h>
 
-#define WITH_LIBLIKWID
+// #define WITH_LIBLIKWID // controlled by cmake
 
 // #define DO_LINE_SEARCH
 // #define DO_LINE_SEARCH_SPLIT
@@ -46,16 +46,21 @@ int main(int argc, char **argv) {
     std::cerr << "Error: two many arguments given!" << std::endl;
     return 1;
   }
+  std::string scenario_name(argv[1]);
+  std::cout << "scenario_name: " << scenario_name << std::endl;
 
-#ifdef WITH_LIBLIKWID
-  // use likwid to query some hardware information
   uint64_t l1_size_bytes = 0;
   uint64_t l2_size_bytes = 0;
+#ifdef WITH_LIBLIKWID
+  // use likwid to query some hardware information
   {
     int err = topology_init();
     if (err < 0) {
       std::cerr << "Unable to initialize likwid" << std::endl;
       return 1;
+    } else {
+      std::cout << "info: using likwid to query hardware information"
+                << std::endl;
     }
     // CpuInfo_t contains global information like name, CPU family, ...
     CpuInfo_t info = get_cpuInfo();
@@ -71,6 +76,22 @@ int main(int argc, char **argv) {
         l2_size_bytes = topo->cacheLevels[i].size;
       }
     }
+  }
+#else
+  if (scenario_name.compare("6700k") == 0) {
+    l1_size_bytes = 32 * 1024;
+    l2_size_bytes = 256 * 1024;
+  } else if (scenario_name.compare("xeonsilver") == 0) {
+    l1_size_bytes = 32 * 1024;
+    l2_size_bytes = 1024 * 1024;
+  } else if (scenario_name.compare("knl") == 0) {
+    l1_size_bytes = 32 * 1024;
+    l2_size_bytes = 512 * 1024;
+  } else {
+    std::cerr << "Platform hardware unknown and not compiled with liblikwid, "
+                 "aborting..."
+              << std::endl;
+    return 1;
   }
 #endif
 
@@ -88,9 +109,6 @@ int main(int argc, char **argv) {
   builder_hw_query.set_link_flags("-shared -fno-gnu-unique");
   size_t native_vector_width = autotune::hardware_query_kernel();
   std::cout << "native_vector_width: " << native_vector_width << std::endl;
-
-  std::string scenario_name(argv[1]);
-  std::cout << "scenario_name: " << scenario_name << std::endl;
 
   tuner_duration_file.open(scenario_name + "_tuner_duration.csv");
   tuner_duration_file << "tuner, duration" << std::endl;
