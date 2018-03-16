@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
   uint64_t l1_size_bytes = 0;
   uint64_t l2_size_bytes = 0;
-#ifdef WITH_LIBLIKWID
+#ifdef WITH_LIKWID
   // use likwid to query some hardware information
   {
     int err = topology_init();
@@ -78,6 +78,8 @@ int main(int argc, char **argv) {
     }
   }
 #else
+  std::cout << "Not using likwid, querying internal database for hardware specs"
+            << std::endl;
   if (scenario_name.compare("6700k") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 256 * 1024;
@@ -88,9 +90,10 @@ int main(int argc, char **argv) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 512 * 1024;
   } else {
-    std::cerr << "Platform hardware unknown and not compiled with liblikwid, "
-                 "aborting..."
-              << std::endl;
+    std::cerr
+        << "error: platform hardware unknown and not compiled with liblikwid, "
+           "aborting..."
+        << std::endl;
     return 1;
   }
   std::cout << "level: " << 1 << std::endl;
@@ -320,7 +323,7 @@ int main(int argc, char **argv) {
       return false;
     }
 
-#ifdef WITH_LIBLIKWID
+#ifdef WITH_LIKWID
     size_t l2_memory = (L2_X * L2_K_STEP + L2_K_STEP * L2_Y + L2_X * L2_Y) * 8;
     if (l2_memory > l2_size_bytes) {
       std::cout << "rejected by l2 cache size requirement" << std::endl;

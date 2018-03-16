@@ -34,6 +34,7 @@ target_compile_options(combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} -std=c++1z -ma
 target_include_directories(combined_tuning PRIVATE src)
 set(COMBINED_TUNING_LIBRARIES ${OpenMP_CXX_FLAGS} AutoTuneTMP::AutoTuneTMP Boost::boost Boost::program_options)
 if(WITH_LIKWID)
+  target_compile_definitions(combined_tuning PRIVATE WITH_LIKWID)
   set(COMBINED_TUNING_LIBRARIES ${COMBINED_TUNING_LIBRARIES} likwid)
 endif(WITH_LIKWID)
 target_link_libraries(combined_tuning PUBLIC ${COMBINED_TUNING_LIBRARIES})
