@@ -3,6 +3,7 @@
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/full_neighborhood_search.hpp"
+#include "autotune/tuners/greedy_neighborhood_search.hpp"
 #include "autotune/tuners/group_tuner.hpp"
 #include "autotune/tuners/line_search.hpp"
 #include "autotune/tuners/monte_carlo.hpp"
@@ -26,11 +27,13 @@
 
 // #define DO_LINE_SEARCH
 // #define DO_LINE_SEARCH_SPLIT
-#define DO_NEIGHBOR_SEARCH
-#define DO_NEIGHBOR_SEARCH_SPLIT
+// #define DO_NEIGHBOR_SEARCH
+// #define DO_NEIGHBOR_SEARCH_SPLIT
 // #define DO_FULL_NEIGHBOR_SEARCH
 // #define DO_FULL_NEIGHBOR_SEARCH_SPLIT
 // #define DO_MONTE_CARLO
+#define DO_GREEDY_NEIGHBOR_SEARCH
+#define DO_GREEDY_NEIGHBOR_SEARCH_SPLIT
 
 AUTOTUNE_KERNEL(uint64_t(), hardware_query_kernel,
                 "src/variants/hardware_query_kernel")
@@ -197,7 +200,9 @@ int main(int argc, char **argv) {
   autotune::fixed_set_parameter<size_t> p9("KERNEL_OMP_THREADS", thread_values);
 
 #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||      \
-    defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
+    defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT) ||                                  \
+    defined(DO_GREEDY_NEIGHBOR_SEARCH) ||                                      \
+    defined(DO_GREEDY_NEIGHBOR_SEARCH_SPLIT)
   autotune::countable_set parameters_group_register;
   autotune::countable_set parameters_group_l1;
   autotune::countable_set parameters_group_l2;
@@ -213,7 +218,8 @@ int main(int argc, char **argv) {
   parameters_group_other.add_parameter(p9);
 #endif
 #if defined(DO_LINE_SEARCH) || defined(DO_NEIGHBOR_SEARCH) ||                  \
-    defined(DO_FULL_NEIGHBOR_SEARCH)
+    defined(DO_FULL_NEIGHBOR_SEARCH) || defined(DO_GREEDY_NEIGHBOR_SEARCH) ||  \
+    defined(DO_GREEDY_NEIGHBOR_SEARCH_SPLIT)
   autotune::countable_set parameters;
   parameters.add_parameter(p1);
   parameters.add_parameter(p2);
@@ -409,7 +415,8 @@ int main(int argc, char **argv) {
 // #endif
 
 #if defined(DO_LINE_SEARCH) || defined(DO_NEIGHBOR_SEARCH) ||                  \
-    defined(DO_FULL_NEIGHBOR_SEARCH)
+    defined(DO_FULL_NEIGHBOR_SEARCH) || defined(DO_GREEDY_NEIGHBOR_SEARCH) ||  \
+    defined(DO_GREEDY_NEIGHBOR_SEARCH_SPLIT)
   auto parameter_adjustment_functor =
       [native_vector_width](autotune::countable_set &parameters) -> void {
     auto &x_reg =
@@ -463,7 +470,9 @@ int main(int argc, char **argv) {
 // 7 L2_Y
 // 8 L2_K_STEP
 #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||      \
-    defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
+    defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT) ||                                  \
+    defined(DO_GREEDY_NEIGHBOR_SEARCH) ||                                      \
+    defined(DO_GREEDY_NEIGHBOR_SEARCH_SPLIT)
   auto parameter_values_adjust_functor =
       [native_vector_width, p3, p6, p4, p7,
        p8](autotune::parameter_value_set &parameter_values) -> void {
@@ -745,20 +754,6 @@ int main(int argc, char **argv) {
     size_t search_steps = 20;
     for (size_t restart = 0; restart < restarts; restart++) {
       std::cout << "restart: " << restart << std::endl;
-      // bool valid_start_found = false;
-      // while (!valid_start_found) {
-      //   for (size_t parameter_index = 0; parameter_index < parameters.size();
-      //        parameter_index++) {
-      //     auto &p = parameters[parameter_index];
-      //     p->set_random_value();
-      //     // p->set_initial();
-      //   }
-      //   autotune::parameter_value_set parameter_values =
-      //       autotune::to_parameter_values(parameters);
-      //   if (precompile_validate_parameter_functor(parameter_values)) {
-      //     valid_start_found = true;
-      //   }
-      // }
       parameters.set_values(restart_value_sets[restart]);
 
       autotune::tuners::neighborhood_search tuner(autotune::combined_kernel,
@@ -840,24 +835,6 @@ int main(int argc, char **argv) {
       parameters_group_l2.set_values(parameter_values);
       parameters_group_other.set_values(parameter_values);
 
-      // autotune::parameter_value_set parameter_values;
-      // find random valid start value (first round use initial value)
-      // while (!valid_start_found) {
-      //   iterate_parameter_groups(
-      //       [&](auto &p) {
-      //         // if (restart == 0)
-      //         // p->set_initial();
-      //         // else
-      //         p->set_random_value();
-      //         parameter_values[p->get_name()] = p->get_value();
-      //       },
-      //       parameters_group_register, parameters_group_l1,
-      //       parameters_group_l2,
-      //       parameters_group_other);
-      //   if (precompile_validate_parameter_functor(parameter_values)) {
-      //     valid_start_found = true;
-      //   }
-      // }
       // make sure that all parameters are known to the kernel
       // TODO: should not be necessary -> improve!
       autotune::combined_kernel.set_parameter_values(parameter_values);
@@ -1334,6 +1311,184 @@ int main(int argc, char **argv) {
     std::cout << "[N = " << N
               << "] performance: " << ((repetitions * gflop) / duration_kernel)
               << "GFLOPS" << std::endl;
+  }
+#endif
+
+#ifdef DO_GREEDY_NEIGHBOR_SEARCH
+  // tune with greedy neighborhood search
+  {
+    std::cout
+        << "----------------- starting tuning with greedy neighborhood search"
+           "-----------------"
+        << std::endl;
+
+    size_t restarts = 3;
+    size_t search_steps = 1000; // should be more than enough
+    size_t changes_per_step = 2;
+    for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
+      parameters.set_values(restart_value_sets[restart]);
+
+      autotune::tuners::greedy_neighborhood_search tuner(
+          autotune::combined_kernel, parameters, search_steps,
+          changes_per_step);
+      tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
+      tuner.set_verbose(true);
+      tuner.set_write_measurement(scenario_name +
+                                  "_greedy_neighborhood_search_" +
+                                  std::to_string(restart));
+      tuner.setup_test(test_result);
+
+      autotune::countable_set optimal_parameters;
+      {
+        std::chrono::high_resolution_clock::time_point start =
+            std::chrono::high_resolution_clock::now();
+        optimal_parameters = tuner.tune(m.N_org, m.A_org, m.B_org,
+                                        m.repetitions, duration_kernel);
+        std::chrono::high_resolution_clock::time_point end =
+            std::chrono::high_resolution_clock::now();
+        double tuning_duration =
+            std::chrono::duration<double>(end - start).count();
+        tuner_duration_file << "greedy_neighborhood_search, " << tuning_duration
+                            << std::endl;
+      }
+
+      std::cout << "----------------------- end tuning -----------------------"
+                << std::endl;
+      std::cout << "optimal parameter values (greedy neighborhood search):"
+                << std::endl;
+      optimal_parameters.print_values();
+      autotune::combined_kernel.set_parameter_values(optimal_parameters);
+      autotune::combined_kernel.compile();
+
+      std::vector<double> C = m.matrix_multiply(duration_kernel);
+      bool test_ok = test_result(C);
+      if (test_ok) {
+        std::cout << "optimal parameters test ok!" << std::endl;
+      } else {
+        std::cout << "optimal parameters FAILED test!" << std::endl;
+      }
+
+      double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+                     static_cast<double>(N);
+      double gflop = flops / 1E9;
+      std::cout << "optimal inner_duration (greedy neighborhood search): "
+                << duration_kernel << std::endl;
+      std::cout << "[N = " << N << "] performance: "
+                << ((repetitions * gflop) / duration_kernel) << "GFLOPS"
+                << std::endl;
+    }
+    for (size_t parameter_index = 0; parameter_index < parameters.size();
+         parameter_index++) {
+      auto &p = parameters[parameter_index];
+      p->set_initial();
+    }
+  }
+#endif
+#ifdef DO_GREEDY_NEIGHBOR_SEARCH_SPLIT
+  // tune with greedy neighborhood search with parameter splitting
+  {
+    std::cout << "----------------- starting tuning with greedy neighborhood "
+                 "split search ------------ "
+              << std::endl;
+    // set to 10, will iterate absolutely all values!
+    size_t search_steps = 100;
+    size_t changes_per_step = 2;
+    // how often is the each group of parameters looked at
+    size_t group_repeat = 3;
+    size_t restarts = 3; // number of initial random experiments
+
+    autotune::parameter_value_set original_parameters =
+        autotune::combined_kernel.get_parameter_values();
+
+    for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
+
+      autotune::parameter_value_set parameter_values =
+          restart_value_sets[restart];
+      parameters_group_register.set_values(parameter_values);
+      parameters_group_l1.set_values(parameter_values);
+      parameters_group_l2.set_values(parameter_values);
+      parameters_group_other.set_values(parameter_values);
+
+      // make sure that all parameters are known to the kernel
+      // TODO: should not be necessary -> improve!
+      autotune::combined_kernel.set_parameter_values(parameter_values);
+
+      // create all tuners
+      autotune::tuners::greedy_neighborhood_search tuner_l2(
+          autotune::combined_kernel, parameters_group_l2, search_steps,
+          changes_per_step);
+      tuner_l2.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_l2.set_write_measurement(scenario_name +
+                                     "_split_greedy_neighborhood_search_l2_" +
+                                     std::to_string(restart));
+
+      autotune::tuners::greedy_neighborhood_search tuner_l1(
+          autotune::combined_kernel, parameters_group_l1, search_steps,
+          changes_per_step);
+      tuner_l1.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_l1.set_write_measurement(scenario_name +
+                                     "_split_greedy_neighborhood_search_l1_" +
+                                     std::to_string(restart));
+
+      autotune::tuners::greedy_neighborhood_search tuner_reg(
+          autotune::combined_kernel, parameters_group_register, search_steps,
+          changes_per_step);
+      tuner_reg.set_parameter_values_adjustment_functor(
+          parameter_values_adjust_functor);
+      tuner_reg.set_write_measurement(
+          scenario_name + "_split_greedy_neighborhood_search_register_" +
+          std::to_string(restart));
+
+      autotune::tuners::greedy_neighborhood_search tuner_other(
+          autotune::combined_kernel, parameters_group_other, search_steps,
+          changes_per_step);
+      tuner_other.set_write_measurement(
+          scenario_name + "_split_greedy_neighborhood_search_other_" +
+          std::to_string(restart));
+
+      autotune::tuners::group_tuner g(autotune::combined_kernel, group_repeat,
+                                      tuner_l2, tuner_l1, tuner_reg,
+                                      tuner_other);
+      g.set_verbose(true);
+      autotune::parameter_value_set optimal_parameter_values =
+          g.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+      autotune::combined_kernel.set_parameter_values(optimal_parameter_values);
+
+      std::cout << "----------------------- end tuning -----------------------"
+                << std::endl;
+      std::cout
+          << "optimal parameter values (split greedy neighborhood search):"
+          << std::endl;
+      autotune::print_parameter_values(
+          autotune::combined_kernel.get_parameter_values());
+      autotune::combined_kernel.compile();
+
+      std::vector<double> C = m.matrix_multiply(duration_kernel);
+      bool test_ok = test_result(C);
+      if (test_ok) {
+        std::cout << "optimal parameters test ok!" << std::endl;
+      } else {
+        std::cout << "optimal parameters FAILED test!" << std::endl;
+      }
+
+      double flops = 2 * static_cast<double>(N) * static_cast<double>(N) *
+                     static_cast<double>(N);
+      double gflop = flops / 1E9;
+      std::cout << "optimal inner_duration (split greedy neighborhood search): "
+                << duration_kernel << std::endl;
+      std::cout << "[N = " << N << "] performance: "
+                << ((repetitions * gflop) / duration_kernel) << "GFLOPS"
+                << std::endl;
+    }
+
+    autotune::combined_kernel.set_parameter_values(original_parameters);
+    iterate_parameter_groups([&](auto &p) { p->set_initial(); },
+                             parameters_group_register, parameters_group_l1,
+                             parameters_group_l2, parameters_group_other);
   }
 #endif
 }
