@@ -35,7 +35,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
 
     auto &builder =
         autotune::combined_kernel.get_builder<cppjit::builder::gcc>();
-    builder.set_verbose(true);
+    // builder.set_verbose(true);
     builder.set_include_paths(
         "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
         "-IAutoTuneTMP/Vc_install/include "

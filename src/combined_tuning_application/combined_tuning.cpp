@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
   // figure out native vector width
   auto &builder_hw_query =
       autotune::hardware_query_kernel.get_builder<cppjit::builder::gcc>();
-  builder_hw_query.set_verbose(true);
+  // builder_hw_query.set_verbose(true);
   builder_hw_query.set_include_paths(
       "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
       "-IAutoTuneTMP/Vc_install/include "
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
       [&duration_kernel]() { return duration_kernel; });
 
   auto &builder = autotune::combined_kernel.get_builder<cppjit::builder::gcc>();
-  builder.set_verbose(true);
+  // builder.set_verbose(true);
 
   builder.set_include_paths(
       "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
