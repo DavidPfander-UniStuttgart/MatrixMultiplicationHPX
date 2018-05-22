@@ -123,11 +123,11 @@ int main(int argc, char **argv) {
   tuner_duration_file.open(scenario_name + "_tuner_duration.csv");
   tuner_duration_file << "tuner, duration" << std::endl;
 
-  std::uint64_t N = 1024;
+  std::uint64_t N = 2048;
   // std::uint64_t N = 16;
 
   bool transposed = false;
-  size_t repetitions = 5;
+  size_t repetitions = 2;
   bool verbose = false;
 
   // create matrices A, B>
