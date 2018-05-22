@@ -19,7 +19,9 @@
 #include <functional>
 #include <random>
 
+#ifdef WITH_LIKWID
 #include <likwid.h>
+#endif
 #include <omp.h>
 #include <chrono>
 
