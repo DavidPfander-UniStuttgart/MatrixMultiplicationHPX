@@ -308,7 +308,7 @@ int main(int argc, char **argv) {
 
 
     size_t line_search_steps = 50;
-    size_t restarts = 1;
+    size_t restarts = 3;
     for (size_t restart = 0; restart < restarts; restart++) {
       std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
