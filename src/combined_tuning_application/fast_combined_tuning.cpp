@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
     std::cout << "----------------- starting tuning with parallel line search, large ------------ "
               << std::endl;
     std::uint64_t N_large = 4096;
-    size_t repetitions = 3;
+    size_t repetitions = 5;
     combined::combined m(N_large, A_4096, B_4096, repetitions, verbose);
 
 
@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
               << std::endl;
     std::uint64_t N_noisy = 4096;
     size_t repetitions = 1;
-    combined::combined m(N_noisy, A_4096, B_4096, repetitions, verbose);
+    combined::combined m(N_noisy, A_4096, B_4096, repetitions, verbose); // different number of repetitions
 
     size_t line_search_steps = 50;
     size_t restarts = 3;
