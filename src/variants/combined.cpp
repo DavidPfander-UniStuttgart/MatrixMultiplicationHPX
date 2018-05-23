@@ -26,7 +26,9 @@ combined::combined(size_t N, std::vector<double> &A_org, std::vector<double> &B_
   autotune::combined_kernel.set_verbose(verbose);
 }
 
-combined::~combined() { autotune::combined_kernel.clear(); }
+combined::~combined() {
+  // autotune::combined_kernel.clear();
+}
 
 std::vector<double> combined::matrix_multiply(double &duration) {
   if (!autotune::combined_kernel.is_compiled()) {

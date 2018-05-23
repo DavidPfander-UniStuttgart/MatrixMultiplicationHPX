@@ -130,17 +130,17 @@ int main(int argc, char **argv) {
   }
   std::cout << " done (4096)" << std::endl << std::flush;
 
-  std::vector<double> A_2048 = util::create_random_matrix<double>(2048);
-  std::vector<double> B_2048 = util::create_random_matrix<double>(2048);
+  // std::vector<double> A_2048 = util::create_random_matrix<double>(2048);
+  // std::vector<double> B_2048 = util::create_random_matrix<double>(2048);
 
-  std::vector<double> C_reference_2048;
-  {
-    kernel_tiled::kernel_tiled m_tiled(2048, A_2048, B_2048, transposed, 1, verbose);
-    std::cout << "calculating reference solution..." << std::flush;
-    double duration_reference;
-    C_reference_2048 = m_tiled.matrix_multiply(duration_reference);
-  }
-  std::cout << " done (2048)" << std::endl << std::flush;
+  // std::vector<double> C_reference_2048;
+  // {
+  //   kernel_tiled::kernel_tiled m_tiled(2048, A_2048, B_2048, transposed, 1, verbose);
+  //   std::cout << "calculating reference solution..." << std::flush;
+  //   double duration_reference;
+  //   C_reference_2048 = m_tiled.matrix_multiply(duration_reference);
+  // }
+  // std::cout << " done (2048)" << std::endl << std::flush;
 
   if (transposed) {
     throw util::matrix_multiplication_exception(
@@ -302,10 +302,11 @@ int main(int argc, char **argv) {
   {
     std::cout << "----------------- starting tuning with parallel line search, large ------------ "
               << std::endl;
-    combined::combined m(4096, A_4096, B_4096, 5, verbose);
+    std::uint64_t N_large = 4096;
+    size_t repetitions = 3;
+    combined::combined m(N_large, A_4096, B_4096, repetitions, verbose);
 
-    // std::uint64_t N = 4096;
-    // size_t repetitions = 5;
+
     size_t line_search_steps = 50;
     size_t restarts = 1;
     for (size_t restart = 0; restart < restarts; restart++) {
@@ -329,8 +330,8 @@ int main(int argc, char **argv) {
       tuner.set_write_measurement(scenario_name + "_parallel_line_search_large_" +
                                   std::to_string(restart));
       std::function<bool(const std::vector<double> &C)> test_result =
-          [&C_reference_4096](const std::vector<double> &C) -> bool {
-        for (size_t i = 0; i < 4096 * 4096; i++) {
+	[&C_reference_4096, N_large](const std::vector<double> &C) -> bool {
+        for (size_t i = 0; i < N_large * N_large; i++) {
           double threshold = 1E-8;
           if (fabs(C[i] - C_reference_4096[i]) >= threshold) {
             std::cout << "test error C: " << C[i] << " C_ref: " << C_reference_4096[i]
@@ -369,11 +370,11 @@ int main(int argc, char **argv) {
       }
 
       double flops =
-          2 * static_cast<double>(4096) * static_cast<double>(4096) * static_cast<double>(4096);
+          2 * static_cast<double>(N_large) * static_cast<double>(N_large) * static_cast<double>(N_large);
       double gflop = flops / 1E9;
       std::cout << "optimal inner_duration (parallel line search, large): " << duration_kernel
                 << std::endl;
-      std::cout << "[N = " << 4096 << "] performance: " << ((5 * gflop) / duration_kernel)
+      std::cout << "[N = " << N_large << "] performance: " << ((repetitions * gflop) / duration_kernel)
                 << "GFLOPS" << std::endl;
     }
     for (size_t parameter_index = 0; parameter_index < parameters.size(); parameter_index++) {
@@ -385,11 +386,12 @@ int main(int argc, char **argv) {
   {
     std::cout << "----------------- starting tuning with parallel line search, noisy ------------ "
               << std::endl;
-    combined::combined m(2048, A_2048, B_2048, 1, verbose);
-    // std::uint64_t N = 2048;
-    // size_t repetitions = 1;
+    std::uint64_t N_noisy = 4096;
+    size_t repetitions = 1;
+    combined::combined m(N_noisy, A_4096, B_4096, repetitions, verbose);
+
     size_t line_search_steps = 50;
-    size_t restarts = 1;
+    size_t restarts = 3;
     for (size_t restart = 0; restart < restarts; restart++) {
       std::cout << "restart: " << restart << std::endl;
       bool valid_start_found = false;
@@ -411,11 +413,11 @@ int main(int argc, char **argv) {
       tuner.set_write_measurement(scenario_name + "_parallel_line_search_noisy_" +
                                   std::to_string(restart));
       std::function<bool(const std::vector<double> &C)> test_result =
-          [&C_reference_2048](const std::vector<double> &C) -> bool {
-        for (size_t i = 0; i < 2048 * 2048; i++) {
+	[&C_reference_4096,N_noisy](const std::vector<double> &C) -> bool {
+        for (size_t i = 0; i < N_noisy * N_noisy; i++) {
           double threshold = 1E-8;
-          if (fabs(C[i] - C_reference_2048[i]) >= threshold) {
-            std::cout << "test error C: " << C[i] << " C_ref: " << C_reference_2048[i]
+          if (fabs(C[i] - C_reference_4096[i]) >= threshold) {
+            std::cout << "test error C: " << C[i] << " C_ref: " << C_reference_4096[i]
                       << " i: " << i << " (threshold: " << threshold << ")" << std::endl;
             return false;
           }
@@ -450,11 +452,11 @@ int main(int argc, char **argv) {
       }
 
       double flops =
-          2 * static_cast<double>(2048) * static_cast<double>(2048) * static_cast<double>(2048);
+          2 * static_cast<double>(N_noisy) * static_cast<double>(N_noisy) * static_cast<double>(N_noisy);
       double gflop = flops / 1E9;
       std::cout << "optimal inner_duration (parallel line search, noisy): " << duration_kernel
                 << std::endl;
-      std::cout << "[N = " << 2048 << "] performance: " << ((1 * gflop) / duration_kernel)
+      std::cout << "[N = " << N_noisy << "] performance: " << ((repetitions * gflop) / duration_kernel)
                 << "GFLOPS" << std::endl;
     }
     for (size_t parameter_index = 0; parameter_index < parameters.size(); parameter_index++) {
