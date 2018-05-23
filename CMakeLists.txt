@@ -38,4 +38,17 @@ if(WITH_LIKWID)
   set(COMBINED_TUNING_LIBRARIES ${COMBINED_TUNING_LIBRARIES} likwid)
 endif(WITH_LIKWID)
 target_link_libraries(combined_tuning PUBLIC ${COMBINED_TUNING_LIBRARIES})
-install(TARGETS matrix_multiply combined_tuning RUNTIME DESTINATION bin)
+
+set(SOURCES_FAST_COMBINED_TUNING ${SOURCES_COMMON} "src/combined_tuning_application/fast_combined_tuning.cpp")
+add_executable(fast_combined_tuning ${SOURCES_FAST_COMBINED_TUNING})
+target_compile_options(fast_combined_tuning PUBLIC ${OpenMP_CXX_FLAGS} -std=c++1z -march=native -mtune=native)
+target_include_directories(fast_combined_tuning PRIVATE src)
+set(FAST_COMBINED_TUNING_LIBRARIES ${OpenMP_CXX_FLAGS} AutoTuneTMP::AutoTuneTMP Boost::boost Boost::program_options)
+if(WITH_LIKWID)
+  target_compile_definitions(fast_combined_tuning PRIVATE WITH_LIKWID)
+  set(FAST_COMBINED_TUNING_LIBRARIES ${FAST_COMBINED_TUNING_LIBRARIES} likwid)
+endif(WITH_LIKWID)
+target_link_libraries(fast_combined_tuning PUBLIC ${FAST_COMBINED_TUNING_LIBRARIES})
+
+
+install(TARGETS matrix_multiply combined_tuning fast_combined_tuning RUNTIME DESTINATION bin)

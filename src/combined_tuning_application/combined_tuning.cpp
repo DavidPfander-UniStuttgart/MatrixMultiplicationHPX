@@ -5,9 +5,9 @@
 #include "autotune/tuners/greedy_neighborhood_search.hpp"
 #include "autotune/tuners/group_tuner.hpp"
 #include "autotune/tuners/line_search.hpp"
-#include "autotune/tuners/parallel_line_search.hpp"
 #include "autotune/tuners/monte_carlo.hpp"
 #include "autotune/tuners/neighborhood_search.hpp"
+#include "autotune/tuners/parallel_line_search.hpp"
 
 #include "util/create_random_matrix.hpp"
 #include "util/matrix_multiplication_exception.hpp"
@@ -123,11 +123,14 @@ int main(int argc, char **argv) {
   tuner_duration_file.open(scenario_name + "_tuner_duration.csv");
   tuner_duration_file << "tuner, duration" << std::endl;
 
-  std::uint64_t N = 2048;
+  // #if !defined(DO_PARALLEL_LINE_SEARCH)
+  std::uint64_t N = 4096;
   // std::uint64_t N = 16;
+  size_t repetitions = 5;
+  // #endif
 
   bool transposed = false;
-  size_t repetitions = 2;
+
   bool verbose = false;
 
   // create matrices A, B>
@@ -136,7 +139,7 @@ int main(int argc, char **argv) {
 
   std::vector<double> C_reference;
   {
-    kernel_tiled::kernel_tiled m_tiled(N, A, B, transposed, repetitions, verbose);
+    kernel_tiled::kernel_tiled m_tiled(N, A, B, transposed, 1, verbose);
     std::cout << "calculating reference solution..." << std::flush;
     double duration_reference;
     C_reference = m_tiled.matrix_multiply(duration_reference);
@@ -573,9 +576,12 @@ int main(int argc, char **argv) {
   }
 #endif
 #ifdef DO_PARALLEL_LINE_SEARCH
-  // tune with line search
+  // tune with parallel line search, large scenario
   {
-    std::cout << "----------------- starting tuning with parallel line search ------------ " << std::endl;
+    std::cout << "----------------- starting tuning with parallel line search, large ------------ "
+              << std::endl;
+    std::uint64_t N = 4096;
+    size_t repetitions = 5;
     size_t line_search_steps = 50;
     size_t restarts = 1;
     for (size_t restart = 0; restart < restarts; restart++) {
@@ -596,7 +602,8 @@ int main(int argc, char **argv) {
                                                    line_search_steps);
       tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
       tuner.set_verbose(true);
-      tuner.set_write_measurement(scenario_name + "_line_search_" + std::to_string(restart));
+      tuner.set_write_measurement(scenario_name + "parallel_line_search_large" +
+                                  std::to_string(restart));
       tuner.setup_test(test_result);
 
       autotune::countable_set optimal_parameters;
@@ -607,11 +614,11 @@ int main(int argc, char **argv) {
         std::chrono::high_resolution_clock::time_point end =
             std::chrono::high_resolution_clock::now();
         double tuning_duration = std::chrono::duration<double>(end - start).count();
-        tuner_duration_file << "parallel line_search, " << tuning_duration << std::endl;
+        tuner_duration_file << "parallel_line_search_large, " << tuning_duration << std::endl;
       }
 
       std::cout << "----------------------- end tuning -----------------------" << std::endl;
-      std::cout << "optimal parameter values (parallel line search):" << std::endl;
+      std::cout << "optimal parameter values (parallel line search, large):" << std::endl;
       optimal_parameters.print_values();
       autotune::combined_kernel.set_parameter_values(optimal_parameters);
       autotune::combined_kernel.compile();
@@ -626,7 +633,75 @@ int main(int argc, char **argv) {
 
       double flops = 2 * static_cast<double>(N) * static_cast<double>(N) * static_cast<double>(N);
       double gflop = flops / 1E9;
-      std::cout << "optimal inner_duration (parallel line search): " << duration_kernel << std::endl;
+      std::cout << "optimal inner_duration (parallel line search, large): " << duration_kernel
+                << std::endl;
+      std::cout << "[N = " << N << "] performance: " << ((repetitions * gflop) / duration_kernel)
+                << "GFLOPS" << std::endl;
+    }
+    for (size_t parameter_index = 0; parameter_index < parameters.size(); parameter_index++) {
+      auto &p = parameters[parameter_index];
+      p->set_initial();
+    }
+  }
+  // tune with parallel line search, noisy scenario
+  {
+    std::cout << "----------------- starting tuning with parallel line search, noisy ------------ "
+              << std::endl;
+    std::uint64_t N = 2048;
+    size_t repetitions = 1;
+    size_t line_search_steps = 50;
+    size_t restarts = 1;
+    for (size_t restart = 0; restart < restarts; restart++) {
+      std::cout << "restart: " << restart << std::endl;
+      bool valid_start_found = false;
+      while (!valid_start_found) {
+        for (size_t parameter_index = 0; parameter_index < parameters.size(); parameter_index++) {
+          auto &p = parameters[parameter_index];
+          p->set_random_value();
+        }
+        autotune::parameter_value_set parameter_values = autotune::to_parameter_values(parameters);
+        if (precompile_validate_parameter_functor(parameter_values)) {
+          valid_start_found = true;
+        }
+      }
+
+      autotune::tuners::parallel_line_search tuner(autotune::combined_kernel, parameters,
+                                                   line_search_steps);
+      tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
+      tuner.set_verbose(true);
+      tuner.set_write_measurement(scenario_name + "parallel__line_search_noisy" +
+                                  std::to_string(restart));
+      tuner.setup_test(test_result);
+
+      autotune::countable_set optimal_parameters;
+      {
+        std::chrono::high_resolution_clock::time_point start =
+            std::chrono::high_resolution_clock::now();
+        optimal_parameters = tuner.tune(m.N_org, m.A_org, m.B_org, m.repetitions, duration_kernel);
+        std::chrono::high_resolution_clock::time_point end =
+            std::chrono::high_resolution_clock::now();
+        double tuning_duration = std::chrono::duration<double>(end - start).count();
+        tuner_duration_file << "parallel_line_search_noisy, " << tuning_duration << std::endl;
+      }
+
+      std::cout << "----------------------- end tuning -----------------------" << std::endl;
+      std::cout << "optimal parameter values (parallel line search, noisy):" << std::endl;
+      optimal_parameters.print_values();
+      autotune::combined_kernel.set_parameter_values(optimal_parameters);
+      autotune::combined_kernel.compile();
+
+      std::vector<double> C = m.matrix_multiply(duration_kernel);
+      bool test_ok = test_result(C);
+      if (test_ok) {
+        std::cout << "optimal parameters test ok!" << std::endl;
+      } else {
+        std::cout << "optimal parameters FAILED test!" << std::endl;
+      }
+
+      double flops = 2 * static_cast<double>(N) * static_cast<double>(N) * static_cast<double>(N);
+      double gflop = flops / 1E9;
+      std::cout << "optimal inner_duration (parallel line search, noisy): " << duration_kernel
+                << std::endl;
       std::cout << "[N = " << N << "] performance: " << ((repetitions * gflop) / duration_kernel)
                 << "GFLOPS" << std::endl;
     }
