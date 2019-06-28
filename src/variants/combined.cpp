@@ -45,9 +45,9 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     builder.set_link_flags("-shared -fno-gnu-unique");
 
     autotune::countable_set parameters;
-    autotune::fixed_set_parameter<std::string> p4("L2_X", {"80"}, false);
+    autotune::fixed_set_parameter<std::string> p4("L2_X", {"120"}, false);
     autotune::fixed_set_parameter<std::string> p5("L2_Y", {"128"}, false);
-    autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"64"}, false);
+    autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"128"}, false);
     autotune::fixed_set_parameter<std::string> p7("L1_X", {"20"}, false);
     autotune::fixed_set_parameter<std::string> p8("L1_Y", {"16"}, false);
     autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"64"}, false);
