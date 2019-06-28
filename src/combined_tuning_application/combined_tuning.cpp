@@ -176,6 +176,7 @@ int main(int argc, char **argv) {
       "-Wall -Wextra -std=c++17 -march=native -mtune=native "
       "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
   builder.set_link_flags("-shared -g -fno-gnu-unique");
+  builder.set_libraries("-lnuma");
 
   autotune::countable_continuous_parameter p1("X_REG", 5, 1, 1, 5);         // 5
   autotune::countable_continuous_parameter p2("Y_BASE_WIDTH", 2, 1, 1, 5);  // 5

@@ -16,6 +16,9 @@ using Vc::double_v;
 #include <opttmp/vectorization/register_tiling.hpp>
 #include <vector>
 
+#include <numa.h>
+#include <omp.h>
+
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 
@@ -147,6 +150,15 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
                                                size_t repetitions,
                                                double &duration) {
 
+  int num_nodes = numa_num_configured_nodes();
+  std::cout << "num_nodes: " << num_nodes << std::endl;
+  int num_cpus = numa_num_configured_cpus();
+  std::cout << "num_cpus: " << num_cpus << std::endl;
+  int cpus_per_node = num_cpus / num_nodes;
+  std::cout << "cpus_per_node: " << cpus_per_node << std::endl;
+  // int cpus_allowed = numa_num_task_cpus();
+  // std::cout << "cpus_allowed: " << cpus_allowed << std::endl;
+  
   duration = 0.0;
 
   std::size_t X_size;
@@ -177,7 +189,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   // std::cout << "A_trans_untiled:" << std::endl;
   // print_matrix_host(K_size, X_size, A_trans_untiled);
 
-  std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_trans =
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_trans_some_node = // _some_node
       memory_layout::make_tiled<2>(A_trans_untiled, tiling_spec_A_trans);
 
   // std::cout << "A_trans (tiled):" << std::endl;
@@ -195,8 +207,20 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   std::copy(B.begin(), B.end(), B_copy.begin());
 
   std::vector<double, boost::alignment::aligned_allocator<double, 64>>
-      B_padded = memory_layout::make_tiled<2>(B_copy, tiling_spec_B);
+    B_padded_some_node = memory_layout::make_tiled<2>(B_copy, tiling_spec_B); // _some_node
 
+  std::vector<std::vector<double, boost::alignment::aligned_allocator<double, 64>>> A_trans_nodes(num_nodes);
+  for (size_t i = 0; i < num_nodes; i+=1) {
+    numa_run_on_node(i);
+    A_trans_nodes[i] = A_trans_some_node;
+  }
+
+  std::vector<std::vector<double, boost::alignment::aligned_allocator<double, 64>>> B_padded_nodes(num_nodes);
+  for (size_t i = 0; i < num_nodes; i+=1) {
+    numa_run_on_node(i);
+    B_padded_nodes[i] = B_padded_some_node;
+  }
+  
   memory_layout::tiling_configuration tiling_spec_C(2);
   tiling_spec_C[0].tile_size_dir = L1_X;
   tiling_spec_C[0].stride = X_size;
@@ -213,9 +237,21 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
 
 //#define USE_OLD_STYLE
 
-#pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS)
+#pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS), schedule(dynamic)
     for (size_t l2_x = 0; l2_x < X_size; l2_x += L2_X) {
       for (size_t l2_y = 0; l2_y < Y_size; l2_y += L2_Y) {
+	// get pointers to the matrices on your numa node
+
+	int thread_id = omp_get_thread_num();
+	int mapped_numa_node = numa_node_of_cpu(thread_id);
+	numa_run_on_node(mapped_numa_node);
+	// // std::cout << "thread_id: " << thread_id  << " my numa node is: " << mapped_numa_node << std::endl;
+
+	// // std::vector<double, boost::alignment::aligned_allocator<double, 64>> &A_trans = A_trans_some_node;
+	// // std::vector<double, boost::alignment::aligned_allocator<double, 64>> &B_padded = B_padded_some_node;
+	std::vector<double, boost::alignment::aligned_allocator<double, 64>> &A_trans = A_trans_nodes[mapped_numa_node];
+	std::vector<double, boost::alignment::aligned_allocator<double, 64>> &B_padded = B_padded_nodes[mapped_numa_node];	
+	
         for (size_t l2_k = 0; l2_k < K_size; l2_k += L2_K_STEP) {
           // L1 blocking
           for (size_t l1_x = l2_x; (l1_x < l2_x + L2_X) && (l1_x < X_size);
