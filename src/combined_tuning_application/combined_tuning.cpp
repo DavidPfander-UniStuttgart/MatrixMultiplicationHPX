@@ -97,6 +97,9 @@ int main(int argc, char **argv) {
   } else if (scenario_name.compare("epyc") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 512 * 1024;
+  } else if (scenario_name.compare("element") == 0) {
+    l1_size_bytes = 32 * 1024;
+    l2_size_bytes = 512 * 1024;
   } else {
     std::cerr << "error: platform hardware unknown and not compiled with liblikwid, "
                  "aborting..."

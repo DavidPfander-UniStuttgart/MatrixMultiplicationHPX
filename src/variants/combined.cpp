@@ -43,22 +43,27 @@ std::vector<double> combined::matrix_multiply(double &duration) {
         "-Wall -Wextra -std=c++17 -march=native -mtune=native "
         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
     builder.set_link_flags("-shared -fno-gnu-unique");
-    builder.set_libraries("-lnuma");
+    builder.set_library_paths("-LAutoTuneTMP/libkwid");
+    builder.set_libraries("-lnuma -llikwid");
     builder.set_builder_verbose(true);
 
     autotune::countable_set parameters;
-    autotune::fixed_set_parameter<std::string> p4("L2_X", {"120"}, false);
+    autotune::fixed_set_parameter<int> p2("KERNEL_NUMA", {1}); //0 == none, 1 == copy
+    autotune::fixed_set_parameter<int> p3("KERNEL_SCHEDULE", {1}); // 0==static, 1==dynamic
+    autotune::fixed_set_parameter<std::string> p4("L2_X", {"72"}, false);
     autotune::fixed_set_parameter<std::string> p5("L2_Y", {"128"}, false);
-    autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"128"}, false);
-    autotune::fixed_set_parameter<std::string> p7("L1_X", {"20"}, false);
-    autotune::fixed_set_parameter<std::string> p8("L1_Y", {"32"}, false);
-    autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"32"}, false);
-    autotune::fixed_set_parameter<std::string> p10("X_REG", {"5"}, false);
+    autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"160"}, false);
+    autotune::fixed_set_parameter<std::string> p7("L1_X", {"36"}, false);
+    autotune::fixed_set_parameter<std::string> p8("L1_Y", {"8"}, false);
+    autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"80"}, false);
+    autotune::fixed_set_parameter<std::string> p10("X_REG", {"4"}, false);
     autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"}, false);
     size_t openmp_threads = omp_get_max_threads();
     autotune::fixed_set_parameter<size_t> p12("KERNEL_OMP_THREADS", {openmp_threads});
     // autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS", {1});
 
+    parameters.add_parameter(p2);
+    parameters.add_parameter(p3);
     parameters.add_parameter(p4);
     parameters.add_parameter(p5);
     parameters.add_parameter(p6);
