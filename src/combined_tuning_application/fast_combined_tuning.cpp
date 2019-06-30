@@ -86,6 +86,9 @@ int main(int argc, char **argv) {
   } else if (scenario_name.compare("epyc") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 512 * 1024;
+  } else if (scenario_name.compare("element") == 0) {
+    l1_size_bytes = 32 * 1024;
+    l2_size_bytes = 512 * 1024;
   } else {
     std::cerr << "error: platform hardware unknown and not compiled with liblikwid, "
                  "aborting..."
@@ -161,13 +164,16 @@ int main(int argc, char **argv) {
   builder.set_include_paths(
       "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
       "-IAutoTuneTMP/Vc_install/include "
-      "-IAutoTuneTMP/boost_install/include");
+      "-IAutoTuneTMP/boost_install/include -IAutoTuneTMP/likwid/src/includes");
   builder.set_cpp_flags(
       "-Wall -Wextra -std=c++17 -march=native -mtune=native "
       "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
+  builder.set_library_paths("-LAutoTuneTMP/libkwid");
   builder.set_link_flags("-shared -g -fno-gnu-unique");
-  builder.set_libraries("-lnuma");
+  builder.set_libraries("-lnuma -llikwid");
 
+  autotune::fixed_set_parameter<int> p0a("KERNEL_NUMA", {0, 1}); //0 == none, 1 == copy
+  autotune::fixed_set_parameter<int> p0b("KERNEL_SCHEDULE", {0, 1}); // 0==static, 1==dynamic
   autotune::countable_continuous_parameter p1("X_REG", 5, 1, 1, 5);         // 5
   autotune::countable_continuous_parameter p2("Y_BASE_WIDTH", 2, 1, 1, 5);  // 5
   autotune::countable_continuous_parameter p3("L1_X", 30, 5, 10, 40);       // 8
@@ -194,6 +200,8 @@ int main(int argc, char **argv) {
   autotune::fixed_set_parameter<size_t> p9("KERNEL_OMP_THREADS", thread_values);
 
   autotune::countable_set parameters;
+  parameters.add_parameter(p0a);
+  parameters.add_parameter(p0b);
   parameters.add_parameter(p1);
   parameters.add_parameter(p2);
   parameters.add_parameter(p3);

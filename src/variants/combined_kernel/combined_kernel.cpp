@@ -17,7 +17,7 @@ using Vc::double_v;
 #include <opttmp/vectorization/register_tiling.hpp>
 #include <vector>
 
-#include <numa.h>
+#include "/usr/include/numa.h"
 #include <sched.h>
 #include <omp.h>
 

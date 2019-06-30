@@ -38,7 +38,7 @@ std::vector<double> combined::matrix_multiply(double &duration) {
     builder.set_include_paths(
         "-IAutoTuneTMP/AutoTuneTMP_install/include -Isrc/variants/ "
         "-IAutoTuneTMP/Vc_install/include "
-        "-IAutoTuneTMP/boost_install/include");
+        "-IAutoTuneTMP/boost_install/include -IAutoTuneTMP/likwid/src/includes");
     builder.set_cpp_flags(
         "-Wall -Wextra -std=c++17 -march=native -mtune=native "
         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
