@@ -49,7 +49,7 @@ std::vector<double> combined::matrix_multiply(double &duration,
         "-Wall -Wextra -std=c++17 -march=native -mtune=native "
         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
     builder.set_link_flags("-shared -fno-gnu-unique");
-    builder.set_library_paths("-LAutoTuneTMP/libkwid");
+    builder.set_library_paths("-LAutoTuneTMP/likwid");
     builder.set_libraries("-lnuma -llikwid");
     builder.set_builder_verbose(true);
 

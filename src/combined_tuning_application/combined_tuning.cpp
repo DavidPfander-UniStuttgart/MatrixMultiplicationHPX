@@ -385,7 +385,7 @@ int main(int argc, char **argv) {
       "-IAutoTuneTMP/boost_install/include -IAutoTuneTMP/likwid/src/includes");
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
                         "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
-  builder.set_library_paths("-LAutoTuneTMP/libkwid");
+  builder.set_library_paths("-LAutoTuneTMP/likwid");
   builder.set_link_flags("-shared -g -fno-gnu-unique");
   builder.set_libraries("-lnuma AutoTuneTMP/likwid/liblikwid.so");
 
