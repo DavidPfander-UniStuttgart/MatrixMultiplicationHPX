@@ -83,6 +83,9 @@ int main(int argc, char **argv) {
   } else if (scenario_name.compare("xeonsilver") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 1024 * 1024;
+  } else if (scenario_name.compare("xeongold") == 0) {
+    l1_size_bytes = 32 * 1024;
+    l2_size_bytes = 1024 * 1024;
   } else if (scenario_name.compare("knl") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 512 * 1024;
