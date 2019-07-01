@@ -9,8 +9,8 @@
 #include "util/transpose_matrix.hpp"
 // global test variables are defined here
 #include "util/util.hpp"
-#include "variants/naive.hpp"
 #include "variants/combined.hpp"
+#include "variants/naive.hpp"
 
 #include <iomanip>
 
@@ -26,10 +26,11 @@ BOOST_AUTO_TEST_CASE(apply_inverse_2) {
   bool verbose = false;
 
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     // std::cout << std::fixed << std::setw(30) << std::setprecision(30)
@@ -57,10 +58,11 @@ BOOST_AUTO_TEST_CASE(apply_inverse_4) {
 
   bool verbose = false;
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     BOOST_CHECK_SMALL(fabs(C[i] - C_reference[i]), 1E-8);
@@ -117,10 +119,11 @@ BOOST_AUTO_TEST_CASE(apply_inverse_8) {
   bool verbose = false;
 
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     BOOST_CHECK_SMALL(fabs(C[i] - C_reference[i]), 1E-8);
@@ -136,8 +139,9 @@ BOOST_AUTO_TEST_CASE(random_matrices_2) {
 
   bool verbose = false;
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
-  
+
   // if (!transposed) {
   //   C_reference = naive_matrix_multiply(N, A, B);
   // } else {
@@ -145,7 +149,7 @@ BOOST_AUTO_TEST_CASE(random_matrices_2) {
   // }
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     BOOST_CHECK_SMALL(fabs(C[i] - C_reference[i]), 1E-8);
@@ -161,12 +165,13 @@ BOOST_AUTO_TEST_CASE(random_matrices_4) {
 
   bool verbose = false;
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
 
   std::vector<double> C_reference = naive_matrix_multiply(N, A, B);
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     BOOST_CHECK_SMALL(fabs(C[i] - C_reference[i]), 1E-8);
@@ -182,12 +187,13 @@ BOOST_AUTO_TEST_CASE(random_matrices_8) {
 
   bool verbose = false;
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
 
   std::vector<double> C_reference = naive_matrix_multiply(N, A, B);
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     BOOST_CHECK_SMALL(fabs(C[i] - C_reference[i]), 1E-8);
@@ -203,12 +209,13 @@ BOOST_AUTO_TEST_CASE(random_matrices_256) {
 
   bool verbose = false;
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
 
   std::vector<double> C_reference = naive_matrix_multiply(N, A, B);
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     BOOST_CHECK_SMALL(fabs(C[i] - C_reference[i]), 1E-8);
@@ -224,12 +231,13 @@ BOOST_AUTO_TEST_CASE(random_matrices_512) {
 
   bool verbose = false;
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
 
   std::vector<double> C_reference = naive_matrix_multiply(N, A, B);
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     BOOST_CHECK_SMALL(fabs(C[i] - C_reference[i]), 1E-8);
@@ -245,12 +253,13 @@ BOOST_AUTO_TEST_CASE(random_matrices_1024) {
 
   bool verbose = false;
   double duration = 0.0; // write variable
+  double gflops = 0.0;   // write variable
   uint64_t repetitions = 1;
 
   std::vector<double> C_reference = naive_matrix_multiply(N, A, B);
 
   combined::combined m(N, A, B, repetitions, verbose);
-  std::vector<double> C = m.matrix_multiply(duration);
+  std::vector<double> C = m.matrix_multiply(duration, gflops);
 
   for (size_t i = 0; i < N * N; i++) {
     BOOST_CHECK_SMALL(fabs(C[i] - C_reference[i]), 1E-8);

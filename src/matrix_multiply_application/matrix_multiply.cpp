@@ -39,7 +39,10 @@ int main(int argc, char *argv[]) {
       boost::program_options::value<std::string>()->default_value(
           "naive"), // TODO: truncate
       "select algorithm: single, pseudodynamic, algorithms, looped, semi, "
-      "combined, kernel_test, kernel_tiled")("help", "display help");
+      "combined, kernel_test, kernel_tiled")("help", "display help")(
+      "combined_parameters_file", boost::program_options::value<std::string>(),
+      "parameters for the combined algorith, output of tuner")("help",
+                                                               "display help");
 
   boost::program_options::variables_map vm;
   boost::program_options::store(
@@ -133,7 +136,8 @@ int main(int argc, char *argv[]) {
     duration = (timer_stop - timer_start).count();
   } else if (algorithm.compare("combined") == 0) {
     combined::combined m(N, A, B, repetitions, verbose);
-    C = m.matrix_multiply(duration);
+    double gflops_kernel;
+    C = m.matrix_multiply(duration, gflops_kernel);
   } else {
     std::cout << "\"" << algorithm << "\" not a valid algorithm" << std::endl;
     return 1;

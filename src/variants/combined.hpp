@@ -7,10 +7,9 @@
 #include <cstdint>
 #include <vector>
 
-AUTOTUNE_DECLARE_KERNEL(std::vector<double>(std::size_t, 
-                                            std::vector<double> &,
+AUTOTUNE_DECLARE_KERNEL(std::vector<double>(std::size_t, std::vector<double> &,
                                             std::vector<double> &, size_t,
-                                            double &),
+                                            double &, double &),
                         combined_kernel)
 
 namespace combined {
@@ -40,6 +39,6 @@ public:
 
   ~combined();
 
-  std::vector<double> matrix_multiply(double &duration);
+  std::vector<double> matrix_multiply(double &duration, double &gflops_kernel);
 };
-}
+} // namespace combined

@@ -8,9 +8,9 @@ using Vc::double_v;
 
 #include "../util/util.hpp"
 
+#include "autotune_kernel.hpp"
 #include "opttmp/loop/unroll_loop.hpp"
 #include "opttmp/memory_layout/tile_array.hpp"
-#include "parameters.hpp"
 #include <autotune/queue_thread_pool.hpp>
 #include <chrono>
 #include <opttmp/memory_layout/tile_view.hpp>
@@ -18,8 +18,8 @@ using Vc::double_v;
 #include <vector>
 
 #include "/usr/include/numa.h"
-#include <sched.h>
 #include <omp.h>
+#include <sched.h>
 
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
@@ -32,7 +32,7 @@ using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 
 using namespace index_iterator;
 
-extern "C" bool is_valid_parameter_combination() {
+AUTOTUNE_EXPORT bool is_valid_parameter_combination() {
 
   if (L1_X < X_REG) {
     std::cout << "error: L1_X < X_REG, L1_X too small" << std::endl;
@@ -146,11 +146,10 @@ void pad_matrices(const size_t N_org, const std::vector<double> &A_org,
   }
 }
 
-extern "C" std::vector<double> combined_kernel(std::size_t N_org,
-                                               std::vector<double> &A_org,
-                                               std::vector<double> &B_org,
-                                               size_t repetitions,
-                                               double &duration) {
+AUTOTUNE_EXPORT std::vector<double>
+combined_kernel(std::size_t N_org, std::vector<double> &A_org,
+                std::vector<double> &B_org, size_t repetitions,
+                double &duration, double &gflops) {
 
   int num_nodes = numa_num_configured_nodes();
   std::cout << "num_nodes: " << num_nodes << std::endl;
@@ -186,8 +185,8 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
     }
   }
 
-// std::cout << "A_trans_untiled:" << std::endl;
-// print_matrix_host(K_size, X_size, A_trans_untiled);
+  // std::cout << "A_trans_untiled:" << std::endl;
+  // print_matrix_host(K_size, X_size, A_trans_untiled);
 
 #if KERNEL_NUMA == 1
   std::vector<double, boost::alignment::aligned_allocator<double, 64>>
@@ -253,9 +252,11 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
 #define use_omp
 #ifdef use_omp
 #if KERNEL_SCHEDULE == 1
-#pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS), schedule(dynamic)
+#pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS),         \
+    schedule(dynamic)
 #else
-#pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS), schedule(static)
+#pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS),         \
+    schedule(static)
 #endif
 #else
     autotune::queue_thread_pool<KERNEL_OMP_THREADS> pool;
@@ -264,7 +265,7 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
 #endif
     for (size_t l2_x = 0; l2_x < X_size; l2_x += L2_X) {
       for (size_t l2_y = 0; l2_y < Y_size; l2_y += L2_Y) {
-#ifndef use_omp	  
+#ifndef use_omp
         pool.enqueue_work(
             [&](size_t l2_x, size_t l2_y) -> void {
 #endif
@@ -349,8 +350,8 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
             },
             l2_x, l2_y); // L2_K_STEP
 #endif
-      }                  // L2_Y
-    }                    // L2_X
+      } // L2_Y
+    }   // L2_X
 
 #ifndef use_omp
     pool.finish();
@@ -374,9 +375,10 @@ extern "C" std::vector<double> combined_kernel(std::size_t N_org,
   double flops = 2 * static_cast<double>(X_size) * static_cast<double>(Y_size) *
                  static_cast<double>(K_size);
   double gflop = flops / 1E9;
+  gflops = repetitions * gflop / duration;
   std::cout << "[X_size = " << X_size << ", Y_size = " << Y_size
-            << ", K_size = " << K_size
-            << "] inner performance: " << (repetitions * gflop / duration)
+            << ", K_size = " << K_size << "], duration: " << duration
+            << " inner performance: " << gflops
             << "Gflops (average across repetitions)" << std::endl;
 
   return C_return;
