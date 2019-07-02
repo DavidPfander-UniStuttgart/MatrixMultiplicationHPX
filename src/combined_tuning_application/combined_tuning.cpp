@@ -48,8 +48,8 @@ AUTOTUNE_KERNEL(uint64_t(), hardware_query_kernel,
 std::ofstream tuner_duration_file;
 
 namespace detail {
-std::uint64_t N = 8192;
-size_t repetitions = 5;
+std::uint64_t N = 4096;
+size_t repetitions = 10;
 size_t restarts = 1;
 bool use_pvn = false;
 std::vector<double> A;
@@ -829,7 +829,7 @@ int main(int argc, char **argv) {
                                         randomizable_parameters, search_steps);
     tuner.set_parameter_adjustment_functor(
         parameter_adjustment_functor_randomizable);
-    do_tuning(tuner, randomizable_parameters, scenario_name + "monte_carlo");
+    do_tuning(tuner, randomizable_parameters, scenario_name + "_monte_carlo");
   }
 #endif
 #ifdef DO_GREEDY_NEIGHBOR_SEARCH
