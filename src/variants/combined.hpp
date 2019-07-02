@@ -39,6 +39,7 @@ public:
 
   ~combined();
 
-  std::vector<double> matrix_multiply(double &duration, double &gflops_kernel);
+  std::vector<double> matrix_multiply(double &duration, double &gflops_kernel,
+                                      bool set_default_parameters = true);
 };
 } // namespace combined

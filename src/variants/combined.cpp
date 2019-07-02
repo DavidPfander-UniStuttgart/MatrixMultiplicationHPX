@@ -33,8 +33,8 @@ combined::~combined() {
   // autotune::combined_kernel.clear();
 }
 
-std::vector<double> combined::matrix_multiply(double &duration,
-                                              double &gflops) {
+std::vector<double> combined::matrix_multiply(double &duration, double &gflops,
+                                              bool set_default_parameters) {
   if (!autotune::combined_kernel.is_compiled()) {
     auto &builder =
         autotune::combined_kernel.get_builder<cppjit::builder::gcc>();
@@ -53,38 +53,41 @@ std::vector<double> combined::matrix_multiply(double &duration,
     builder.set_libraries("-lnuma -llikwid");
     builder.set_builder_verbose(true);
 
-    autotune::countable_set parameters;
-    autotune::fixed_set_parameter<int> p2("KERNEL_NUMA",
-                                          {1}); // 0 == none, 1 == copy
-    autotune::fixed_set_parameter<int> p3("KERNEL_SCHEDULE",
-                                          {1}); // 0==static, 1==dynamic
-    autotune::fixed_set_parameter<std::string> p4("L2_X", {"72"}, false);
-    autotune::fixed_set_parameter<std::string> p5("L2_Y", {"128"}, false);
-    autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"160"}, false);
-    autotune::fixed_set_parameter<std::string> p7("L1_X", {"36"}, false);
-    autotune::fixed_set_parameter<std::string> p8("L1_Y", {"8"}, false);
-    autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"80"}, false);
-    autotune::fixed_set_parameter<std::string> p10("X_REG", {"4"}, false);
-    autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"},
-                                                   false);
-    size_t openmp_threads = omp_get_max_threads();
-    autotune::fixed_set_parameter<size_t> p12("KERNEL_OMP_THREADS",
-                                              {openmp_threads});
-    // autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS", {1});
+    if (set_default_parameters) {
+      autotune::countable_set parameters;
+      autotune::fixed_set_parameter<int> p2("KERNEL_NUMA",
+                                            {1}); // 0 == none, 1 == copy
+      autotune::fixed_set_parameter<int> p3("KERNEL_SCHEDULE",
+                                            {1}); // 0==static, 1==dynamic
+      autotune::fixed_set_parameter<std::string> p4("L2_X", {"72"}, false);
+      autotune::fixed_set_parameter<std::string> p5("L2_Y", {"128"}, false);
+      autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"160"},
+                                                    false);
+      autotune::fixed_set_parameter<std::string> p7("L1_X", {"36"}, false);
+      autotune::fixed_set_parameter<std::string> p8("L1_Y", {"8"}, false);
+      autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"80"}, false);
+      autotune::fixed_set_parameter<std::string> p10("X_REG", {"4"}, false);
+      autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"},
+                                                     false);
+      size_t openmp_threads = omp_get_max_threads();
+      autotune::fixed_set_parameter<size_t> p12("KERNEL_OMP_THREADS",
+                                                {openmp_threads});
+      // autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS", {1});
 
-    parameters.add_parameter(p2);
-    parameters.add_parameter(p3);
-    parameters.add_parameter(p4);
-    parameters.add_parameter(p5);
-    parameters.add_parameter(p6);
-    parameters.add_parameter(p7);
-    parameters.add_parameter(p8);
-    parameters.add_parameter(p9);
-    parameters.add_parameter(p10);
-    parameters.add_parameter(p11);
-    parameters.add_parameter(p12);
+      parameters.add_parameter(p2);
+      parameters.add_parameter(p3);
+      parameters.add_parameter(p4);
+      parameters.add_parameter(p5);
+      parameters.add_parameter(p6);
+      parameters.add_parameter(p7);
+      parameters.add_parameter(p8);
+      parameters.add_parameter(p9);
+      parameters.add_parameter(p10);
+      parameters.add_parameter(p11);
+      parameters.add_parameter(p12);
 
-    autotune::combined_kernel.set_parameter_values(parameters);
+      autotune::combined_kernel.set_parameter_values(parameters);
+    }
     autotune::combined_kernel.compile();
 
     if (!autotune::combined_kernel.is_valid_parameter_combination()) {
