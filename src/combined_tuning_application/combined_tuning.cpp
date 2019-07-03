@@ -262,6 +262,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   std::string scenario_name(argv[1]);
+  std::string scenario_name_raw(argv[1]);  
   std::cout << "scenario_name: " << scenario_name << std::endl;
   scenario_name = scenario_name + std::string("_") + std::to_string(detail::N);
 
@@ -296,28 +297,28 @@ int main(int argc, char **argv) {
 #else
   std::cout << "Not using likwid, querying internal database for hardware specs"
             << std::endl;
-  if (scenario_name.compare("6700k") == 0) {
+  if (scenario_name_raw.compare("6700k") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 256 * 1024;
-  } else if (scenario_name.compare("4300U") == 0) {
+  } else if (scenario_name_raw.compare("4300U") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 256 * 1024;
-  } else if (scenario_name.compare("xeonsilver") == 0) {
+  } else if (scenario_name_raw.compare("xeonsilver") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 1024 * 1024;
-  } else if (scenario_name.compare("xeongold") == 0) {
+  } else if (scenario_name_raw.compare("xeongold") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 1024 * 1024;
-  } else if (scenario_name.compare("knl") == 0) {
+  } else if (scenario_name_raw.compare("knl") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 512 * 1024;
-  } else if (scenario_name.compare("epyc") == 0) {
+  } else if (scenario_name_raw.compare("epyc") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 512 * 1024;
-  } else if (scenario_name.compare("large") == 0) {
+  } else if (scenario_name_raw.compare("large") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 256 * 1024;
-  } else if (scenario_name.compare("element") == 0) {
+  } else if (scenario_name_raw.compare("element") == 0) {
     l1_size_bytes = 32 * 1024;
     l2_size_bytes = 512 * 1024;
   } else {
