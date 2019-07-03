@@ -263,6 +263,7 @@ int main(int argc, char **argv) {
   }
   std::string scenario_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
+  scenario_name = scenario_name + std::string("_") + std::to_string(detail::N);
 
   uint64_t l1_size_bytes = 0;
   uint64_t l2_size_bytes = 0;
@@ -826,7 +827,8 @@ int main(int argc, char **argv) {
               << std::endl;
     size_t search_steps = 50;
     autotune::tuners::monte_carlo tuner(autotune::combined_kernel,
-                                        randomizable_parameters, search_steps);
+                                        randomizable_parameters, search_steps,
+                                        1000000);
     tuner.set_parameter_adjustment_functor(
         parameter_adjustment_functor_randomizable);
     do_tuning(tuner, randomizable_parameters, scenario_name + "_monte_carlo");
