@@ -19,6 +19,9 @@ boost::program_options::options_description
     desc_commandline("Usage: matrix_multiply [options]");
 
 int main(int argc, char *argv[]) {
+
+  std::string combined_parameters_file;
+
   desc_commandline.add_options()(
       "n-value",
       boost::program_options::value<std::uint64_t>()->default_value(4ull),
@@ -39,7 +42,12 @@ int main(int argc, char *argv[]) {
       boost::program_options::value<std::string>()->default_value(
           "naive"), // TODO: truncate
       "select algorithm: single, pseudodynamic, algorithms, looped, semi, "
-      "combined, kernel_test, kernel_tiled")("help", "display help");
+      "combined, kernel_test, kernel_tiled")("help", "display help")(
+      "combined_parameters_file",
+      boost::program_options::value<std::string>(&combined_parameters_file)
+          ->default_value(""),
+      "parameters for the combined algorith, output of tuner")("help",
+                                                               "display help");
 
   boost::program_options::variables_map vm;
   boost::program_options::store(
@@ -132,8 +140,18 @@ int main(int argc, char *argv[]) {
     auto timer_stop = std::chrono::high_resolution_clock::now();
     duration = (timer_stop - timer_start).count();
   } else if (algorithm.compare("combined") == 0) {
+    bool set_default_parameters = true;
+    if (combined_parameters_file.compare("") != 0) {
+      set_default_parameters = false;
+      std::cout << "setting parameters from: " << combined_parameters_file
+                << std::endl;
+      autotune::parameter_value_set pv =
+          autotune::parameter_values_from_file(combined_parameters_file);
+      autotune::combined_kernel.set_parameter_values(pv);
+    }
     combined::combined m(N, A, B, repetitions, verbose);
-    C = m.matrix_multiply(duration);
+    double gflops_kernel;
+    C = m.matrix_multiply(duration, gflops_kernel, set_default_parameters);
   } else {
     std::cout << "\"" << algorithm << "\" not a valid algorithm" << std::endl;
     return 1;

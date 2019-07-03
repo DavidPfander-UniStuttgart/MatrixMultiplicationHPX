@@ -34,5 +34,5 @@ fi
 source $(readlink -f $(dirname "$BASH_SOURCE"))/AutoTuneTMP/source-me.sh
 
 export MatrixMultiplicationHPX_ROOT=$PWD/MatrixMultiplicationHPX_install
-export LD_LIBRARY_PATH=$PWD/AutoTuneTMP/boost_install/lib:$PWD/AutoTuneTMP/Vc_install/lib
+export LD_LIBRARY_PATH=$PWD/AutoTuneTMP/boost_install/lib:$PWD/AutoTuneTMP/Vc_install/lib:$PWD/AutoTuneTMP/likwid:$PWD/AutoTuneTMP/
 export matrix_multiplication_source_me_sourced=1
