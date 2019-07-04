@@ -48,7 +48,7 @@ AUTOTUNE_KERNEL(uint64_t(), hardware_query_kernel,
 std::ofstream tuner_duration_file;
 
 namespace detail {
-std::uint64_t N = 4096;
+std::uint64_t N = 8192;
 size_t repetitions = 10;
 size_t restarts = 1;
 bool use_pvn = false;
