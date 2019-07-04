@@ -297,9 +297,19 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
                        (l1_y < l2_y + L2_Y) && (l1_y < Y_size); l1_y += L1_Y) {
                     auto C_view = memory_layout::make_view_from_index<2>(
                         {l1_x, l1_y}, C_padded, tiling_spec_C);
+
+                    // auto A_trans_view = memory_layout::make_view_from_index<2>(
+                    //     {l2_k, l1_x}, A_trans, tiling_spec_A_trans);
+                    // auto B_view = memory_layout::make_view_from_index<2>(
+                    //     {l2_k, l1_y}, B_padded, tiling_spec_B);
+
                     for (size_t l1_k = l2_k;
                          (l1_k < l2_k + L2_K_STEP) && (l1_k < K_size);
                          l1_k += L1_K_STEP) {
+                      // if (l1_k > l2_k) {
+                      //   A_trans_view.inc_index<0>();
+                      //   B_view.inc_index<0>();
+                      // }
                       auto A_trans_view =
                           memory_layout::make_view_from_index<2>(
                               {l1_k, l1_x}, A_trans, tiling_spec_A_trans);
@@ -319,15 +329,23 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
                                 Vc::flags::vector_aligned);
 
                             // loads from A_trans are broadcasts!
-                            std::array<double_v, X_REG> a_temp;
                             for (size_t r = 0; r < X_REG; r++) {
-                              a_temp[r] =
-                                  A_trans_view[k_inner * L1_X + (x + r)];
+                              acc[r] +=
+                                  double_v(
+                                      A_trans_view[k_inner * L1_X + (x + r)]) *
+                                  b_temp;
                             }
 
-                            for (size_t r = 0; r < X_REG; r++) {
-                              acc[r] += a_temp[r] * b_temp;
-                            }
+                            // // loads from A_trans are broadcasts!
+                            // std::array<double_v, X_REG> a_temp;
+                            // for (size_t r = 0; r < X_REG; r++) {
+                            //   a_temp[r] =
+                            //       A_trans_view[k_inner * L1_X + (x + r)];
+                            // }
+
+                            // for (size_t r = 0; r < X_REG; r++) {
+                            //   acc[r] += a_temp[r] * b_temp;
+                            // }
                           }
 
                           for (size_t r = 0; r < X_REG; r++) {

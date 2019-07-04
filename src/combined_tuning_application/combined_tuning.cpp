@@ -33,9 +33,9 @@
 #define DO_PARALLEL_LINE_SEARCH
 // #define DO_LINE_SEARCH_SPLIT
 // #define DO_NEIGHBOR_SEARCH
-#define DO_PARALLEL_NEIGHBOR_SEARCH
+// #define DO_PARALLEL_NEIGHBOR_SEARCH
 // #define DO_FULL_NEIGHBOR_SEARCH
-#define DO_MONTE_CARLO
+// #define DO_MONTE_CARLO
 // #define DO_GREEDY_NEIGHBOR_SEARCH
 // #define DO_NEIGHBOR_SEARCH_SPLIT
 // #define DO_FULL_NEIGHBOR_SEARCH_SPLIT
@@ -48,7 +48,7 @@ AUTOTUNE_KERNEL(uint64_t(), hardware_query_kernel,
 std::ofstream tuner_duration_file;
 
 namespace detail {
-std::uint64_t N = 8192;
+std::uint64_t N = 4096;
 size_t repetitions = 10;
 size_t restarts = 1;
 bool use_pvn = false;
@@ -262,80 +262,80 @@ int main(int argc, char **argv) {
     return 1;
   }
   std::string scenario_name(argv[1]);
-  std::string scenario_name_raw(argv[1]);  
+  std::string scenario_name_raw(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
   scenario_name = scenario_name + std::string("_") + std::to_string(detail::N);
 
-  uint64_t l1_size_bytes = 0;
-  uint64_t l2_size_bytes = 0;
-#ifdef WITH_LIKWID
-  // use likwid to query some hardware information
-  {
-    int err = topology_init();
-    if (err < 0) {
-      std::cerr << "Unable to initialize likwid" << std::endl;
-      return 1;
-    } else {
-      std::cout << "info: using likwid to query hardware information"
-                << std::endl;
-    }
-    // CpuInfo_t contains global information like name, CPU family, ...
-    CpuInfo_t info = get_cpuInfo();
-    std::cout << "using cpu name: " << info->name << std::endl;
-    // CpuTopology_t contains information about the topology of the CPUs.
-    CpuTopology_t topo = get_cpuTopology();
-    for (size_t i = 0; i < topo->numCacheLevels; i++) {
-      std::cout << "level: " << topo->cacheLevels[i].level << std::endl;
-      std::cout << "size: " << topo->cacheLevels[i].size << std::endl;
-      if (topo->cacheLevels[i].level == 1) {
-        l1_size_bytes = topo->cacheLevels[i].size;
-      } else if (topo->cacheLevels[i].level == 2) {
-        l2_size_bytes = topo->cacheLevels[i].size;
-      }
-    }
-  }
-#else
-  std::cout << "Not using likwid, querying internal database for hardware specs"
-            << std::endl;
-  if (scenario_name_raw.compare("6700k") == 0) {
-    l1_size_bytes = 32 * 1024;
-    l2_size_bytes = 256 * 1024;
-  } else if (scenario_name_raw.compare("4300U") == 0) {
-    l1_size_bytes = 32 * 1024;
-    l2_size_bytes = 256 * 1024;
-  } else if (scenario_name_raw.compare("xeonsilver") == 0) {
-    l1_size_bytes = 32 * 1024;
-    l2_size_bytes = 1024 * 1024;
-  } else if (scenario_name_raw.compare("xeongold") == 0) {
-    l1_size_bytes = 32 * 1024;
-    l2_size_bytes = 1024 * 1024;
-  } else if (scenario_name_raw.compare("knl") == 0) {
-    l1_size_bytes = 32 * 1024;
-    l2_size_bytes = 512 * 1024;
-  } else if (scenario_name_raw.compare("epyc") == 0) {
-    l1_size_bytes = 32 * 1024;
-    l2_size_bytes = 512 * 1024;
-  } else if (scenario_name_raw.compare("large") == 0) {
-    l1_size_bytes = 32 * 1024;
-    l2_size_bytes = 256 * 1024;
-  } else if (scenario_name_raw.compare("element") == 0) {
-    l1_size_bytes = 32 * 1024;
-    l2_size_bytes = 512 * 1024;
-  } else if (scenario_name_raw.compare("A10") == 0) {
-    l1_size_bytes = 16 * 1024;
-    l2_size_bytes = 2048 * 1024;
-  } else {
-    std::cerr
-        << "error: platform hardware unknown and not compiled with liblikwid, "
-           "aborting..."
-        << std::endl;
-    return 1;
-  }
-  std::cout << "level: " << 1 << std::endl;
-  std::cout << "size: " << l1_size_bytes << std::endl;
-  std::cout << "level: " << 2 << std::endl;
-  std::cout << "size: " << l2_size_bytes << std::endl;
-#endif
+//   uint64_t l1_size_bytes = 0;
+//   uint64_t l2_size_bytes = 0;
+// #ifdef WITH_LIKWID
+//   // use likwid to query some hardware information
+//   {
+//     int err = topology_init();
+//     if (err < 0) {
+//       std::cerr << "Unable to initialize likwid" << std::endl;
+//       return 1;
+//     } else {
+//       std::cout << "info: using likwid to query hardware information"
+//                 << std::endl;
+//     }
+//     // CpuInfo_t contains global information like name, CPU family, ...
+//     CpuInfo_t info = get_cpuInfo();
+//     std::cout << "using cpu name: " << info->name << std::endl;
+//     // CpuTopology_t contains information about the topology of the CPUs.
+//     CpuTopology_t topo = get_cpuTopology();
+//     for (size_t i = 0; i < topo->numCacheLevels; i++) {
+//       std::cout << "level: " << topo->cacheLevels[i].level << std::endl;
+//       std::cout << "size: " << topo->cacheLevels[i].size << std::endl;
+//       if (topo->cacheLevels[i].level == 1) {
+//         l1_size_bytes = topo->cacheLevels[i].size;
+//       } else if (topo->cacheLevels[i].level == 2) {
+//         l2_size_bytes = topo->cacheLevels[i].size;
+//       }
+//     }
+//   }
+// #else
+//   std::cout << "Not using likwid, querying internal database for hardware specs"
+//             << std::endl;
+//   if (scenario_name_raw.compare("6700k") == 0) {
+//     l1_size_bytes = 32 * 1024;
+//     l2_size_bytes = 256 * 1024;
+//   } else if (scenario_name_raw.compare("4300U") == 0) {
+//     l1_size_bytes = 32 * 1024;
+//     l2_size_bytes = 256 * 1024;
+//   } else if (scenario_name_raw.compare("xeonsilver") == 0) {
+//     l1_size_bytes = 32 * 1024;
+//     l2_size_bytes = 1024 * 1024;
+//   } else if (scenario_name_raw.compare("xeongold") == 0) {
+//     l1_size_bytes = 32 * 1024;
+//     l2_size_bytes = 1024 * 1024;
+//   } else if (scenario_name_raw.compare("knl") == 0) {
+//     l1_size_bytes = 32 * 1024;
+//     l2_size_bytes = 512 * 1024;
+//   } else if (scenario_name_raw.compare("epyc") == 0) {
+//     l1_size_bytes = 32 * 1024;
+//     l2_size_bytes = 512 * 1024;
+//   } else if (scenario_name_raw.compare("large") == 0) {
+//     l1_size_bytes = 32 * 1024;
+//     l2_size_bytes = 256 * 1024;
+//   } else if (scenario_name_raw.compare("element") == 0) {
+//     l1_size_bytes = 32 * 1024;
+//     l2_size_bytes = 512 * 1024;
+//   } else if (scenario_name_raw.compare("A10") == 0) {
+//     l1_size_bytes = 16 * 1024;
+//     l2_size_bytes = 2048 * 1024;
+//   } else {
+//     std::cerr
+//         << "error: platform hardware unknown and not compiled with liblikwid, "
+//            "aborting..."
+//         << std::endl;
+//     return 1;
+//   }
+//   std::cout << "level: " << 1 << std::endl;
+//   std::cout << "size: " << l1_size_bytes << std::endl;
+//   std::cout << "level: " << 2 << std::endl;
+//   std::cout << "size: " << l2_size_bytes << std::endl;
+// #endif
 
   // figure out native vector width
   auto &builder_hw_query =
@@ -480,8 +480,7 @@ int main(int argc, char **argv) {
 #endif
 
   auto precompile_validate_parameter_functor =
-      [l2_size_bytes,
-       l1_size_bytes](autotune::parameter_value_set &parameters) -> bool {
+      [](autotune::parameter_value_set &parameters) -> bool {
     int64_t X_REG = stol(parameters["X_REG"]);
     int64_t Y_BASE_WIDTH = stol(parameters["Y_BASE_WIDTH"]);
     int64_t L1_X = stol(parameters["L1_X"]);
@@ -539,16 +538,16 @@ int main(int argc, char **argv) {
       return false;
     }
 
-    size_t l2_memory = (L2_X * L2_K_STEP + L2_K_STEP * L2_Y + L2_X * L2_Y) * 8;
-    if (l2_memory > l2_size_bytes) {
-      std::cout << "rejected by l2 cache size requirement" << std::endl;
-      return false;
-    }
-    size_t l1_memory = (L1_X * L1_K_STEP + L1_K_STEP * L1_Y + L1_X * L1_Y) * 8;
-    if (l1_memory > l1_size_bytes) {
-      std::cout << "rejected by l1 cache size requirement" << std::endl;
-      return false;
-    }
+    // size_t l2_memory = (L2_X * L2_K_STEP + L2_K_STEP * L2_Y + L2_X * L2_Y) * 8;
+    // if (l2_memory > l2_size_bytes) {
+    //   std::cout << "rejected by l2 cache size requirement" << std::endl;
+    //   return false;
+    // }
+    // size_t l1_memory = (L1_X * L1_K_STEP + L1_K_STEP * L1_Y + L1_X * L1_Y) * 8;
+    // if (l1_memory > l1_size_bytes) {
+    //   std::cout << "rejected by l1 cache size requirement" << std::endl;
+    //   return false;
+    // }
 
     return true;
   };
