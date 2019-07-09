@@ -29,9 +29,7 @@ combined::combined(size_t N, std::vector<double> &A_org,
   autotune::combined_kernel.set_verbose(verbose);
 }
 
-combined::~combined() {
-  // autotune::combined_kernel.clear();
-}
+combined::~combined() {}
 
 std::vector<double> combined::matrix_multiply(double &duration, double &gflops,
                                               bool set_default_parameters) {
@@ -55,25 +53,27 @@ std::vector<double> combined::matrix_multiply(double &duration, double &gflops,
 
     if (set_default_parameters) {
       autotune::countable_set parameters;
-      autotune::fixed_set_parameter<int> p2("KERNEL_NUMA",
+      autotune::fixed_set_parameter<int> p1("KERNEL_NUMA",
                                             {1}); // 0 == none, 1 == copy
-      autotune::fixed_set_parameter<int> p3("KERNEL_SCHEDULE",
+      autotune::fixed_set_parameter<int> p2("KERNEL_SCHEDULE",
                                             {1}); // 0==static, 1==dynamic
-      autotune::fixed_set_parameter<std::string> p4("L2_X", {"72"}, false);
-      autotune::fixed_set_parameter<std::string> p5("L2_Y", {"128"}, false);
-      autotune::fixed_set_parameter<std::string> p6("L2_K_STEP", {"160"},
-                                                    false);
-      autotune::fixed_set_parameter<std::string> p7("L1_X", {"36"}, false);
-      autotune::fixed_set_parameter<std::string> p8("L1_Y", {"8"}, false);
-      autotune::fixed_set_parameter<std::string> p9("L1_K_STEP", {"80"}, false);
-      autotune::fixed_set_parameter<std::string> p10("X_REG", {"4"}, false);
-      autotune::fixed_set_parameter<std::string> p11("Y_BASE_WIDTH", {"2"},
+      autotune::fixed_set_parameter<std::string> p3("L3_X", {"320"}, false);
+      autotune::fixed_set_parameter<std::string> p4("L3_Y", {"384"}, false);
+      autotune::fixed_set_parameter<std::string> p5("L3_K", {"100"}, false);
+      autotune::fixed_set_parameter<std::string> p6("L2_X", {"80"}, false);
+      autotune::fixed_set_parameter<std::string> p7("L2_Y", {"48"}, false);
+      autotune::fixed_set_parameter<std::string> p8("L2_K", {"100"}, false);
+      autotune::fixed_set_parameter<std::string> p9("L1_X", {"80"}, false);
+      autotune::fixed_set_parameter<std::string> p10("L1_Y", {"8"}, false);
+      autotune::fixed_set_parameter<std::string> p11("L1_K", {"100"}, false);
+      autotune::fixed_set_parameter<std::string> p12("X_REG", {"5"}, false);
+      autotune::fixed_set_parameter<std::string> p13("Y_BASE_WIDTH", {"2"},
                                                      false);
       size_t openmp_threads = omp_get_max_threads();
-      autotune::fixed_set_parameter<size_t> p12("KERNEL_OMP_THREADS",
+      autotune::fixed_set_parameter<size_t> p14("KERNEL_OMP_THREADS",
                                                 {openmp_threads});
-      // autotune::fixed_set_parameter<size_t> p10("KERNEL_OMP_THREADS", {1});
 
+      parameters.add_parameter(p1);
       parameters.add_parameter(p2);
       parameters.add_parameter(p3);
       parameters.add_parameter(p4);
@@ -85,6 +85,7 @@ std::vector<double> combined::matrix_multiply(double &duration, double &gflops,
       parameters.add_parameter(p10);
       parameters.add_parameter(p11);
       parameters.add_parameter(p12);
+      parameters.add_parameter(p13);
 
       autotune::combined_kernel.set_parameter_values(parameters);
     }
@@ -101,24 +102,10 @@ std::vector<double> combined::matrix_multiply(double &duration, double &gflops,
   }
 
   // autotune::combined_kernel.print_parameters();
-
   duration = 0.0;
-
   std::vector<double> C_return;
-  // C_return = autotune::combined_kernel(N_org, X_size, Y_size, K_size, A, B,
-  //                                      repetitions, duration);
   C_return = autotune::combined_kernel(N_org, A_org, B_org, repetitions,
                                        duration, gflops);
-
-  // double flops = 2 * static_cast<double>(X_size) *
-  // static_cast<double>(Y_size) *
-  //                static_cast<double>(K_size);
-  // double gflop = flops / 1E9;
-  // std::cout << "[X_size = " << X_size << ", Y_size = " << Y_size
-  //           << ", K_size = " << K_size
-  //           << "] inner performance: " << (repetitions * gflop / duration)
-  //           << "Gflops (average across repetitions)" << std::endl;
-
   return C_return;
 }
 } // namespace combined

@@ -14,18 +14,10 @@ AUTOTUNE_DECLARE_KERNEL(std::vector<double>(std::size_t, std::vector<double> &,
 
 namespace combined {
 
-// // max 2 L3 par set to 1024 (rest 512)
-// constexpr uint64_t L3_X = 180;
-// constexpr uint64_t L3_Y = 256;
-// constexpr uint64_t L3_K_STEP = 256;
-
 class combined {
 
 public:
   std::size_t N_org;
-  // std::size_t X_size;
-  // std::size_t Y_size;
-  // std::size_t K_size;
 
   std::vector<double> A_org;
   std::vector<double> B_org;
