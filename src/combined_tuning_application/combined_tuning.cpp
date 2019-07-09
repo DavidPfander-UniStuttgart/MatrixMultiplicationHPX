@@ -32,9 +32,9 @@
 // #define DO_LINE_SEARCH
 #define DO_PARALLEL_LINE_SEARCH
 // #define DO_NEIGHBOR_SEARCH
-// #define DO_PARALLEL_NEIGHBOR_SEARCH
+#define DO_PARALLEL_NEIGHBOR_SEARCH
 // #define DO_FULL_NEIGHBOR_SEARCH
-// #define DO_MONTE_CARLO
+#define DO_MONTE_CARLO
 // #define DO_GREEDY_NEIGHBOR_SEARCH
 
 // #define DO_LINE_SEARCH_SPLIT
@@ -866,7 +866,7 @@ int main(int argc, char **argv) {
     autotune::tuners::parallel_neighborhood_search tuner(
         autotune::combined_kernel, parameters, search_steps);
     tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
-    do_tuning(tuner, parameters, scenario_name + "_neighborhood_search");
+    do_tuning(tuner, parameters, scenario_name + "_parallel_neighborhood_search");
   }
 #endif
 #ifdef DO_FULL_NEIGHBOR_SEARCH
