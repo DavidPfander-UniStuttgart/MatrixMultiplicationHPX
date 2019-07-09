@@ -419,9 +419,9 @@ int main(int argc, char **argv) {
   autotune::countable_continuous_parameter p12("X_REG", 1, 1, 1, 5);
   autotune::countable_continuous_parameter p13("Y_BASE_WIDTH", 1, 1, 1, 5);
 
-  int64_t smt_factor = 2;
+  int64_t smt_factor = 1;
   if (node_name.compare("knl") == 0) {
-    smt_factor = 3;
+    smt_factor = 2;
   }
   size_t openmp_threads = omp_get_max_threads();
   detail::thread_values.push_back(openmp_threads);
