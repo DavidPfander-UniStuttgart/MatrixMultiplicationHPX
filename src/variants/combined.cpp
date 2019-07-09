@@ -86,6 +86,7 @@ std::vector<double> combined::matrix_multiply(double &duration, double &gflops,
       parameters.add_parameter(p11);
       parameters.add_parameter(p12);
       parameters.add_parameter(p13);
+      parameters.add_parameter(p14);
 
       autotune::combined_kernel.set_parameter_values(parameters);
     }
