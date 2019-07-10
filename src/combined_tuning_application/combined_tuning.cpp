@@ -425,13 +425,10 @@ int main(int argc, char **argv) {
   }
   size_t openmp_threads = omp_get_max_threads();
   detail::thread_values.push_back(openmp_threads);
-  std::cout << "KERNEL_OMP_THREADS values: ";
+  std::cout << "KERNEL_OMP_THREADS values: " << openmp_threads;
   for (int64_t i = 0; i < smt_factor; i++) { // 4-way HT assumed max
     openmp_threads /= 2;
-    if (i > 0) {
-      std::cout << ", ";
-    }
-    std::cout << openmp_threads;
+    std::cout << ", " << openmp_threads;
     detail::thread_values.push_back(openmp_threads);
   }
   std::cout << std::endl;
