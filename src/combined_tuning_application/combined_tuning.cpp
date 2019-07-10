@@ -216,10 +216,9 @@ void do_tuning(tuner_t &tuner, parameter_set_type &ps,
     }
     autotune::parameter_value_set pv =
         autotune::to_parameter_values(optimal_parameters);
-    autotune::parameter_values_to_file(pv,
-                                       scenario_name + std::string("_") +
-                                           std::to_string(restart) +
-                                           std::string(".json"));
+    autotune::parameter_values_to_file(pv, scenario_name + std::string("_") +
+                                               std::to_string(restart) +
+                                               std::string(".json"));
 
     std::cout << "----------------------- end tuning -----------------------"
               << std::endl;
@@ -254,18 +253,20 @@ int main(int argc, char **argv) {
     return 1;
   } else if (argc > 5) {
     std::cerr << "Error: two many arguments given!" << std::endl;
-    std::cerr << "args: node name; scenario suffix; N" << std::endl;
+    std::cerr << "args: node name; scenario suffix; N; rep" << std::endl;
     return 1;
   }
   std::string scenario_name(argv[1]);
-  scenario_name += std::string("_") + std::string(argv[2]);
+  scenario_name += std::string("_") + std::string(argv[2]));
   std::string node_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
   detail::N = stod(std::string(argv[3]));
   std::cout << "N: " << detail::N << std::endl;
   detail::repetitions = stod(std::string(argv[4]));
   std::cout << "repetitions: " << detail::repetitions << std::endl;
-  scenario_name = scenario_name + std::string("_") + std::to_string(detail::N);
+  scenario_name = scenario_name + std::string("_") + std::to_string(detail::N) +
+                  std::string("_") + std::string(detail::repetitions) +
+                  std::string("r");
 
   //   uint64_t l1_size_bytes = 0;
   //   uint64_t l2_size_bytes = 0;
@@ -585,74 +586,74 @@ int main(int argc, char **argv) {
   autotune::combined_kernel.set_precompile_validate_parameter_functor(
       precompile_validate_parameter_functor);
 
-// size_t global_restarts = 3;
-// // std::vector<autotune::parameter_value_set> restart_value_sets;
-// std::vector<autotune::parameter_value_set> restart_value_sets;
-// for (size_t i = 0; i < global_restarts; i++) {
-//   autotune::parameter_value_set parameter_values;
-//   // find random valid start value (first round use initial value)
-//   while (true) {
-//     iterate_parameter_groups(
-//         [&](auto &p) {
-//           p->set_random_value();
-//           parameter_values[p->get_name()] = p->get_value();
-//         },
-//         parameters_group_register, parameters_group_l1,
-//         parameters_group_l2, parameters_group_other);
-//     if (precompile_validate_parameter_functor(parameter_values)) {
-//       restart_value_sets.push_back(parameter_values);
-//       break;
-//     }
-//   }
-// }
+  // size_t global_restarts = 3;
+  // // std::vector<autotune::parameter_value_set> restart_value_sets;
+  // std::vector<autotune::parameter_value_set> restart_value_sets;
+  // for (size_t i = 0; i < global_restarts; i++) {
+  //   autotune::parameter_value_set parameter_values;
+  //   // find random valid start value (first round use initial value)
+  //   while (true) {
+  //     iterate_parameter_groups(
+  //         [&](auto &p) {
+  //           p->set_random_value();
+  //           parameter_values[p->get_name()] = p->get_value();
+  //         },
+  //         parameters_group_register, parameters_group_l1,
+  //         parameters_group_l2, parameters_group_other);
+  //     if (precompile_validate_parameter_functor(parameter_values)) {
+  //       restart_value_sets.push_back(parameter_values);
+  //       break;
+  //     }
+  //   }
+  // }
 
-// #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||
-//     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
-// auto parameter_group_l1_adjustment_functor = [native_vector_width](
-//     autotune::countable_set &parameters,
-//     autotune::parameter_value_set parameter_values) -> void {
-//   auto x_reg = stol(parameter_values["X_REG"]);
-//   auto y_base_width = stol(parameter_values["Y_BASE_WIDTH"]);
-//   auto &l1_x =
-//       parameters.get_by_name<autotune::countable_continuous_parameter>(
-//           "L1_X");
-//   auto &l1_y =
-//       parameters.get_by_name<autotune::countable_continuous_parameter>(
-//           "L1_Y");
+  // #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||
+  //     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
+  // auto parameter_group_l1_adjustment_functor = [native_vector_width](
+  //     autotune::countable_set &parameters,
+  //     autotune::parameter_value_set parameter_values) -> void {
+  //   auto x_reg = stol(parameter_values["X_REG"]);
+  //   auto y_base_width = stol(parameter_values["Y_BASE_WIDTH"]);
+  //   auto &l1_x =
+  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //           "L1_X");
+  //   auto &l1_y =
+  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //           "L1_Y");
 
-//   const double y_reg_value = y_base_width * native_vector_width;
+  //   const double y_reg_value = y_base_width * native_vector_width;
 
-//   // register parameters are always correct, never changed
+  //   // register parameters are always correct, never changed
 
-//   l1_x.to_nearest_valid(x_reg);
+  //   l1_x.to_nearest_valid(x_reg);
 
-//   l1_y.to_nearest_valid(y_reg_value);
-// };
-// auto parameter_group_l2_adjustment_functor = [native_vector_width](
-//     autotune::countable_set &parameters,
-//     autotune::parameter_value_set parameter_values) -> void {
-//   auto l1_x = stol(parameter_values["L1_X"]);
-//   auto l1_y = stol(parameter_values["L1_Y"]);
-//   auto l1_k_step = stol(parameter_values["L1_K"]);
-//   auto &l2_x =
-//       parameters.get_by_name<autotune::countable_continuous_parameter>(
-//           "L2_X");
-//   auto &l2_y =
-//       parameters.get_by_name<autotune::countable_continuous_parameter>(
-//           "L2_Y");
-//   auto &l2_k_step =
-//       parameters.get_by_name<autotune::countable_continuous_parameter>(
-//           "L2_K");
+  //   l1_y.to_nearest_valid(y_reg_value);
+  // };
+  // auto parameter_group_l2_adjustment_functor = [native_vector_width](
+  //     autotune::countable_set &parameters,
+  //     autotune::parameter_value_set parameter_values) -> void {
+  //   auto l1_x = stol(parameter_values["L1_X"]);
+  //   auto l1_y = stol(parameter_values["L1_Y"]);
+  //   auto l1_k_step = stol(parameter_values["L1_K"]);
+  //   auto &l2_x =
+  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //           "L2_X");
+  //   auto &l2_y =
+  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //           "L2_Y");
+  //   auto &l2_k_step =
+  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //           "L2_K");
 
-//   // register parameters are always correct, never changed
+  //   // register parameters are always correct, never changed
 
-//   l2_x.to_nearest_valid(l1_x);
+  //   l2_x.to_nearest_valid(l1_x);
 
-//   l2_y.to_nearest_valid(l1_y);
+  //   l2_y.to_nearest_valid(l1_y);
 
-//   l2_k_step.to_nearest_valid(l1_k_step);
-// };
-// #endif
+  //   l2_k_step.to_nearest_valid(l1_k_step);
+  // };
+  // #endif
 
 #if defined(DO_PARALLEL_LINE_SEARCH) || defined(DO_LINE_SEARCH) ||             \
     defined(DO_NEIGHBOR_SEARCH) || defined(DO_FULL_NEIGHBOR_SEARCH) ||         \
@@ -711,7 +712,7 @@ int main(int argc, char **argv) {
   };
 #endif
 
-///////////// new adjust
+  ///////////// new adjust
 
 #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||      \
     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT) ||                                  \
@@ -768,7 +769,7 @@ int main(int argc, char **argv) {
   };
 #endif
 
-///////////// end new adjust
+  ///////////// end new adjust
 
 #ifdef DO_MONTE_CARLO
   auto parameter_adjustment_functor_randomizable =
