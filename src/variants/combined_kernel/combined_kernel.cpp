@@ -24,16 +24,6 @@ using Vc::double_v;
 constexpr size_t Y_REG = Y_BASE_WIDTH * double_v::size(); // don't set directly
 using reg_array = opttmp::vectorization::register_array<double_v, Y_BASE_WIDTH>;
 
-/*#define L1_X (X_REG*L1_X_FACTOR)
-#define L1_Y (Y_REG*L1_Y_FACTOR)
-#define L2_X (X_REG*L1_X_FACTOR*L2_X_FACTOR)
-#define L2_Y (Y_REG*L1_Y_FACTOR*L2_Y_FACTOR)
-#define L2_K (L1_K*L2_K_FACTOR)*/
-
-// #define L3_K 100
-// #define L3_X 320
-// #define L3_Y 384 // 96 192 288 384 484
-
 using namespace index_iterator;
 
 AUTOTUNE_EXPORT bool is_valid_parameter_combination() {

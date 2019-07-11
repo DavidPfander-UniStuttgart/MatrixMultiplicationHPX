@@ -30,14 +30,14 @@
 // #define WITH_LIBLIKWID // controlled by cmake
 
 // #define DO_LINE_SEARCH
-#define DO_PARALLEL_LINE_SEARCH
+// #define DO_PARALLEL_LINE_SEARCH
 // #define DO_NEIGHBOR_SEARCH
-#define DO_PARALLEL_NEIGHBOR_SEARCH
+// #define DO_PARALLEL_NEIGHBOR_SEARCH
 // #define DO_FULL_NEIGHBOR_SEARCH
-#define DO_MONTE_CARLO
+// #define DO_MONTE_CARLO
 // #define DO_GREEDY_NEIGHBOR_SEARCH
 
-// #define DO_LINE_SEARCH_SPLIT
+#define DO_LINE_SEARCH_SPLIT
 // #define DO_NEIGHBOR_SEARCH_SPLIT
 // #define DO_FULL_NEIGHBOR_SEARCH_SPLIT
 // #define DO_GREEDY_NEIGHBOR_SEARCH_SPLIT
@@ -60,6 +60,7 @@ double duration_kernel;
 double gflops_kernel;
 std::vector<size_t> thread_values;
 size_t native_vector_width;
+std::map<std::string, std::string> pvn_values_map;
 
 std::function<bool(const std::vector<double> &C)> test_result =
     [&](const std::vector<double> &C) -> bool {
@@ -102,6 +103,48 @@ void evaluate_pvn(parameter_set_type &parameters, std::ofstream &pvn_csv_file,
                << detail::gflops_kernel << std::endl;
   if (key.compare("None") != 0) {
     parameters.get_by_name(key)->set_value_unsafe(old_value);
+  }
+}
+
+template <typename parameter_set_type>
+void evaluate_pvn_group(parameter_set_type &parameters,
+                        std::ofstream &pvn_csv_file,
+                        const std::string &group_name,
+                        const std::vector<std::string> &keys,
+                        const std::vector<std::string> &new_values) {
+  std::cout << "evaluate_pvn_group: ";
+  for (const std::string &key : keys) {
+    std::cout << key << " ";
+  }
+  std::cout << std::endl;
+  std::vector<std::string> old_values;
+  if (keys.size() > 0) {
+    for (const std::string &key : keys) {
+      old_values.push_back(parameters.get_by_name(key)->get_value());
+    }
+    for (size_t i = 0; i < new_values.size(); i += 1) {
+      parameters.get_by_name(keys[i])->set_value_unsafe(new_values[i]);
+    }
+  }
+  autotune::combined_kernel.set_parameter_values(parameters);
+  std::vector<double> C = autotune::combined_kernel(
+      detail::N, detail::A, detail::B, detail::repetitions,
+      detail::duration_kernel, detail::gflops_kernel);
+  bool test_ok = detail::test_result(C);
+  if (test_ok) {
+    std::cout << "optimal parameters test ok!" << std::endl;
+  } else {
+    std::cout << "optimal parameters FAILED test!" << std::endl;
+  }
+  for (size_t i = 0; i < parameters.size(); i += 1) {
+    pvn_csv_file << parameters[i]->get_value() << ",";
+  }
+  pvn_csv_file << group_name << "," << detail::duration_kernel << ","
+               << detail::gflops_kernel << std::endl;
+  if (keys.size() > 0) {
+    for (size_t i = 0; i < new_values.size(); i += 1) {
+      parameters.get_by_name(keys[i])->set_value_unsafe(old_values[i]);
+    }
   }
 }
 
@@ -150,6 +193,20 @@ void pvn_compare(const std::string &scenario_name,
                parameters.get_by_name("L2_Y")->get_value());
   evaluate_pvn(parameters, pvn_csv_file, "L3_K",
                parameters.get_by_name("L2_K")->get_value());
+
+  evaluate_pvn_group(parameters, pvn_csv_file, "L3_GROUP",
+                     {"L3_X", "L3_Y", "L3_K"},
+                     {parameters.get_by_name("L2_X")->get_value(),
+                      parameters.get_by_name("L2_Y")->get_value(),
+                      parameters.get_by_name("L2_K")->get_value()});
+  evaluate_pvn_group(parameters, pvn_csv_file, "L2_L3_GROUP",
+                     {"L3_X", "L3_Y", "L3_K", "L2_X", "L2_Y", "L2_K"},
+                     {parameters.get_by_name("L1_X")->get_value(),
+                      parameters.get_by_name("L1_Y")->get_value(),
+                      parameters.get_by_name("L1_K")->get_value(),
+                      parameters.get_by_name("L1_X")->get_value(),
+                      parameters.get_by_name("L1_Y")->get_value(),
+                      parameters.get_by_name("L1_K")->get_value()});
   // other parameters
   evaluate_pvn(parameters, pvn_csv_file, "KERNEL_OMP_THREADS",
                std::to_string(detail::thread_values[0]));
@@ -178,21 +235,9 @@ void do_tuning(tuner_t &tuner, parameter_set_type &ps,
         valid_start_found = true; // should get adjusted
       }
     } else {
-      ps.get_by_name("KERNEL_NUMA")->set_value_unsafe("0");
-      ps.get_by_name("KERNEL_SCHEDULE")->set_value_unsafe("0");
-      ps.get_by_name("X_REG")->set_value_unsafe("1");
-      ps.get_by_name("Y_BASE_WIDTH")->set_value_unsafe("1");
-      ps.get_by_name("L1_X")->set_value_unsafe("10");
-      ps.get_by_name("L1_Y")->set_value_unsafe("8");
-      ps.get_by_name("L1_K")->set_value_unsafe("16");
-      ps.get_by_name("L2_X")->set_value_unsafe("20");
-      ps.get_by_name("L2_Y")->set_value_unsafe("16");
-      ps.get_by_name("L2_K")->set_value_unsafe("32");
-      ps.get_by_name("L3_X")->set_value_unsafe("40");
-      ps.get_by_name("L3_Y")->set_value_unsafe("32");
-      ps.get_by_name("L3_K")->set_value_unsafe("64");
-      ps.get_by_name("KERNEL_OMP_THREADS")
-          ->set_value_unsafe(std::to_string(detail::thread_values[0]));
+      for (auto &pair : detail::pvn_values_map) {
+        ps.get_by_name(pair.first)->set_value_unsafe(pair.second);
+      }
     }
 
     tuner.set_verbose(true);
@@ -229,7 +274,7 @@ void do_tuning(tuner_t &tuner, parameter_set_type &ps,
     std::cout
         << "----------------------- end pvn compare -----------------------"
         << std::endl;
-    std::cout << "optimal parameter values (parallel line search, large):"
+    std::cout << "optimal parameter values:"
               << std::endl;
     optimal_parameters.print_values();
     autotune::combined_kernel.set_parameter_values(optimal_parameters);
@@ -257,7 +302,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   std::string scenario_name(argv[1]);
-  scenario_name += std::string("_") + std::string(argv[2]));
+  scenario_name += std::string("_") + std::string(argv[2]);
   std::string node_name(argv[1]);
   std::cout << "scenario_name: " << scenario_name << std::endl;
   detail::N = stod(std::string(argv[3]));
@@ -265,7 +310,7 @@ int main(int argc, char **argv) {
   detail::repetitions = stod(std::string(argv[4]));
   std::cout << "repetitions: " << detail::repetitions << std::endl;
   scenario_name = scenario_name + std::string("_") + std::to_string(detail::N) +
-                  std::string("_") + std::string(detail::repetitions) +
+                  std::string("_") + std::to_string(detail::repetitions) +
                   std::string("r");
 
   //   uint64_t l1_size_bytes = 0;
@@ -405,9 +450,9 @@ int main(int argc, char **argv) {
                                         {0, 1}); // 0 == none, 1 == copy
   autotune::fixed_set_parameter<int> p2("KERNEL_SCHEDULE",
                                         {0, 1}); // 0==static, 1==dynamic
-  autotune::countable_continuous_parameter p3("L3_X", 40, 20, 40, 400);
-  autotune::countable_continuous_parameter p4("L3_Y", 32, 32, 32, 448);
-  autotune::countable_continuous_parameter p5("L3_K", 64, 64, 64, 512);
+  autotune::countable_continuous_parameter p3("L3_X", 20, 20, 20, 400);
+  autotune::countable_continuous_parameter p4("L3_Y", 16, 32, 16, 448);
+  autotune::countable_continuous_parameter p5("L3_K", 32, 64, 32, 512);
 
   autotune::countable_continuous_parameter p6("L2_X", 20, 10, 20, 100);
   autotune::countable_continuous_parameter p7("L2_Y", 16, 16, 16, 128);
@@ -436,22 +481,25 @@ int main(int argc, char **argv) {
   autotune::fixed_set_parameter<size_t> p14("KERNEL_OMP_THREADS",
                                             detail::thread_values);
 
-  // TODO: needs adjust if commented in
-  // autotune::countable_set parameters_group_register;
-  // autotune::countable_set parameters_group_l1;
-  // autotune::countable_set parameters_group_l2;
-  // autotune::countable_set parameters_group_other;
-  // parameters_group_register.add_parameter(p1);
-  // parameters_group_register.add_parameter(p2);
-  // parameters_group_l1.add_parameter(p3);
-  // parameters_group_l1.add_parameter(p4);
-  // parameters_group_l1.add_parameter(p5);
-  // parameters_group_l2.add_parameter(p6);
-  // parameters_group_l2.add_parameter(p7);
-  // parameters_group_l2.add_parameter(p8);
-  // parameters_group_other.add_parameter(p9);
-  // parameters_group_other.add_parameter(p0a);
-  // parameters_group_other.add_parameter(p0b);
+  autotune::countable_set parameters_group_register;
+  autotune::countable_set parameters_group_l1;
+  autotune::countable_set parameters_group_l2;
+  autotune::countable_set parameters_group_l3;
+  autotune::countable_set parameters_group_other;
+  parameters_group_other.add_parameter(p1);
+  parameters_group_other.add_parameter(p2);
+  parameters_group_other.add_parameter(p14);
+  parameters_group_l3.add_parameter(p3);
+  parameters_group_l3.add_parameter(p4);
+  parameters_group_l3.add_parameter(p5);
+  parameters_group_l2.add_parameter(p6);
+  parameters_group_l2.add_parameter(p7);
+  parameters_group_l2.add_parameter(p8);
+  parameters_group_l1.add_parameter(p9);
+  parameters_group_l1.add_parameter(p10);
+  parameters_group_l1.add_parameter(p11);
+  parameters_group_register.add_parameter(p12);
+  parameters_group_register.add_parameter(p13);
 
   autotune::countable_set parameters;
   parameters.add_parameter(p1);
@@ -487,13 +535,15 @@ int main(int argc, char **argv) {
 
   autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
 
-  // #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||      \
-//     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
-  //   autotune::combined_kernel.set_parameter_values(parameters_group_register);
-  //   autotune::combined_kernel.set_parameter_values(parameters_group_l1);
-  //   autotune::combined_kernel.set_parameter_values(parameters_group_l2);
-  //   autotune::combined_kernel.set_parameter_values(parameters_group_other);
-  // #endif
+#if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||      \
+    defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
+  autotune::combined_kernel.set_parameter_values(parameters_group_other);
+  autotune::combined_kernel.set_parameter_values(parameters_group_l3);
+  autotune::combined_kernel.set_parameter_values(parameters_group_l2);
+  autotune::combined_kernel.set_parameter_values(parameters_group_l1);
+  autotune::combined_kernel.set_parameter_values(parameters_group_register);
+
+#endif
 
   auto precompile_validate_parameter_functor =
       [](autotune::parameter_value_set &parameters) -> bool {
@@ -608,51 +658,63 @@ int main(int argc, char **argv) {
   // }
 
   // #if defined(DO_LINE_SEARCH_SPLIT) || defined(DO_NEIGHBOR_SEARCH_SPLIT) ||
-  //     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
-  // auto parameter_group_l1_adjustment_functor = [native_vector_width](
-  //     autotune::countable_set &parameters,
-  //     autotune::parameter_value_set parameter_values) -> void {
-  //   auto x_reg = stol(parameter_values["X_REG"]);
-  //   auto y_base_width = stol(parameter_values["Y_BASE_WIDTH"]);
-  //   auto &l1_x =
-  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
-  //           "L1_X");
-  //   auto &l1_y =
-  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
-  //           "L1_Y");
+  // defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
+  //   auto parameter_group_l1_adjustment_functor =
+  //       [](autotune::countable_set &parameters,
+  //          autotune::parameter_value_set parameter_values) -> void {
+  //     auto x_reg = stol(parameter_values["X_REG"]);
+  //     auto y_base_width = stol(parameter_values["Y_BASE_WIDTH"]);
+  //     auto &l1_x =
+  //         parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //             "L1_X");
+  //     auto &l1_y =
+  //         parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //             "L1_Y");
 
-  //   const double y_reg_value = y_base_width * native_vector_width;
+  //     const double y_reg_value = y_base_width * detail::native_vector_width;
 
-  //   // register parameters are always correct, never changed
-
-  //   l1_x.to_nearest_valid(x_reg);
-
-  //   l1_y.to_nearest_valid(y_reg_value);
-  // };
-  // auto parameter_group_l2_adjustment_functor = [native_vector_width](
-  //     autotune::countable_set &parameters,
-  //     autotune::parameter_value_set parameter_values) -> void {
-  //   auto l1_x = stol(parameter_values["L1_X"]);
-  //   auto l1_y = stol(parameter_values["L1_Y"]);
-  //   auto l1_k_step = stol(parameter_values["L1_K"]);
-  //   auto &l2_x =
-  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
-  //           "L2_X");
-  //   auto &l2_y =
-  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
-  //           "L2_Y");
-  //   auto &l2_k_step =
-  //       parameters.get_by_name<autotune::countable_continuous_parameter>(
-  //           "L2_K");
-
-  //   // register parameters are always correct, never changed
-
-  //   l2_x.to_nearest_valid(l1_x);
-
-  //   l2_y.to_nearest_valid(l1_y);
-
-  //   l2_k_step.to_nearest_valid(l1_k_step);
-  // };
+  //     // register parameters are always correct, never changed
+  //     l1_x.to_nearest_valid(x_reg);
+  //     l1_y.to_nearest_valid(y_reg_value);
+  //   };
+  //   auto parameter_group_l2_adjustment_functor =
+  //       [](autotune::countable_set &parameters,
+  //          autotune::parameter_value_set parameter_values) -> void {
+  //     auto l1_x = stol(parameter_values["L1_X"]);
+  //     auto l1_y = stol(parameter_values["L1_Y"]);
+  //     auto l1_k_step = stol(parameter_values["L1_K"]);
+  //     auto &l2_x =
+  //         parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //             "L2_X");
+  //     auto &l2_y =
+  //         parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //             "L2_Y");
+  //     auto &l2_k_step =
+  //         parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //             "L2_K");
+  //     l2_x.to_nearest_valid(l1_x);
+  //     l2_y.to_nearest_valid(l1_y);
+  //     l2_k_step.to_nearest_valid(l1_k_step);
+  //   };
+  //   auto parameter_group_l3_adjustment_functor =
+  //       [](autotune::countable_set &parameters,
+  //          autotune::parameter_value_set parameter_values) -> void {
+  //     auto l2_x = stol(parameter_values["L2_X"]);
+  //     auto l2_y = stol(parameter_values["L2_Y"]);
+  //     auto l2_k = stol(parameter_values["L2_K"]);
+  //     auto &l3_x =
+  //         parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //             "L3_X");
+  //     auto &l3_y =
+  //         parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //             "L3_Y");
+  //     auto &l3_k =
+  //         parameters.get_by_name<autotune::countable_continuous_parameter>(
+  //             "L3_K");
+  //     l3_x.to_nearest_valid(l2_x);
+  //     l3_y.to_nearest_valid(l2_y);
+  //     l3_k.to_nearest_valid(l2_k);
+  //   };
   // #endif
 
 #if defined(DO_PARALLEL_LINE_SEARCH) || defined(DO_LINE_SEARCH) ||             \
@@ -826,6 +888,41 @@ int main(int argc, char **argv) {
   };
 #endif
 
+  detail::pvn_values_map.emplace("KERNEL_NUMA", "0");
+  detail::pvn_values_map.emplace("KERNEL_SCHEDULE", "0");
+  detail::pvn_values_map.emplace("X_REG", "1");
+  detail::pvn_values_map.emplace("Y_BASE_WIDTH", "1");
+  detail::pvn_values_map.emplace("L1_X", "10");
+  detail::pvn_values_map.emplace("L1_Y", "8");
+  detail::pvn_values_map.emplace("L1_K", "16");
+  detail::pvn_values_map.emplace("L2_X", "20");
+  detail::pvn_values_map.emplace("L2_Y", "16");
+  detail::pvn_values_map.emplace("L2_K", "32");
+  detail::pvn_values_map.emplace("L3_X", "20");
+  detail::pvn_values_map.emplace("L3_Y", "16");
+  detail::pvn_values_map.emplace("L3_K", "32");
+  std::string first_thread_value = std::to_string(detail::thread_values[0]);
+  detail::pvn_values_map.emplace("KERNEL_OMP_THREADS",
+                                 first_thread_value.c_str());
+
+  // parameters.get_by_name("KERNEL_NUMA")->set_value_unsafe("1");
+  // parameters.get_by_name("KERNEL_SCHEDULE")->set_value_unsafe("1");
+  // parameters.get_by_name("X_REG")->set_value_unsafe("5");
+  // parameters.get_by_name("Y_BASE_WIDTH")->set_value_unsafe("4");
+  // parameters.get_by_name("L1_X")->set_value_unsafe("25");
+  // parameters.get_by_name("L1_Y")->set_value_unsafe("32");
+  // parameters.get_by_name("L1_K")->set_value_unsafe("64");
+  // parameters.get_by_name("L2_X")->set_value_unsafe("100");
+  // parameters.get_by_name("L2_Y")->set_value_unsafe("128");
+  // parameters.get_by_name("L2_K")->set_value_unsafe("64");
+  // parameters.get_by_name("L3_X")->set_value_unsafe("100");
+  // parameters.get_by_name("L3_Y")->set_value_unsafe("128");
+  // parameters.get_by_name("L3_K")->set_value_unsafe("256");
+  // parameters.get_by_name("KERNEL_OMP_THREADS")
+  //     ->set_value_unsafe(std::to_string(detail::thread_values[0]));
+  // pvn_compare(scenario_name + std::string("_") + std::to_string(0),
+  // parameters); return 0;
+
 #ifdef DO_LINE_SEARCH
   {
     std::cout << "----------------- starting tuning with line search "
@@ -917,121 +1014,105 @@ int main(int argc, char **argv) {
     do_tuning(tuner, parameters, scenario_name + "_greedy_neighborhood_search");
   }
 #endif
-// #ifdef DO_LINE_SEARCH_SPLIT
-//   {
-//     std::cout
-//         << "----------------- starting tuning with line search ------------ "
-//         << std::endl;
-//     size_t line_search_steps =
-//         10; // set to 10, will iterate absolutely all values!
-//     size_t group_repeat =
-//         3;               // how often is the each group of parameters looked
-//         at
-//     size_t restarts = 1; // number of initial random experiments
+#ifdef DO_LINE_SEARCH_SPLIT
+  {
+    std::cout << "------ starting tuning with split line search "
+                 "------"
+              << std::endl;
+    size_t line_search_steps = 10;
+    size_t group_repeat = 3;
 
-//     autotune::parameter_value_set original_parameters =
-//         autotune::combined_kernel.get_parameter_values();
+    autotune::parameter_value_set original_parameters =
+        autotune::combined_kernel.get_parameter_values();
 
-//     for (size_t restart = 0; restart < restarts; restart++) {
-//       std::cout << "restart: " << restart << std::endl;
-//       bool valid_start_found = false;
+    autotune::parameter_value_set parameter_values;
+    for (auto &pair : detail::pvn_values_map) {
+      parameter_values[pair.first] = pair.second;
+    }
+    // make sure that all parameters are known to the kernel
+    autotune::combined_kernel.set_parameter_values(parameter_values);
+    autotune::print_parameter_values(
+        autotune::combined_kernel.get_parameter_values());
 
-//       autotune::parameter_value_set parameter_values;
-//       // find random valid start value (first round use initial value)
-//       while (!valid_start_found) {
-//         iterate_parameter_groups(
-//             [&](auto &p) {
-//               if (restart == 0)
-//                 p->set_initial();
-//               else
-//                 p->set_random_value();
-//               parameter_values[p->get_name()] = p->get_value();
-//             },
-//             parameters_group_register, parameters_group_l1,
-//             parameters_group_l2, parameters_group_other);
-//         if (precompile_validate_parameter_functor(parameter_values)) {
-//           valid_start_found = true;
-//         }
-//       }
-//       // make sure that all parameters are known to the kernel
-//       // TODO: should not be necessary -> improve!
-//       autotune::combined_kernel.set_parameter_values(parameter_values);
+    // create all tuners
+    autotune::tuners::parallel_line_search tuner_l3(
+        autotune::combined_kernel, parameters_group_l3, line_search_steps);
+    tuner_l3.set_parameter_values_adjustment_functor(
+        parameter_values_adjust_functor);
+    tuner_l3.set_write_measurement(scenario_name + "_split_parallel_line_search_l3");
+    tuner_l3.setup_test(detail::test_result);
 
-//       // create all tuners
-//       autotune::tuners::line_search tuner_l2(
-//           autotune::combined_kernel, parameters_group_l2, line_search_steps);
-//       tuner_l2.set_parameter_values_adjustment_functor(
-//           parameter_values_adjust_functor);
-//       tuner_l2.set_write_measurement(scenario_name + "_split_line_search_l2_"
-//       +
-//                                      std::to_string(restart));
+    autotune::tuners::parallel_line_search tuner_l2(
+        autotune::combined_kernel, parameters_group_l2, line_search_steps);
+    tuner_l2.set_parameter_values_adjustment_functor(
+        parameter_values_adjust_functor);
+    tuner_l2.set_write_measurement(scenario_name + "_split_parallel_line_search_l2");
+    tuner_l2.setup_test(detail::test_result);
 
-//       autotune::tuners::line_search tuner_l1(
-//           autotune::combined_kernel, parameters_group_l1, line_search_steps);
-//       tuner_l1.set_parameter_values_adjustment_functor(
-//           parameter_values_adjust_functor);
-//       tuner_l1.set_write_measurement(scenario_name + "_split_line_search_l1_"
-//       +
-//                                      std::to_string(restart));
+    autotune::tuners::parallel_line_search tuner_l1(
+        autotune::combined_kernel, parameters_group_l1, line_search_steps);
+    tuner_l1.set_parameter_values_adjustment_functor(
+        parameter_values_adjust_functor);
+    tuner_l1.set_write_measurement(scenario_name + "_split_parallel_line_search_l1");
+    tuner_l1.setup_test(detail::test_result);
 
-//       autotune::tuners::line_search tuner_reg(autotune::combined_kernel,
-//                                               parameters_group_register,
-//                                               line_search_steps);
-//       tuner_reg.set_parameter_values_adjustment_functor(
-//           parameter_values_adjust_functor);
-//       tuner_reg.set_write_measurement(scenario_name +
-//                                       "_split_line_search_register_" +
-//                                       std::to_string(restart));
+    autotune::tuners::parallel_line_search tuner_reg(autotune::combined_kernel,
+                                                     parameters_group_register,
+                                                     line_search_steps);
+    tuner_reg.set_parameter_values_adjustment_functor(
+        parameter_values_adjust_functor);
+    tuner_reg.set_write_measurement(scenario_name +
+                                    "_split_parallel_line_search_register");
+    tuner_reg.setup_test(detail::test_result);
 
-//       autotune::tuners::line_search tuner_other(
-//           autotune::combined_kernel, parameters_group_other,
-//           line_search_steps);
-//       tuner_other.set_write_measurement(scenario_name +
-//                                         "_split_line_search_other_" +
-//                                         std::to_string(restart));
+    autotune::tuners::parallel_line_search tuner_other(
+        autotune::combined_kernel, parameters_group_other, line_search_steps);
+    tuner_other.set_write_measurement(scenario_name +
+                                      "_split_parallel_line_search_other");
+    tuner_other.setup_test(detail::test_result);
 
-//       autotune::tuners::group_tuner g(autotune::combined_kernel,
-//       group_repeat,
-//                                       tuner_l2, tuner_l1, tuner_reg,
-//                                       tuner_other);
-//       g.set_verbose(true);
-//       autotune::parameter_value_set optimal_parameter_values = g.tune(
-//           m.N_org, m.A_org, m.B_org, m.repetitions, detail::duration_kernel);
-//       autotune::combined_kernel.set_parameter_values(optimal_parameter_values);
+    autotune::tuners::group_tuner g(autotune::combined_kernel, group_repeat,
+                                    tuner_l3, tuner_l2, tuner_l1, tuner_reg,
+                                    tuner_other);
+    g.set_verbose(true);
+    autotune::parameter_value_set optimal_parameter_values =
+        g.tune(m.N_org, m.A_org, m.B_org, m.repetitions,
+               detail::duration_kernel, detail::gflops_kernel);
+    autotune::combined_kernel.set_parameter_values(optimal_parameter_values);
 
-//       std::cout << "----------------------- end tuning
-//       -----------------------"
-//                 << std::endl;
-//       std::cout << "optimal parameter values (split line search):" <<
-//       std::endl; autotune::print_parameter_values(
-//           autotune::combined_kernel.get_parameter_values());
-//       autotune::combined_kernel.compile();
+    std::cout << "----------------------- end tuning -----------------------"
+              << std::endl;
+    // std::cout << "optimal parameter values (split line search):" << std::endl;
+    // autotune::print_parameter_values(
+    //     autotune::combined_kernel.get_parameter_values());
+    // autotune::combined_kernel.compile();
 
-//       std::vector<double> C = m.matrix_multiply(detail::duration_kernel);
-//       bool test_ok = detail::test_result(C);
-//       if (test_ok) {
-//         std::cout << "optimal parameters test ok!" << std::endl;
-//       } else {
-//         std::cout << "optimal parameters FAILED test!" << std::endl;
-//       }
+    // std::vector<double> C =
+    //     m.matrix_multiply(detail::duration_kernel, detail::gflops_kernel);
+    // bool test_ok = detail::test_result(C);
+    // if (test_ok) {
+    //   std::cout << "optimal parameters test ok!" << std::endl;
+    // } else {
+    //   std::cout << "optimal parameters FAILED test!" << std::endl;
+    // }
 
-//       double flops = 2 * static_cast<double>(detail::N) *
-//                      static_cast<double>(detail::N) *
-//                      static_cast<double>(detail::N);
-//       double gflop = flops / 1E9;
-//       std::cout << "optimal inner_duration (split line search): "
-//                 << detail::duration_kernel << std::endl;
-//       std::cout << "[N = " << detail::N << "] performance: "
-//                 << ((detail::repetitions * gflop) / detail::duration_kernel)
-//                 << "GFLOPS" << std::endl;
-//     }
+    // double flops = 2 * static_cast<double>(detail::N) *
+    //                static_cast<double>(detail::N) *
+    //                static_cast<double>(detail::N);
+    // double gflop = flops / 1E9;
+    // std::cout << "optimal inner_duration (split line search): "
+    //           << detail::duration_kernel << std::endl;
+    // std::cout << "[N = " << detail::N << "] performance: "
+    //           << ((detail::repetitions * gflop) / detail::duration_kernel)
+    //           << "GFLOPS" << std::endl;
 
-//     autotune::combined_kernel.set_parameter_values(original_parameters);
-//     iterate_parameter_groups([&](auto &p) { p->set_initial(); },
-//                              parameters_group_register, parameters_group_l1,
-//                              parameters_group_l2, parameters_group_other);
-//   }
-// #endif
+    // autotune::combined_kernel.set_parameter_values(original_parameters);
+    // iterate_parameter_groups([&](auto &p) { p->set_initial(); },
+    //                          parameters_group_register, parameters_group_l1,
+    //                          parameters_group_l2, parameters_group_l3,
+    //                          parameters_group_other);
+  }
+#endif
 // #ifdef DO_NEIGHBOR_SEARCH_SPLIT
 //   // tune with neighborhood search with parameter splitting
 //   {
