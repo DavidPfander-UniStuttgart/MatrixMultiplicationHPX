@@ -183,7 +183,7 @@ void pvn_compare(const std::string &scenario_name,
   evaluate_pvn(parameters, pvn_csv_file, "L1_K", "16");
   evaluate_pvn_group(
       parameters, pvn_csv_file, "L1_GROUP", {"L1_X", "L1_Y", "L1_K"},
-      {parameters.get_by_name("REG_X")->get_value(),
+      {parameters.get_by_name("X_REG")->get_value(),
        std::to_string(
            stod(parameters.get_by_name("Y_BASE_WIDTH")->get_value()) *
            detail::native_vector_width),
