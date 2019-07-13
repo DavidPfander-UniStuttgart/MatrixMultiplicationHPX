@@ -32,15 +32,15 @@
 // #define WITH_LIBLIKWID // controlled by cmake
 
 // #define DO_LINE_SEARCH
-// #define DO_PARALLEL_LINE_SEARCH
+#define DO_PARALLEL_LINE_SEARCH
 // #define DO_NEIGHBOR_SEARCH
-// #define DO_PARALLEL_NEIGHBOR_SEARCH
+#define DO_PARALLEL_NEIGHBOR_SEARCH
 // #define DO_FULL_NEIGHBOR_SEARCH
 // #define DO_MONTE_CARLO
 // #define DO_GREEDY_NEIGHBOR_SEARCH
 
 #define DO_PARALLEL_LINE_SEARCH_SPLIT
-// #define DO_PARALLEL_FULL_NEIGHBOR_SEARCH_SPLIT
+#define DO_PARALLEL_FULL_NEIGHBOR_SEARCH_SPLIT
 // #define DO_NEIGHBOR_SEARCH_SPLIT
 // #define DO_GREEDY_NEIGHBOR_SEARCH_SPLIT
 // #define DO_BRUTEFORCE
@@ -561,18 +561,6 @@ int main(int argc, char **argv) {
   randomizable_parameters.add_parameter(p_threads);
 
   autotune::combined_kernel.set_source_dir("src/variants/combined_kernel");
-
-  // #if defined(DO_PARALLEL_LINE_SEARCH_SPLIT) ||                                  \
-//     defined(DO_PARALLEL_FULL_NEIGHBOR_SEARCH_SPLIT) ||                         \
-//     defined(DO_NEIGHBOR_SEARCH_SPLIT) ||                                       \
-//     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
-  //   autotune::combined_kernel.set_parameter_values(parameters_group_other);
-  //   autotune::combined_kernel.set_parameter_values(parameters_group_l3);
-  //   // autotune::combined_kernel.set_parameter_values(parameters_group_l2);
-  //   autotune::combined_kernel.set_parameter_values(parameters_group_l1);
-  //   autotune::combined_kernel.set_parameter_values(parameters_group_register);
-
-  // #endif
 
   auto precompile_validate_parameter_functor =
       [](autotune::parameter_value_set &parameters) -> bool {
