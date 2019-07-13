@@ -158,12 +158,14 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
   std::vector<double, boost::alignment::aligned_allocator<double, 64>> C_padded(
       X_size * Y_size);
 
+#define A_trans_enable 1
+
+#if A_trans_enable == 1
   memory_layout::tiling_configuration tiling_spec_A_trans(2);
   tiling_spec_A_trans[0].tile_size_dir = L1_K;
   tiling_spec_A_trans[0].stride = K_size;
   tiling_spec_A_trans[1].tile_size_dir = L1_X;
   tiling_spec_A_trans[1].stride = X_size;
-
   std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       A_trans_untiled(A.size());
   for (size_t i = 0; i < K_size; i++) {
@@ -171,14 +173,43 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
       A_trans_untiled[i * X_size + j] = A[j * K_size + i];
     }
   }
+#else
+  memory_layout::tiling_configuration tiling_spec_A_padded(2);
+  tiling_spec_A_padded[0].tile_size_dir = L1_X;
+  tiling_spec_A_padded[0].stride = X_size;
+  tiling_spec_A_padded[1].tile_size_dir = L1_K;
+  tiling_spec_A_padded[1].stride = K_size;
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
+      A_padded_untiled(A.size());
+  std::copy(A.begin(), A.end(), A_padded_untiled.begin());
+// std::vector<double, boost::alignment::aligned_allocator<double, 64>>
+//     A_padded_untiled(A.size());
+// for (size_t i = 0; i < K_size; i++) {
+//   for (size_t j = 0; j < X_size; j++) {
+//     A_padded_untiled[i * X_size + j] = A[j * K_size + i];
+//   }
+// }
+#endif
 
 #if KERNEL_NUMA == 1
+#if A_trans_enable == 1
   std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       A_trans_some_node =
           memory_layout::make_tiled<2>(A_trans_untiled, tiling_spec_A_trans);
 #else
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
+      A_padded_some_node =
+          memory_layout::make_tiled<2>(A_padded_untiled, tiling_spec_A_padded);
+#endif
+#else
+#if A_trans_enable == 1
   std::vector<double, boost::alignment::aligned_allocator<double, 64>> A_trans =
       memory_layout::make_tiled<2>(A_trans_untiled, tiling_spec_A_trans);
+#else
+  std::vector<double, boost::alignment::aligned_allocator<double, 64>>
+      A_padded =
+          memory_layout::make_tiled<2>(A_padded_untiled, tiling_spec_A_padded);
+#endif
 #endif
 
   memory_layout::tiling_configuration tiling_spec_B(2);
@@ -196,6 +227,7 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
   std::vector<double, boost::alignment::aligned_allocator<double, 64>>
       B_padded_some_node = memory_layout::make_tiled<2>(B_copy, tiling_spec_B);
 
+#if A_trans_enable == 1
   std::vector<
       std::vector<double, boost::alignment::aligned_allocator<double, 64>>>
       A_trans_nodes(num_nodes);
@@ -203,6 +235,15 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
     numa_run_on_node(i);
     A_trans_nodes[i] = A_trans_some_node;
   }
+#else
+  std::vector<
+      std::vector<double, boost::alignment::aligned_allocator<double, 64>>>
+      A_padded_nodes(num_nodes);
+  for (int i = 0; i < num_nodes; i += 1) {
+    numa_run_on_node(i);
+    A_padded_nodes[i] = A_padded_some_node;
+  }
+#endif
 
   std::vector<
       std::vector<double, boost::alignment::aligned_allocator<double, 64>>>
@@ -222,31 +263,31 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
   tiling_spec_C[1].tile_size_dir = L1_Y;
   tiling_spec_C[1].stride = Y_size;
 
-  // std::cout << "info: hierarchy is inclusive! (sum on L2/L3)" << std::endl;
-  // std::cout << "info: for a single thread on all levels! (beware L3)"
-  //           << std::endl;
-  // std::cout << "matrices total: "
-  //           << ((X_size * Y_size + X_size * K_size + Y_size * K_size) * 8 /
-  //               (1024.0 * 1024.0))
-  //           << "MB" << std::endl;
-  // std::cout << "L1 requirement = "
-  //           << ((L1_X * L1_Y + L1_X * L1_K + L1_Y * L1_K) * 8 / (1024.0))
-  //           << "kB" << std::endl;
+  std::cout << "info: hierarchy is inclusive! (sum on L2/L3)" << std::endl;
+  std::cout << "info: for a single thread on all levels! (beware L3)"
+            << std::endl;
+  std::cout << "matrices total: "
+            << ((X_size * Y_size + X_size * K_size + Y_size * K_size) * 8 /
+                (1024.0 * 1024.0))
+            << "MB" << std::endl;
+  std::cout << "L1 requirement = "
+            << ((L1_X * L1_Y + L1_X * L1_K + L1_Y * L1_K) * 8 / (1024.0))
+            << "kB" << std::endl;
 
-  // std::cout << "L2 requirement = "
-  //           << ((L2_X * L2_Y + L2_X * L2_K + L2_Y * L2_K) * 8 / (1024.0))
-  //           << "kB" << std::endl;
-  // std::cout << "L3 requirement = "
-  //           << ((L3_X * L3_Y + L3_X * L3_K + L3_Y * L3_K) * 8 /
-  //               (1024.0 * 1024.0))
-  //           << "MB" << std::endl;
+  std::cout << "L2 requirement = "
+            << ((L2_X * L2_Y + L2_X * L2_K + L2_Y * L2_K) * 8 / (1024.0))
+            << "kB" << std::endl;
+  std::cout << "L3 requirement = "
+            << ((L3_X * L3_Y + L3_X * L3_K + L3_Y * L3_K) * 8 /
+                (1024.0 * 1024.0))
+            << "MB" << std::endl;
 
-  // std::cout << "A cache size = " << ((L1_K * L1_X) * 8 / (1024.0)) << "kB"
-  //           << std::endl;
-  // std::cout << "B cache size = " << ((L1_K * L1_Y) * 8 / (1024.0)) << "kB"
-  //           << std::endl;
-  // std::cout << "C cache size = " << ((L1_X * L1_Y) * 8 / (1024.0)) << "kB"
-  //           << std::endl;
+  std::cout << "A cache size = " << ((L1_K * L1_X) * 8 / (1024.0)) << "kB"
+            << std::endl;
+  std::cout << "B cache size = " << ((L1_K * L1_Y) * 8 / (1024.0)) << "kB"
+            << std::endl;
+  std::cout << "C cache size = " << ((L1_X * L1_Y) * 8 / (1024.0)) << "kB"
+            << std::endl;
 
   for (size_t rep = 0; rep < repetitions; rep++) {
     // reset result before every iteration
@@ -258,10 +299,10 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
 
 #if KERNEL_SCHEDULE == 1
 #pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS),         \
-    schedule(dynamic)
+                                                  schedule(dynamic)
 #else
 #pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS),         \
-    schedule(static)
+                                                  schedule(static)
 #endif
     for (size_t l3_x = 0; l3_x < X_size; l3_x += L3_X) {
       for (size_t l3_y = 0; l3_y < Y_size; l3_y += L3_Y) {
@@ -271,13 +312,24 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
         int thread_id = omp_get_thread_num();
         int mapped_numa_node = numa_node_of_cpu(thread_id);
         numa_run_on_node(mapped_numa_node);
+#if A_trans_enable == 1
         std::vector<double, boost::alignment::aligned_allocator<double, 64>>
             &A_trans = A_trans_nodes[mapped_numa_node];
+#else
+        std::vector<double, boost::alignment::aligned_allocator<double, 64>>
+            &A_padded = A_padded_nodes[mapped_numa_node];
+#endif
         std::vector<double, boost::alignment::aligned_allocator<double, 64>>
             &B_padded = B_padded_nodes[mapped_numa_node];
 #endif
+
+#if A_trans_enable == 1
         auto A_trans_view = memory_layout::make_view_from_index<2>(
             {0, 0}, A_trans, tiling_spec_A_trans);
+#else
+        auto A_padded_view = memory_layout::make_view_from_index<2>(
+            {0, 0}, A_padded, tiling_spec_A_padded);
+#endif
         auto B_view = memory_layout::make_view_from_index<2>({0, 0}, B_padded,
                                                              tiling_spec_B);
         auto C_view = memory_layout::make_view_from_index<2>({0, 0}, C_padded,
@@ -296,7 +348,11 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
                          (l1_k < l2_k + L2_K) && (l1_k < K_size);
                          l1_k += L1_K) {
 
+#if A_trans_enable == 1
                       A_trans_view.move_to_tile_outer({l1_k, l1_x});
+#else
+                      A_padded_view.move_to_tile_outer({l1_x, l1_k});
+#endif
                       B_view.move_to_tile_outer({l1_k, l1_y});
                       // Register blocking
                       for (size_t x = 0; x < L1_X; x += X_REG) {
@@ -306,27 +362,100 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
 
                           for (size_t k_inner = 0; k_inner < L1_K;
                                k_inner += 1) {
+#if B_trans_enable == 1
+                            const reg_array b_temp(
+                                B_view.pointer(y * L1_K + k_inner),
+                                Vc::flags::vector_aligned);
+#else
+                            // __builtin_prefetch(B_view.pointer(k_inner * L1_Y
+                            // 				      + y), 0, 3);
+                            // __builtin_prefetch(B_view.pointer(k_inner * L1_Y
+                            // 				      + y) + 8, 0, 3);
                             const reg_array b_temp(
                                 B_view.pointer(k_inner * L1_Y + y),
                                 Vc::flags::vector_aligned);
+#endif
 
-                            // loads from A_trans are broadcasts!
+                            //   double_v A_tmp(A_trans_view.pointer(
+                            //                      k_inner * L1_X + (x)),
+                            //                  Vc::flags::element_aligned);
+                            //   acc[0] += double_v(A_tmp[0]) * b_temp;
+                            //   acc[1] += double_v(A_tmp[1]) * b_temp;
+                            //   acc[2] += double_v(A_tmp[2]) * b_temp;
+                            //   acc[3] += double_v(A_tmp[3]) * b_temp;
+                            //   A_tmp.memload(A_trans_view.pointer(
+                            //                      k_inner * L1_X + (x + 4)),
+                            //                  Vc::flags::element_aligned);
+                            //   acc[4] += double_v(A_tmp[0]) * b_temp;
+
                             for (size_t r = 0; r < X_REG; r++) {
+#if A_trans_enable == 1
+                              // __builtin_prefetch(
+                              //     &A_trans_view[k_inner * L1_X + (x + r)] +
+                              //         X_REG,
+                              //     0, 3);
+                              // __builtin_prefetch(
+                              //     &A_trans_view[(k_inner + 2) * L1_X + (x + r)],
+                              //     0, 3);
                               acc[r] +=
                                   double_v(
                                       A_trans_view[k_inner * L1_X + (x + r)]) *
                                   b_temp;
+#else
+                              acc[r] +=
+                                  double_v(
+                                      A_padded_view[(x + r) * L1_K + k_inner]) *
+                                  b_temp;
+#endif
                             }
+
+                            // loads from A_trans are broadcasts!
+                            // size_t total = 0;
+                            // for (size_t rr = 0; rr < X_REG; rr += 4) {
+                            //   double_v A_tmp(A_trans_view.pointer(
+                            //                      k_inner * L1_X + (x + rr)),
+                            //                  Vc::flags::vector_aligned);
+                            //   for (size_t r = 0; r < 4; r++) {
+                            //     acc[r] += double_v(A_tmp[r]) * b_temp;
+                            //     // #if A_trans_enable == 1
+                            //     // __builtin_prefetch(&A_trans_view[k_inner *
+                            //     // L1_X + (x + r)] + X_REG, 0, 3);
+                            //     // acc[r] +=
+                            //     //   double_v(
+                            //     // 	   A_trans_view[k_inner * L1_X + (x +
+                            //     // r)]) *
+                            //     //   b_temp;
+                            //     // #else
+                            //     // acc[r] +=
+                            //     //   double_v(
+                            //     // 	   A_padded_view[(x + r) * L1_K +
+                            //     // k_inner]) *
+                            //     //   b_temp;;
+                            //     // #endif
+                            //     if (total >= X_REG) {
+                            //       break;
+                            //     }
+                            //     total += 1;
+                            //   }
+                            // }
                           }
 
+                          double *res_ptr = C_view.pointer(x * L1_Y + y);
+                          size_t offset = 0;
                           for (size_t r = 0; r < X_REG; r++) {
-                            double *const res_ptr =
-                                C_view.pointer((x + r) * L1_Y + y);
-                            reg_array res_value(res_ptr,
-                                                Vc::flags::element_aligned);
+                            // double *const res_ptr =
+                            //     C_view.pointer((x + r) * L1_Y + y);
+                            // reg_array res_value(res_ptr,
+                            //                     Vc::flags::vector_aligned);
+                            // res_value += acc[r];
+                            // res_value.memstore(res_ptr,
+                            //                    Vc::flags::vector_aligned);
+                            reg_array res_value(res_ptr + offset,
+                                                Vc::flags::vector_aligned);
                             res_value += acc[r];
-                            res_value.memstore(res_ptr,
-                                               Vc::flags::element_aligned);
+                            res_value.memstore(res_ptr + offset,
+                                               Vc::flags::vector_aligned);
+                            offset += L1_Y;
                           } // X_REG
                         }   // Y_REG
                       }     // L1_X
