@@ -32,20 +32,20 @@ AUTOTUNE_EXPORT bool is_valid_parameter_combination() {
     std::cout << "error: L1_X < X_REG, L1_X too small" << std::endl;
     return false;
   }
-  if (L2_X < L1_X) {
-    std::cout << "error: L2_X < L1_X, L2_X too small" << std::endl;
+  if (L3_X < L1_X) {
+    std::cout << "error: L3_X < L1_X, L3_X too small" << std::endl;
     return false;
   }
   if (L1_Y < Y_REG) {
     std::cout << "error: L1_Y < Y_REG, L1_Y too small" << std::endl;
     return false;
   }
-  if (L2_Y < L1_Y) {
-    std::cout << "error: L2_Y < L1_Y, L2_Y too small" << std::endl;
+  if (L3_Y < L1_Y) {
+    std::cout << "error: L3_Y < L1_Y, L3_Y too small" << std::endl;
     return false;
   }
-  if (L2_K < L1_K) {
-    std::cout << "error: L2_K < L1_K, L2_K too small" << std::endl;
+  if (L3_K < L1_K) {
+    std::cout << "error: L3_K < L1_K, L3_K too small" << std::endl;
     return false;
   }
   if (L1_X % X_REG != 0) {
@@ -56,33 +56,33 @@ AUTOTUNE_EXPORT bool is_valid_parameter_combination() {
     std::cout << "error: L1_Y does not divide Y_REG" << std::endl;
     return false;
   }
-  if (L2_X % L1_X != 0) {
-    std::cout << "error: x direction blocking error: L2_X % L1_X != 0"
+  // if (L2_X % L1_X != 0) {
+  //   std::cout << "error: x direction blocking error: L2_X % L1_X != 0"
+  //             << std::endl;
+  //   return false;
+  // }
+  // if (L2_Y % L1_Y != 0) {
+  //   std::cout << "error: y direction blocking error: L2_Y % L1_Y != 0"
+  //             << std::endl;
+  //   return false;
+  // }
+  // if (L2_K % L1_K != 0) {
+  //   std::cout << "error: k direction blocking error: L2_K % L1_K != 0 "
+  //             << std::endl;
+  //   return false;
+  // }
+  if (L3_X % L1_X != 0) {
+    std::cout << "error: x direction blocking error: L3_X % L1_X != 0"
               << std::endl;
     return false;
   }
-  if (L2_Y % L1_Y != 0) {
-    std::cout << "error: y direction blocking error: L2_Y % L1_Y != 0"
+  if (L3_Y % L1_Y != 0) {
+    std::cout << "error: y direction blocking error: L3_Y % L1_Y != 0"
               << std::endl;
     return false;
   }
-  if (L2_K % L1_K != 0) {
-    std::cout << "error: k direction blocking error: L2_K % L1_K != 0 "
-              << std::endl;
-    return false;
-  }
-  if (L3_X % L2_X != 0) {
-    std::cout << "error: x direction blocking error: L3_X % L2_X != 0"
-              << std::endl;
-    return false;
-  }
-  if (L3_Y % L2_Y != 0) {
-    std::cout << "error: y direction blocking error: L3_Y % L2_Y != 0"
-              << std::endl;
-    return false;
-  }
-  if (L3_K % L2_K != 0) {
-    std::cout << "error: k direction blocking error: L3_K % L2_K != 0 "
+  if (L3_K % L1_K != 0) {
+    std::cout << "error: k direction blocking error: L3_K % L1_K != 0 "
               << std::endl;
     return false;
   }
@@ -274,9 +274,9 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
             << ((L1_X * L1_Y + L1_X * L1_K + L1_Y * L1_K) * 8 / (1024.0))
             << "kB" << std::endl;
 
-  std::cout << "L2 requirement = "
-            << ((L2_X * L2_Y + L2_X * L2_K + L2_Y * L2_K) * 8 / (1024.0))
-            << "kB" << std::endl;
+  // std::cout << "L2 requirement = "
+  //           << ((L2_X * L2_Y + L2_X * L2_K + L2_Y * L2_K) * 8 / (1024.0))
+  //           << "kB" << std::endl;
   std::cout << "L3 requirement = "
             << ((L3_X * L3_Y + L3_X * L3_K + L3_Y * L3_K) * 8 /
                 (1024.0 * 1024.0))
@@ -299,10 +299,10 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
 
 #if KERNEL_SCHEDULE == 1
 #pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS),         \
-                                                  schedule(dynamic)
+    schedule(dynamic)
 #else
 #pragma omp parallel for collapse(2), num_threads(KERNEL_OMP_THREADS),         \
-                                                  schedule(static)
+    schedule(static)
 #endif
     for (size_t l3_x = 0; l3_x < X_size; l3_x += L3_X) {
       for (size_t l3_y = 0; l3_y < Y_size; l3_y += L3_Y) {
@@ -335,18 +335,17 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
         auto C_view = memory_layout::make_view_from_index<2>({0, 0}, C_padded,
                                                              tiling_spec_C);
         for (size_t l3_k = 0; l3_k < K_size; l3_k += L3_K) {
-          for (size_t l2_x = l3_x; l2_x < l3_x + L3_X; l2_x += L2_X) {
-            for (size_t l2_y = l3_y; l2_y < l3_y + L3_Y; l2_y += L2_Y) {
-              for (size_t l2_k = l3_k; l2_k < l3_k + L3_K; l2_k += L2_K) {
-                for (size_t l1_x = l2_x;
-                     (l1_x < l2_x + L2_X) && (l1_x < X_size); l1_x += L1_X) {
-                  for (size_t l1_y = l2_y;
-                       (l1_y < l2_y + L2_Y) && (l1_y < Y_size); l1_y += L1_Y) {
+          // for (size_t l2_x = l3_x; l2_x < l3_x + L3_X; l2_x += L2_X) {
+          //   for (size_t l2_y = l3_y; l2_y < l3_y + L3_Y; l2_y += L2_Y) {
+          //     for (size_t l2_k = l3_k; l2_k < l3_k + L3_K; l2_k += L2_K) {
+                // for (size_t l1_x = l2_x; l1_x < l2_x + L2_X; l1_x += L1_X) {
+                //   for (size_t l1_y = l2_y; l1_y < l2_y + L2_Y; l1_y += L1_Y) {
+                for (size_t l1_x = l3_x; l1_x < l3_x + L3_X; l1_x += L1_X) {
+                  for (size_t l1_y = l3_y; l1_y < l3_y + L3_Y; l1_y += L1_Y) {                      
                     C_view.move_to_tile_outer({l1_x, l1_y});
 
-                    for (size_t l1_k = l2_k;
-                         (l1_k < l2_k + L2_K) && (l1_k < K_size);
-                         l1_k += L1_K) {
+                    // for (size_t l1_k = l2_k; l1_k < l2_k + L2_K; l1_k += L1_K) {
+                    for (size_t l1_k = l3_k; l1_k < l3_k + L3_K; l1_k += L1_K) {                        
 
 #if A_trans_enable == 1
                       A_trans_view.move_to_tile_outer({l1_k, l1_x});
@@ -395,8 +394,8 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
                               //         X_REG,
                               //     0, 3);
                               // __builtin_prefetch(
-                              //     &A_trans_view[(k_inner + 2) * L1_X + (x + r)],
-                              //     0, 3);
+                              //     &A_trans_view[(k_inner + 2) * L1_X + (x +
+                              //     r)], 0, 3);
                               acc[r] +=
                                   double_v(
                                       A_trans_view[k_inner * L1_X + (x + r)]) *
@@ -462,9 +461,9 @@ combined_kernel(std::size_t N_org, std::vector<double> &A_org,
                     }       // L1_K
                   }         // L1_Y
                 }           // L1_X
-              }             // L2_K
-            }               // L2_Y
-          }                 // L2_X
+          //     }             // L2_K
+          //   }               // L2_Y
+          // }                 // L2_X
         }                   // L3_K
       }                     // L3_Y
     }                       // L3_X

@@ -181,37 +181,44 @@ void pvn_compare(const std::string &scenario_name,
       std::to_string(stod(parameters.get_by_name("Y_BASE_WIDTH")->get_value()) *
                      detail::native_vector_width));
   evaluate_pvn(parameters, pvn_csv_file, "L1_K", "16");
-  // L2 parameters
-  evaluate_pvn(parameters, pvn_csv_file, "L2_X",
-               parameters.get_by_name("L1_X")->get_value());
-  evaluate_pvn(parameters, pvn_csv_file, "L2_Y",
-               parameters.get_by_name("L1_Y")->get_value());
-  evaluate_pvn(parameters, pvn_csv_file, "L2_K",
-               parameters.get_by_name("L1_K")->get_value());
+  evaluate_pvn_group(
+      parameters, pvn_csv_file, "L1_GROUP", {"L1_X", "L1_Y", "L1_K"},
+      {parameters.get_by_name("REG_X")->get_value(),
+       std::to_string(
+           stod(parameters.get_by_name("Y_BASE_WIDTH")->get_value()) *
+           detail::native_vector_width),
+       "1"});
+  // // L1 parameters
+  // evaluate_pvn(parameters, pvn_csv_file, "L2_X",
+  //              parameters.get_by_name("L1_X")->get_value());
+  // evaluate_pvn(parameters, pvn_csv_file, "L2_Y",
+  //              parameters.get_by_name("L1_Y")->get_value());
+  // evaluate_pvn(parameters, pvn_csv_file, "L2_K",
+  //              parameters.get_by_name("L1_K")->get_value());
   // L3 parameters
   evaluate_pvn(parameters, pvn_csv_file, "L3_X",
-               parameters.get_by_name("L2_X")->get_value());
+               parameters.get_by_name("L1_X")->get_value());
   evaluate_pvn(parameters, pvn_csv_file, "L3_Y",
-               parameters.get_by_name("L2_Y")->get_value());
+               parameters.get_by_name("L1_Y")->get_value());
   evaluate_pvn(parameters, pvn_csv_file, "L3_K",
-               parameters.get_by_name("L2_K")->get_value());
+               parameters.get_by_name("L1_K")->get_value());
 
   evaluate_pvn_group(parameters, pvn_csv_file, "REG_GROUP",
                      {"X_REG", "Y_BASE_WIDTH"}, {"1", "1"});
 
   evaluate_pvn_group(parameters, pvn_csv_file, "L3_GROUP",
                      {"L3_X", "L3_Y", "L3_K"},
-                     {parameters.get_by_name("L2_X")->get_value(),
-                      parameters.get_by_name("L2_Y")->get_value(),
-                      parameters.get_by_name("L2_K")->get_value()});
-  evaluate_pvn_group(parameters, pvn_csv_file, "L2_L3_GROUP",
-                     {"L3_X", "L3_Y", "L3_K", "L2_X", "L2_Y", "L2_K"},
                      {parameters.get_by_name("L1_X")->get_value(),
                       parameters.get_by_name("L1_Y")->get_value(),
-                      parameters.get_by_name("L1_K")->get_value(),
-                      parameters.get_by_name("L1_X")->get_value(),
-                      parameters.get_by_name("L1_Y")->get_value(),
                       parameters.get_by_name("L1_K")->get_value()});
+  // evaluate_pvn_group(parameters, pvn_csv_file, "L2_L3_GROUP",
+  //                    {"L3_X", "L3_Y", "L3_K", "L1_X", "L1_Y", "L1_K"},
+  //                    {parameters.get_by_name("L1_X")->get_value(),
+  //                     parameters.get_by_name("L1_Y")->get_value(),
+  //                     parameters.get_by_name("L1_K")->get_value(),
+  //                     parameters.get_by_name("L1_X")->get_value(),
+  //                     parameters.get_by_name("L1_Y")->get_value(),
+  //                     parameters.get_by_name("L1_K")->get_value()});
   // other parameters
   evaluate_pvn(parameters, pvn_csv_file, "KERNEL_OMP_THREADS",
                std::to_string(detail::thread_values[0]));
@@ -266,10 +273,9 @@ void do_tuning(tuner_t &tuner, parameter_set_type &ps,
     }
     autotune::parameter_value_set pv =
         autotune::to_parameter_values(optimal_parameters);
-    autotune::parameter_values_to_file(pv,
-                                       scenario_name + std::string("_") +
-                                           std::to_string(restart) +
-                                           std::string(".json"));
+    autotune::parameter_values_to_file(pv, scenario_name + std::string("_") +
+                                               std::to_string(restart) +
+                                               std::string(".json"));
 
     std::cout << "----------------------- end tuning -----------------------"
               << std::endl;
@@ -459,9 +465,9 @@ int main(int argc, char **argv) {
   autotune::countable_continuous_parameter p4("L3_Y", 32, 32, 32, 512, true);
   autotune::countable_continuous_parameter p5("L3_K", 1, 64, 1, 512, true);
 
-  autotune::countable_continuous_parameter p6("L2_X", 1, 32, 1, 128, true);
-  autotune::countable_continuous_parameter p7("L2_Y", 16, 16, 16, 128, true);
-  autotune::countable_continuous_parameter p8("L2_K", 1, 32, 1, 256, true);
+  // autotune::countable_continuous_parameter p6("L2_X", 1, 32, 1, 128, true);
+  // autotune::countable_continuous_parameter p7("L2_Y", 16, 16, 16, 128, true);
+  // autotune::countable_continuous_parameter p8("L2_K", 1, 32, 1, 256, true);
 
   autotune::countable_continuous_parameter p9("L1_X", 1, 8, 8, 64, true);
   autotune::countable_continuous_parameter p10("L1_Y", 8, 8, 8, 64, true);
@@ -500,7 +506,7 @@ int main(int argc, char **argv) {
 
   autotune::countable_set parameters_group_register;
   autotune::countable_set parameters_group_l1;
-  autotune::countable_set parameters_group_l2;
+  // autotune::countable_set parameters_group_l2;
   autotune::countable_set parameters_group_l3;
   autotune::countable_set parameters_group_other;
   parameters_group_other.add_parameter(p1);
@@ -509,9 +515,9 @@ int main(int argc, char **argv) {
   parameters_group_l3.add_parameter(p3);
   parameters_group_l3.add_parameter(p4);
   parameters_group_l3.add_parameter(p5);
-  parameters_group_l2.add_parameter(p6);
-  parameters_group_l2.add_parameter(p7);
-  parameters_group_l2.add_parameter(p8);
+  // parameters_group_l2.add_parameter(p6);
+  // parameters_group_l2.add_parameter(p7);
+  // parameters_group_l2.add_parameter(p8);
   parameters_group_l1.add_parameter(p9);
   parameters_group_l1.add_parameter(p10);
   parameters_group_l1.add_parameter(p11);
@@ -524,9 +530,9 @@ int main(int argc, char **argv) {
   parameters.add_parameter(p3);
   parameters.add_parameter(p4);
   parameters.add_parameter(p5);
-  parameters.add_parameter(p6);
-  parameters.add_parameter(p7);
-  parameters.add_parameter(p8);
+  // parameters.add_parameter(p6);
+  // parameters.add_parameter(p7);
+  // parameters.add_parameter(p8);
   parameters.add_parameter(p9);
   parameters.add_parameter(p10);
   parameters.add_parameter(p11);
@@ -540,9 +546,9 @@ int main(int argc, char **argv) {
   randomizable_parameters.add_parameter(p3);
   randomizable_parameters.add_parameter(p4);
   randomizable_parameters.add_parameter(p5);
-  randomizable_parameters.add_parameter(p6);
-  randomizable_parameters.add_parameter(p7);
-  randomizable_parameters.add_parameter(p8);
+  // randomizable_parameters.add_parameter(p6);
+  // randomizable_parameters.add_parameter(p7);
+  // randomizable_parameters.add_parameter(p8);
   randomizable_parameters.add_parameter(p9);
   randomizable_parameters.add_parameter(p10);
   randomizable_parameters.add_parameter(p11);
@@ -558,7 +564,7 @@ int main(int argc, char **argv) {
     defined(DO_FULL_NEIGHBOR_SEARCH_SPLIT)
   autotune::combined_kernel.set_parameter_values(parameters_group_other);
   autotune::combined_kernel.set_parameter_values(parameters_group_l3);
-  autotune::combined_kernel.set_parameter_values(parameters_group_l2);
+  // autotune::combined_kernel.set_parameter_values(parameters_group_l2);
   autotune::combined_kernel.set_parameter_values(parameters_group_l1);
   autotune::combined_kernel.set_parameter_values(parameters_group_register);
 
@@ -571,9 +577,9 @@ int main(int argc, char **argv) {
     int64_t L1_X = stol(parameters["L1_X"]);
     int64_t L1_Y = stol(parameters["L1_Y"]);
     int64_t L1_K = stol(parameters["L1_K"]);
-    int64_t L2_X = stol(parameters["L2_X"]);
-    int64_t L2_Y = stol(parameters["L2_Y"]);
-    int64_t L2_K = stol(parameters["L2_K"]);
+    // int64_t L2_X = stol(parameters["L2_X"]);
+    // int64_t L2_Y = stol(parameters["L2_Y"]);
+    // int64_t L2_K = stol(parameters["L2_K"]);
     int64_t L3_X = stol(parameters["L3_X"]);
     int64_t L3_Y = stol(parameters["L3_Y"]);
     int64_t L3_K = stol(parameters["L3_K"]);
@@ -584,22 +590,22 @@ int main(int argc, char **argv) {
       std::cout << "error: L1_X < X_REG, L1_X too small" << std::endl;
       return false;
     }
-    if (L2_X < L1_X) {
-      std::cout << "error: L2_X < L1_X, L2_X too small" << std::endl;
+    if (L3_X < L1_X) {
+      std::cout << "error: L3_X < L1_X, L3_X too small" << std::endl;
       return false;
     }
     if (L1_Y < Y_REG) {
       std::cout << "error: L1_Y < Y_REG, L1_Y too small" << std::endl;
       return false;
     }
-    if (L2_Y < L1_Y) {
-      std::cout << "error: L2_Y < L1_Y, L2_Y too small" << std::endl;
+    if (L3_Y < L1_Y) {
+      std::cout << "error: L3_Y < L1_Y, L3_Y too small" << std::endl;
       return false;
     }
-    if (L2_K < L1_K) {
-      std::cout << "error: L2_K < L1_K, L2_K too small" << std::endl;
+    if (L3_K < L1_K) {
+      std::cout << "error: L3_K < L1_K, L3_K too small" << std::endl;
       return false;
-    }
+    };
     if (L1_X % X_REG != 0) {
       std::cout << "error: L1_X does not divide X_REG" << std::endl;
       return false;
@@ -608,33 +614,33 @@ int main(int argc, char **argv) {
       std::cout << "error: L1_Y does not divide Y_REG" << std::endl;
       return false;
     }
-    if (L2_X % L1_X != 0) {
-      std::cout << "error: x direction blocking error: L2_X % L1_X != 0"
+    // if (L2_X % L1_X != 0) {
+    //   std::cout << "error: x direction blocking error: L2_X % L1_X != 0"
+    //             << std::endl;
+    //   return false;
+    // }
+    // if (L2_Y % L1_Y != 0) {
+    //   std::cout << "error: y direction blocking error: L2_Y % L1_Y != 0"
+    //             << std::endl;
+    //   return false;
+    // }
+    // if (L2_K % L1_K != 0) {
+    //   std::cout << "error: k direction blocking error: L2_K % L1_K != 0 "
+    //             << std::endl;
+    //   return false;
+    // }
+    if (L3_X % L1_X != 0) {
+      std::cout << "error: x direction blocking error: L3_X % L1_X != 0"
                 << std::endl;
       return false;
     }
-    if (L2_Y % L1_Y != 0) {
-      std::cout << "error: y direction blocking error: L2_Y % L1_Y != 0"
+    if (L3_Y % L1_Y != 0) {
+      std::cout << "error: y direction blocking error: L3_Y % L1_Y != 0"
                 << std::endl;
       return false;
     }
-    if (L2_K % L1_K != 0) {
-      std::cout << "error: k direction blocking error: L2_K % L1_K != 0 "
-                << std::endl;
-      return false;
-    }
-    if (L3_X % L2_X != 0) {
-      std::cout << "error: x direction blocking error: L3_X % L2_X != 0"
-                << std::endl;
-      return false;
-    }
-    if (L3_Y % L2_Y != 0) {
-      std::cout << "error: y direction blocking error: L3_Y % L2_Y != 0"
-                << std::endl;
-      return false;
-    }
-    if (L3_K % L2_K != 0) {
-      std::cout << "error: k direction blocking error: L3_K % L2_K != 0 "
+    if (L3_K % L1_K != 0) {
+      std::cout << "error: k direction blocking error: L3_K % L1_K != 0 "
                 << std::endl;
       return false;
     }
@@ -677,15 +683,15 @@ int main(int argc, char **argv) {
     auto &l1_k =
         parameters.get_by_name<autotune::countable_continuous_parameter>(
             "L1_K");
-    auto &l2_x =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_X");
-    auto &l2_y =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_Y");
-    auto &l2_k =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_K");
+    // auto &l2_x =
+    //     parameters.get_by_name<autotune::countable_continuous_parameter>(
+    //         "L2_X");
+    // auto &l2_y =
+    //     parameters.get_by_name<autotune::countable_continuous_parameter>(
+    //         "L2_Y");
+    // auto &l2_k =
+    //     parameters.get_by_name<autotune::countable_continuous_parameter>(
+    //         "L2_K");
     auto &l3_x =
         parameters.get_by_name<autotune::countable_continuous_parameter>(
             "L3_X");
@@ -701,19 +707,19 @@ int main(int argc, char **argv) {
 
     // register parameters are always correct, never changed
     l1_x.to_nearest_valid(x_reg.get_raw_value());
-    l2_x.to_nearest_valid(l1_x.get_raw_value());
-    l3_x.to_nearest_valid(l2_x.get_raw_value());
+    // l2_x.to_nearest_valid(l1_x.get_raw_value());
+    l3_x.to_nearest_valid(l1_x.get_raw_value());
 
     l1_y.to_nearest_valid(y_reg_value);
-    l2_y.to_nearest_valid(l1_y.get_raw_value());
-    l3_y.to_nearest_valid(l2_y.get_raw_value());
+    // l2_y.to_nearest_valid(l1_y.get_raw_value());
+    l3_y.to_nearest_valid(l1_y.get_raw_value());
 
-    l2_k.to_nearest_valid(l1_k.get_raw_value());
-    l3_k.to_nearest_valid(l2_k.get_raw_value());
+    // l2_k.to_nearest_valid(l1_k.get_raw_value());
+    l3_k.to_nearest_valid(l1_k.get_raw_value());
   };
 #endif
 
-///////////// new adjust
+  ///////////// new adjust
 
 #if defined(DO_PARALLEL_LINE_SEARCH_SPLIT) ||                                  \
     defined(DO_NEIGHBOR_SEARCH_SPLIT) ||                                       \
@@ -727,9 +733,9 @@ int main(int argc, char **argv) {
     double L1_X = stod(parameter_values["L1_X"]);
     double L1_Y = stod(parameter_values["L1_Y"]);
     double L1_K = stod(parameter_values["L1_K"]);
-    double L2_X = stod(parameter_values["L2_X"]);
-    double L2_Y = stod(parameter_values["L2_Y"]);
-    double L2_K = stod(parameter_values["L2_K"]);
+    // double L2_X = stod(parameter_values["L2_X"]);
+    // double L2_Y = stod(parameter_values["L2_Y"]);
+    // double L2_K = stod(parameter_values["L2_K"]);
     double L3_X = stod(parameter_values["L3_X"]);
     double L3_Y = stod(parameter_values["L3_Y"]);
     double L3_K = stod(parameter_values["L3_K"]);
@@ -741,37 +747,43 @@ int main(int argc, char **argv) {
     // autotune::detail::round_to_nearest_bounded(current, factor, min, max);
     L1_X = autotune::detail::round_to_nearest_bounded(L1_X, X_REG, p9.get_min(),
                                                       p9.get_max());
-    L2_X = autotune::detail::round_to_nearest_bounded(L2_X, L1_X, p6.get_min(),
-                                                      p6.get_max());
-    L3_X = autotune::detail::round_to_nearest_bounded(L3_X, L2_X, p3.get_min(),
+    // L2_X = autotune::detail::round_to_nearest_bounded(L2_X, L1_X,
+    // p6.get_min(),
+    //                                                   p6.get_max());
+    L3_X = autotune::detail::round_to_nearest_bounded(L3_X, L1_X, p3.get_min(),
                                                       p3.get_max());
 
     L1_Y = autotune::detail::round_to_nearest_bounded(
         L1_Y, Y_REG, p10.get_min(), p10.get_max());
-    L2_Y = autotune::detail::round_to_nearest_bounded(L2_Y, L1_Y, p7.get_min(),
-                                                      p7.get_max());
-    L3_Y = autotune::detail::round_to_nearest_bounded(L3_Y, L2_Y, p4.get_min(),
+    // L2_Y = autotune::detail::round_to_nearest_bounded(L2_Y, L1_Y,
+    // p7.get_min(),
+    //                                                   p7.get_max());
+    L3_Y = autotune::detail::round_to_nearest_bounded(L3_Y, L1_Y, p4.get_min(),
                                                       p4.get_max());
 
-    L2_K = autotune::detail::round_to_nearest_bounded(L2_K, L1_K, p8.get_min(),
-                                                      p8.get_max());
-    L3_K = autotune::detail::round_to_nearest_bounded(L3_K, L2_K, p5.get_min(),
+    // L2_K = autotune::detail::round_to_nearest_bounded(L2_K, L1_K,
+    // p8.get_min(),
+    //                                                   p8.get_max());
+    L3_K = autotune::detail::round_to_nearest_bounded(L3_K, L1_K, p5.get_min(),
                                                       p5.get_max());
 
     parameter_values["L1_X"] = autotune::detail::truncate_trailing_zeros(L1_X);
-    parameter_values["L2_X"] = autotune::detail::truncate_trailing_zeros(L2_X);
+    // parameter_values["L2_X"] =
+    // autotune::detail::truncate_trailing_zeros(L2_X);
     parameter_values["L3_X"] = autotune::detail::truncate_trailing_zeros(L3_X);
 
     parameter_values["L1_Y"] = autotune::detail::truncate_trailing_zeros(L1_Y);
-    parameter_values["L2_Y"] = autotune::detail::truncate_trailing_zeros(L2_Y);
+    // parameter_values["L2_Y"] =
+    // autotune::detail::truncate_trailing_zeros(L2_Y);
     parameter_values["L3_Y"] = autotune::detail::truncate_trailing_zeros(L3_Y);
 
-    parameter_values["L2_K"] = autotune::detail::truncate_trailing_zeros(L2_K);
+    // parameter_values["L2_K"] =
+    // autotune::detail::truncate_trailing_zeros(L2_K);
     parameter_values["L3_K"] = autotune::detail::truncate_trailing_zeros(L3_K);
   };
 #endif
 
-///////////// end new adjust
+  ///////////// end new adjust
 
 #ifdef DO_MONTE_CARLO
   auto parameter_adjustment_functor_randomizable =
@@ -791,15 +803,15 @@ int main(int argc, char **argv) {
     auto &l1_k_step =
         parameters.get_by_name<autotune::countable_continuous_parameter>(
             "L1_K");
-    auto &l2_x =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_X");
-    auto &l2_y =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_Y");
-    auto &l2_k_step =
-        parameters.get_by_name<autotune::countable_continuous_parameter>(
-            "L2_K");
+    // auto &l2_x =
+    //     parameters.get_by_name<autotune::countable_continuous_parameter>(
+    //         "L2_X");
+    // auto &l2_y =
+    //     parameters.get_by_name<autotune::countable_continuous_parameter>(
+    //         "L2_Y");
+    // auto &l2_k_step =
+    //     parameters.get_by_name<autotune::countable_continuous_parameter>(
+    //         "L2_K");
     auto &l3_x =
         parameters.get_by_name<autotune::countable_continuous_parameter>(
             "L3_X");
@@ -816,15 +828,15 @@ int main(int argc, char **argv) {
     // register parameters are always correct, never changed
 
     l1_x.to_nearest_valid(x_reg.get_raw_value());
-    l2_x.to_nearest_valid(l1_x.get_raw_value());
-    l3_x.to_nearest_valid(l2_x.get_raw_value());
+    // l2_x.to_nearest_valid(l1_x.get_raw_value());
+    l3_x.to_nearest_valid(l1_x.get_raw_value());
 
     l1_y.to_nearest_valid(y_reg_value);
-    l2_y.to_nearest_valid(l1_y.get_raw_value());
-    l3_y.to_nearest_valid(l2_y.get_raw_value());
+    // l2_y.to_nearest_valid(l1_y.get_raw_value());
+    l3_y.to_nearest_valid(l1_y.get_raw_value());
 
-    l2_k_step.to_nearest_valid(l1_k_step.get_raw_value());
-    l3_k_step.to_nearest_valid(l2_k_step.get_raw_value());
+    // l2_k_step.to_nearest_valid(l1_k_step.get_raw_value());
+    l3_k_step.to_nearest_valid(l1_k_step.get_raw_value());
   };
 #endif
 
@@ -835,9 +847,9 @@ int main(int argc, char **argv) {
   detail::pvn_values_map.emplace("L1_X", "1");
   detail::pvn_values_map.emplace("L1_Y", "8");
   detail::pvn_values_map.emplace("L1_K", "1");
-  detail::pvn_values_map.emplace("L2_X", "1");
-  detail::pvn_values_map.emplace("L2_Y", "16");
-  detail::pvn_values_map.emplace("L2_K", "1");
+  // detail::pvn_values_map.emplace("L2_X", "1");
+  // detail::pvn_values_map.emplace("L2_Y", "16");
+  // detail::pvn_values_map.emplace("L2_K", "1");
   detail::pvn_values_map.emplace("L3_X", "1");
   detail::pvn_values_map.emplace("L3_Y", "32");
   detail::pvn_values_map.emplace("L3_K", "1");
@@ -845,23 +857,23 @@ int main(int argc, char **argv) {
   detail::pvn_values_map.emplace("KERNEL_OMP_THREADS",
                                  first_thread_value.c_str());
 
-// parameters.get_by_name("KERNEL_NUMA")->set_value_unsafe("1");
-// parameters.get_by_name("KERNEL_SCHEDULE")->set_value_unsafe("1");
-// parameters.get_by_name("X_REG")->set_value_unsafe("5");
-// parameters.get_by_name("Y_BASE_WIDTH")->set_value_unsafe("4");
-// parameters.get_by_name("L1_X")->set_value_unsafe("25");
-// parameters.get_by_name("L1_Y")->set_value_unsafe("32");
-// parameters.get_by_name("L1_K")->set_value_unsafe("64");
-// parameters.get_by_name("L2_X")->set_value_unsafe("100");
-// parameters.get_by_name("L2_Y")->set_value_unsafe("128");
-// parameters.get_by_name("L2_K")->set_value_unsafe("64");
-// parameters.get_by_name("L3_X")->set_value_unsafe("100");
-// parameters.get_by_name("L3_Y")->set_value_unsafe("128");
-// parameters.get_by_name("L3_K")->set_value_unsafe("256");
-// parameters.get_by_name("KERNEL_OMP_THREADS")
-//     ->set_value_unsafe(std::to_string(detail::thread_values[0]));
-// pvn_compare(scenario_name + std::string("_") + std::to_string(0),
-// parameters); return 0;
+  // parameters.get_by_name("KERNEL_NUMA")->set_value_unsafe("1");
+  // parameters.get_by_name("KERNEL_SCHEDULE")->set_value_unsafe("1");
+  // parameters.get_by_name("X_REG")->set_value_unsafe("5");
+  // parameters.get_by_name("Y_BASE_WIDTH")->set_value_unsafe("4");
+  // parameters.get_by_name("L1_X")->set_value_unsafe("25");
+  // parameters.get_by_name("L1_Y")->set_value_unsafe("32");
+  // parameters.get_by_name("L1_K")->set_value_unsafe("64");
+  // parameters.get_by_name("L2_X")->set_value_unsafe("100");
+  // parameters.get_by_name("L2_Y")->set_value_unsafe("128");
+  // parameters.get_by_name("L2_K")->set_value_unsafe("64");
+  // parameters.get_by_name("L3_X")->set_value_unsafe("100");
+  // parameters.get_by_name("L3_Y")->set_value_unsafe("128");
+  // parameters.get_by_name("L3_K")->set_value_unsafe("256");
+  // parameters.get_by_name("KERNEL_OMP_THREADS")
+  //     ->set_value_unsafe(std::to_string(detail::thread_values[0]));
+  // pvn_compare(scenario_name + std::string("_") + std::to_string(0),
+  // parameters); return 0;
 
 #ifdef DO_LINE_SEARCH
   {
@@ -983,13 +995,13 @@ int main(int argc, char **argv) {
                                    "_split_parallel_line_search_l3");
     tuner_l3.setup_test(detail::test_result);
 
-    autotune::tuners::parallel_line_search tuner_l2(
-        autotune::combined_kernel, parameters_group_l2, line_search_steps);
-    tuner_l2.set_parameter_values_adjustment_functor(
-        parameter_values_adjust_functor);
-    tuner_l2.set_write_measurement(scenario_name +
-                                   "_split_parallel_line_search_l2");
-    tuner_l2.setup_test(detail::test_result);
+    // autotune::tuners::parallel_line_search tuner_l2(
+    //     autotune::combined_kernel, parameters_group_l2, line_search_steps);
+    // tuner_l2.set_parameter_values_adjustment_functor(
+    //     parameter_values_adjust_functor);
+    // tuner_l2.set_write_measurement(scenario_name +
+    //                                "_split_parallel_line_search_l2");
+    // tuner_l2.setup_test(detail::test_result);
 
     autotune::tuners::parallel_line_search tuner_l1(
         autotune::combined_kernel, parameters_group_l1, line_search_steps);
@@ -1017,7 +1029,7 @@ int main(int argc, char **argv) {
     tuner_other.setup_test(detail::test_result);
 
     autotune::tuners::group_tuner g(autotune::combined_kernel, group_repeat,
-                                    tuner_l3, tuner_l2, tuner_l1, tuner_reg,
+                                    tuner_l3, tuner_l1, tuner_reg, // tuner_l2,
                                     tuner_other);
     g.set_verbose(true);
     g.set_write_measurement(scenario_name + "_split_parallel_line_search_meta");
@@ -1089,13 +1101,13 @@ int main(int argc, char **argv) {
         scenario_name + "_split_parallel_full_neighborhood_search_l3");
     tuner_l3.setup_test(detail::test_result);
 
-    autotune::tuners::parallel_full_neighborhood_search tuner_l2(
-        autotune::combined_kernel, parameters_group_l2, line_search_steps);
-    tuner_l2.set_parameter_values_adjustment_functor(
-        parameter_values_adjust_functor);
-    tuner_l2.set_write_measurement(
-        scenario_name + "_split_parallel_full_neighborhood_search_l2");
-    tuner_l2.setup_test(detail::test_result);
+    // autotune::tuners::parallel_full_neighborhood_search tuner_l2(
+    //     autotune::combined_kernel, parameters_group_l2, line_search_steps);
+    // tuner_l2.set_parameter_values_adjustment_functor(
+    //     parameter_values_adjust_functor);
+    // tuner_l2.set_write_measurement(
+    //     scenario_name + "_split_parallel_full_neighborhood_search_l2");
+    // tuner_l2.setup_test(detail::test_result);
 
     autotune::tuners::parallel_full_neighborhood_search tuner_l1(
         autotune::combined_kernel, parameters_group_l1, line_search_steps);
@@ -1123,7 +1135,7 @@ int main(int argc, char **argv) {
     tuner_other.setup_test(detail::test_result);
 
     autotune::tuners::group_tuner g(autotune::combined_kernel, group_repeat,
-                                    tuner_l3, tuner_l2, tuner_l1, tuner_reg,
+                                    tuner_l3, tuner_l1, tuner_reg, // tuner_l2,
                                     tuner_other);
     g.set_verbose(true);
     g.set_write_measurement(scenario_name +

@@ -60,9 +60,9 @@ std::vector<double> combined::matrix_multiply(double &duration, double &gflops,
       autotune::fixed_set_parameter<std::string> p3("L3_X", {"320"}, false);
       autotune::fixed_set_parameter<std::string> p4("L3_Y", {"384"}, false);
       autotune::fixed_set_parameter<std::string> p5("L3_K", {"100"}, false);
-      autotune::fixed_set_parameter<std::string> p6("L2_X", {"80"}, false);
-      autotune::fixed_set_parameter<std::string> p7("L2_Y", {"48"}, false);
-      autotune::fixed_set_parameter<std::string> p8("L2_K", {"100"}, false);
+      // autotune::fixed_set_parameter<std::string> p6("L2_X", {"80"}, false);
+      // autotune::fixed_set_parameter<std::string> p7("L2_Y", {"48"}, false);
+      // autotune::fixed_set_parameter<std::string> p8("L2_K", {"100"}, false);
       autotune::fixed_set_parameter<std::string> p9("L1_X", {"80"}, false);
       autotune::fixed_set_parameter<std::string> p10("L1_Y", {"8"}, false);
       autotune::fixed_set_parameter<std::string> p11("L1_K", {"100"}, false);
@@ -78,9 +78,9 @@ std::vector<double> combined::matrix_multiply(double &duration, double &gflops,
       parameters.add_parameter(p3);
       parameters.add_parameter(p4);
       parameters.add_parameter(p5);
-      parameters.add_parameter(p6);
-      parameters.add_parameter(p7);
-      parameters.add_parameter(p8);
+      // parameters.add_parameter(p6);
+      // parameters.add_parameter(p7);
+      // parameters.add_parameter(p8);
       parameters.add_parameter(p9);
       parameters.add_parameter(p10);
       parameters.add_parameter(p11);
