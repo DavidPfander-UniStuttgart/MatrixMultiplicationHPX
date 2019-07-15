@@ -32,14 +32,14 @@
 // #define WITH_LIBLIKWID // controlled by cmake
 
 // #define DO_LINE_SEARCH
-#define DO_PARALLEL_LINE_SEARCH
+// #define DO_PARALLEL_LINE_SEARCH
 // #define DO_NEIGHBOR_SEARCH
-#define DO_PARALLEL_NEIGHBOR_SEARCH
+// #define DO_PARALLEL_NEIGHBOR_SEARCH
 // #define DO_FULL_NEIGHBOR_SEARCH
 // #define DO_MONTE_CARLO
 // #define DO_GREEDY_NEIGHBOR_SEARCH
 
-#define DO_PARALLEL_LINE_SEARCH_SPLIT
+// #define DO_PARALLEL_LINE_SEARCH_SPLIT
 #define DO_PARALLEL_FULL_NEIGHBOR_SEARCH_SPLIT
 // #define DO_NEIGHBOR_SEARCH_SPLIT
 // #define DO_GREEDY_NEIGHBOR_SEARCH_SPLIT
@@ -991,6 +991,24 @@ int main(int argc, char **argv) {
     for (auto &pair : detail::pvn_values_map) {
       parameter_values[pair.first] = pair.second;
     }
+    for (const std::string &name : {"L1_X", "L1_Y", "L1_K"}) {
+      parameters_group_l1.get_by_name(name)->set_value_unsafe(
+          detail::pvn_values_map[name]);
+    }
+    for (const std::string &name : {"L3_X", "L3_Y", "L3_K"}) {
+      parameters_group_l3.get_by_name(name)->set_value_unsafe(
+          detail::pvn_values_map[name]);
+    }
+    for (const std::string &name : {"X_REG", "Y_BASE_WIDTH"}) {
+      parameters_group_register.get_by_name(name)->set_value_unsafe(
+          detail::pvn_values_map[name]);
+    }
+    for (const std::string &name :
+         {"KERNEL_OMP_THREADS", "KERNEL_SCHEDULE", "KERNEL_NUMA"}) {
+      parameters_group_other.get_by_name(name)->set_value_unsafe(
+          detail::pvn_values_map[name]);
+    }
+
     // make sure that all parameters are known to the kernel
     autotune::combined_kernel.set_parameter_values(parameter_values);
     autotune::print_parameter_values(
@@ -1104,6 +1122,24 @@ int main(int argc, char **argv) {
     for (auto &pair : detail::pvn_values_map) {
       parameter_values[pair.first] = pair.second;
     }
+    for (const std::string &name : {"L1_X", "L1_Y", "L1_K"}) {
+      parameters_group_l1.get_by_name(name)->set_value_unsafe(
+          detail::pvn_values_map[name]);
+    }
+    for (const std::string &name : {"L3_X", "L3_Y", "L3_K"}) {
+      parameters_group_l3.get_by_name(name)->set_value_unsafe(
+          detail::pvn_values_map[name]);
+    }
+    for (const std::string &name : {"X_REG", "Y_BASE_WIDTH"}) {
+      parameters_group_register.get_by_name(name)->set_value_unsafe(
+          detail::pvn_values_map[name]);
+    }
+    for (const std::string &name :
+         {"KERNEL_OMP_THREADS", "KERNEL_SCHEDULE", "KERNEL_NUMA"}) {
+      parameters_group_other.get_by_name(name)->set_value_unsafe(
+          detail::pvn_values_map[name]);
+    }
+
     // make sure that all parameters are known to the kernel
     autotune::combined_kernel.set_parameter_values(parameter_values);
     autotune::print_parameter_values(
@@ -1181,7 +1217,8 @@ int main(int argc, char **argv) {
       parameters[i]->set_value_unsafe(
           optimal_parameter_values[parameters[i]->get_name()]);
     }
-    pvn_compare(scenario_name + "_split_parallel_full_neighborhood_search", parameters);
+    pvn_compare(scenario_name + "_split_parallel_full_neighborhood_search",
+                parameters);
 
     std::cout
         << "----------------------- end pvn compare -----------------------"
