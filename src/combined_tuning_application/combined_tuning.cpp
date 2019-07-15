@@ -32,14 +32,14 @@
 // #define WITH_LIBLIKWID // controlled by cmake
 
 // #define DO_LINE_SEARCH
-// #define DO_PARALLEL_LINE_SEARCH
+#define DO_PARALLEL_LINE_SEARCH
 // #define DO_NEIGHBOR_SEARCH
-// #define DO_PARALLEL_NEIGHBOR_SEARCH
+#define DO_PARALLEL_NEIGHBOR_SEARCH
 // #define DO_FULL_NEIGHBOR_SEARCH
-// #define DO_MONTE_CARLO
+#define DO_MONTE_CARLO
 // #define DO_GREEDY_NEIGHBOR_SEARCH
 
-// #define DO_PARALLEL_LINE_SEARCH_SPLIT
+#define DO_PARALLEL_LINE_SEARCH_SPLIT
 #define DO_PARALLEL_FULL_NEIGHBOR_SEARCH_SPLIT
 // #define DO_NEIGHBOR_SEARCH_SPLIT
 // #define DO_GREEDY_NEIGHBOR_SEARCH_SPLIT
@@ -79,16 +79,18 @@ std::function<bool(const std::vector<double> &C)> test_result =
 };
 } // namespace detail
 
-template <typename parameter_set_type>
+template <typename parameter_set_type, typename F>
 void evaluate_pvn(parameter_set_type &parameters, std::ofstream &pvn_csv_file,
-                  const std::string &key, const std::string &new_value) {
+                  const std::string &key, F &parameter_values_adjust_functor) {
   std::cout << "evaluate_pvn: " << key << std::endl;
   std::string old_value;
   if (key.compare("None") != 0) {
     old_value = parameters.get_by_name(key)->get_value();
-    parameters.get_by_name(key)->set_value_unsafe(new_value);
+    parameters.get_by_name(key)->set_value_unsafe(detail::pvn_values_map[key]);
   }
-  autotune::combined_kernel.set_parameter_values(parameters);
+  autotune::parameter_value_set adjusted = to_parameter_values(parameters);
+  parameter_values_adjust_functor(adjusted);
+  autotune::combined_kernel.set_parameter_values(adjusted);
   std::vector<double> C = autotune::combined_kernel(
       detail::N, detail::A, detail::B, detail::repetitions,
       detail::duration_kernel, detail::gflops_kernel);
@@ -108,12 +110,12 @@ void evaluate_pvn(parameter_set_type &parameters, std::ofstream &pvn_csv_file,
   }
 }
 
-template <typename parameter_set_type>
+template <typename parameter_set_type, typename F>
 void evaluate_pvn_group(parameter_set_type &parameters,
                         std::ofstream &pvn_csv_file,
                         const std::string &group_name,
                         const std::vector<std::string> &keys,
-                        const std::vector<std::string> &new_values) {
+                        F &parameter_values_adjust_functor) {
   std::cout << "evaluate_pvn_group: ";
   for (const std::string &key : keys) {
     std::cout << key << " ";
@@ -124,11 +126,14 @@ void evaluate_pvn_group(parameter_set_type &parameters,
     for (const std::string &key : keys) {
       old_values.push_back(parameters.get_by_name(key)->get_value());
     }
-    for (size_t i = 0; i < new_values.size(); i += 1) {
-      parameters.get_by_name(keys[i])->set_value_unsafe(new_values[i]);
+    for (const std::string &key : keys) {
+      parameters.get_by_name(key)->set_value_unsafe(
+          detail::pvn_values_map[key]);
     }
   }
-  autotune::combined_kernel.set_parameter_values(parameters);
+  autotune::parameter_value_set adjusted = to_parameter_values(parameters);
+  parameter_values_adjust_functor(adjusted);
+  autotune::combined_kernel.set_parameter_values(adjusted);
   std::vector<double> C = autotune::combined_kernel(
       detail::N, detail::A, detail::B, detail::repetitions,
       detail::duration_kernel, detail::gflops_kernel);
@@ -144,15 +149,16 @@ void evaluate_pvn_group(parameter_set_type &parameters,
   pvn_csv_file << group_name << "," << detail::duration_kernel << ","
                << detail::gflops_kernel << std::endl;
   if (keys.size() > 0) {
-    for (size_t i = 0; i < new_values.size(); i += 1) {
+    for (size_t i = 0; i < keys.size(); i += 1) {
       parameters.get_by_name(keys[i])->set_value_unsafe(old_values[i]);
     }
   }
 }
 
-template <typename parameter_set_type>
+template <typename parameter_set_type, typename F>
 void pvn_compare(const std::string &scenario_name,
-                 parameter_set_type &parameters) {
+                 parameter_set_type &parameters,
+                 F &parameter_values_adjust_functor) {
   // disable L3 by setting them to value of L2 each
   // disable L2 by setting them to value of L1 each
   // disable L1 by setting them to min
@@ -167,67 +173,49 @@ void pvn_compare(const std::string &scenario_name,
   }
   pvn_csv_file << "changed_key,duration,gflops" << std::endl;
 
-  evaluate_pvn(parameters, pvn_csv_file, "None", "");
-  evaluate_pvn(parameters, pvn_csv_file, "KERNEL_NUMA", "0");
-  evaluate_pvn(parameters, pvn_csv_file, "KERNEL_SCHEDULE", "0");
+  evaluate_pvn(parameters, pvn_csv_file, "None",
+               parameter_values_adjust_functor);
+  evaluate_pvn(parameters, pvn_csv_file, "KERNEL_NUMA",
+               parameter_values_adjust_functor);
+  evaluate_pvn(parameters, pvn_csv_file, "KERNEL_SCHEDULE",
+               parameter_values_adjust_functor);
   // register parameters
-  evaluate_pvn(parameters, pvn_csv_file, "X_REG", "1");
-  evaluate_pvn(parameters, pvn_csv_file, "Y_BASE_WIDTH", "1");
+  evaluate_pvn(parameters, pvn_csv_file, "X_REG",
+               parameter_values_adjust_functor);
+  evaluate_pvn(parameters, pvn_csv_file, "Y_BASE_WIDTH",
+               parameter_values_adjust_functor);
   // L1 parameters
   evaluate_pvn(parameters, pvn_csv_file, "L1_X",
-               parameters.get_by_name("X_REG")->get_value());
-  evaluate_pvn(
-      parameters, pvn_csv_file, "L1_Y",
-      std::to_string(stod(parameters.get_by_name("Y_BASE_WIDTH")->get_value()) *
-                     detail::native_vector_width));
-  evaluate_pvn(parameters, pvn_csv_file, "L1_K", "16");
-  evaluate_pvn_group(
-      parameters, pvn_csv_file, "L1_GROUP", {"L1_X", "L1_Y", "L1_K"},
-      {parameters.get_by_name("X_REG")->get_value(),
-       std::to_string(
-           stod(parameters.get_by_name("Y_BASE_WIDTH")->get_value()) *
-           detail::native_vector_width),
-       "1"});
-  // // L1 parameters
-  // evaluate_pvn(parameters, pvn_csv_file, "L2_X",
-  //              parameters.get_by_name("L1_X")->get_value());
-  // evaluate_pvn(parameters, pvn_csv_file, "L2_Y",
-  //              parameters.get_by_name("L1_Y")->get_value());
-  // evaluate_pvn(parameters, pvn_csv_file, "L2_K",
-  //              parameters.get_by_name("L1_K")->get_value());
+               parameter_values_adjust_functor);
+  evaluate_pvn(parameters, pvn_csv_file, "L1_Y",
+               parameter_values_adjust_functor);
+  evaluate_pvn(parameters, pvn_csv_file, "L1_K",
+               parameter_values_adjust_functor);
+  evaluate_pvn_group(parameters, pvn_csv_file, "L1_GROUP",
+                     {"L1_X", "L1_Y", "L1_K"}, parameter_values_adjust_functor);
   // L3 parameters
   evaluate_pvn(parameters, pvn_csv_file, "L3_X",
-               parameters.get_by_name("L1_X")->get_value());
+               parameter_values_adjust_functor);
   evaluate_pvn(parameters, pvn_csv_file, "L3_Y",
-               parameters.get_by_name("L1_Y")->get_value());
+               parameter_values_adjust_functor);
   evaluate_pvn(parameters, pvn_csv_file, "L3_K",
-               parameters.get_by_name("L1_K")->get_value());
+               parameter_values_adjust_functor);
 
   evaluate_pvn_group(parameters, pvn_csv_file, "REG_GROUP",
-                     {"X_REG", "Y_BASE_WIDTH"}, {"1", "1"});
+                     {"X_REG", "Y_BASE_WIDTH"},
+                     parameter_values_adjust_functor);
 
   evaluate_pvn_group(parameters, pvn_csv_file, "L3_GROUP",
-                     {"L3_X", "L3_Y", "L3_K"},
-                     {parameters.get_by_name("L1_X")->get_value(),
-                      parameters.get_by_name("L1_Y")->get_value(),
-                      parameters.get_by_name("L1_K")->get_value()});
-  // evaluate_pvn_group(parameters, pvn_csv_file, "L2_L3_GROUP",
-  //                    {"L3_X", "L3_Y", "L3_K", "L1_X", "L1_Y", "L1_K"},
-  //                    {parameters.get_by_name("L1_X")->get_value(),
-  //                     parameters.get_by_name("L1_Y")->get_value(),
-  //                     parameters.get_by_name("L1_K")->get_value(),
-  //                     parameters.get_by_name("L1_X")->get_value(),
-  //                     parameters.get_by_name("L1_Y")->get_value(),
-  //                     parameters.get_by_name("L1_K")->get_value()});
+                     {"L3_X", "L3_Y", "L3_K"}, parameter_values_adjust_functor);
   // other parameters
   evaluate_pvn(parameters, pvn_csv_file, "KERNEL_OMP_THREADS",
-               std::to_string(detail::thread_values[0]));
+               parameter_values_adjust_functor);
 }
 
-template <typename parameter_set_type, typename tuner_t>
+template <typename parameter_set_type, typename tuner_t, typename F>
 void do_tuning(tuner_t &tuner, parameter_set_type &ps,
-               const std::string &scenario_name,
-               const std::string &tuner_name) {
+               const std::string &scenario_name, const std::string &tuner_name,
+               F &parameter_values_adjust_functor) {
   std::cout << "----------------- starting tuning, scenario name: "
             << scenario_name << " ------------ " << std::endl;
   for (size_t restart = 0; restart < detail::restarts; restart++) {
@@ -238,13 +226,8 @@ void do_tuning(tuner_t &tuner, parameter_set_type &ps,
         for (size_t parameter_index = 0; parameter_index < ps.size();
              parameter_index++) {
           auto &p = ps[parameter_index];
-          p->set_random_value(); // TODO: change!
+          p->set_random_value();
         }
-        // autotune::parameter_value_set parameter_values =
-        //     autotune::to_parameter_values(detail::parameters);
-        // if (precompile_validate_parameter_functor(parameter_values)) {
-        //   valid_start_found = true;
-        // }
         valid_start_found = true; // should get adjusted
       }
     } else {
@@ -281,7 +264,7 @@ void do_tuning(tuner_t &tuner, parameter_set_type &ps,
               << std::endl;
 
     pvn_compare(scenario_name + std::string("_") + std::to_string(restart),
-                optimal_parameters);
+                optimal_parameters, parameter_values_adjust_functor);
 
     std::cout
         << "----------------------- end pvn compare -----------------------"
@@ -653,11 +636,6 @@ int main(int argc, char **argv) {
   autotune::combined_kernel.set_precompile_validate_parameter_functor(
       precompile_validate_parameter_functor);
 
-#if defined(DO_PARALLEL_LINE_SEARCH) ||                                        \
-    defined(DO_PARALLEL_FULL_NEIGHBOR_SEARCH_SPLIT) ||                         \
-    defined(DO_LINE_SEARCH) || defined(DO_NEIGHBOR_SEARCH) ||                  \
-    defined(DO_FULL_NEIGHBOR_SEARCH) || defined(DO_GREEDY_NEIGHBOR_SEARCH) ||  \
-    defined(DO_GREEDY_NEIGHBOR_SEARCH_SPLIT)
   auto parameter_adjustment_functor =
       [](autotune::countable_set &parameters) -> void {
     auto &x_reg =
@@ -709,15 +687,7 @@ int main(int argc, char **argv) {
     // l2_k.to_nearest_valid(l1_k.get_raw_value());
     l3_k.to_nearest_valid(l1_k.get_raw_value());
   };
-#endif
 
-  ///////////// new adjust
-
-#if defined(DO_PARALLEL_LINE_SEARCH_SPLIT) ||                                  \
-    defined(DO_NEIGHBOR_SEARCH_SPLIT) ||                                       \
-    defined(DO_PARALLEL_FULL_NEIGHBOR_SEARCH_SPLIT) ||                         \
-    defined(DO_GREEDY_NEIGHBOR_SEARCH) ||                                      \
-    defined(DO_GREEDY_NEIGHBOR_SEARCH_SPLIT)
   auto parameter_values_adjust_functor =
       [&](autotune::parameter_value_set &parameter_values) -> void {
     double X_REG = stod(parameter_values["X_REG"]);
@@ -773,9 +743,6 @@ int main(int argc, char **argv) {
     // autotune::detail::truncate_trailing_zeros(L2_K);
     parameter_values["L3_K"] = autotune::detail::truncate_trailing_zeros(L3_K);
   };
-#endif
-
-  ///////////// end new adjust
 
 #ifdef DO_MONTE_CARLO
   auto parameter_adjustment_functor_randomizable =
@@ -876,7 +843,8 @@ int main(int argc, char **argv) {
     autotune::tuners::line_search tuner(autotune::combined_kernel, parameters,
                                         line_search_steps);
     tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
-    do_tuning(tuner, parameters, scenario_name + "_line_search", "line_search");
+    do_tuning(tuner, parameters, scenario_name + "_line_search", "line_search",
+              parameter_values_adjust_functor);
   }
 #endif
 #ifdef DO_PARALLEL_LINE_SEARCH
@@ -889,7 +857,7 @@ int main(int argc, char **argv) {
                                                  parameters, line_search_steps);
     tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
     do_tuning(tuner, parameters, scenario_name + "_parallel_line_search",
-              "parallel_line_search");
+              "parallel_line_search", parameter_values_adjust_functor);
   }
 #endif
 #ifdef DO_NEIGHBOR_SEARCH
@@ -902,7 +870,7 @@ int main(int argc, char **argv) {
                                                 parameters, search_steps);
     tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
     do_tuning(tuner, parameters, scenario_name + "_neighborhood_search",
-              "neighborhood_search");
+              "neighborhood_search", parameter_values_adjust_functor);
   }
 #endif
 #ifdef DO_PARALLEL_NEIGHBOR_SEARCH
@@ -916,7 +884,7 @@ int main(int argc, char **argv) {
     tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
     do_tuning(tuner, parameters,
               scenario_name + "_parallel_neighborhood_search",
-              "parallel_neighborhood_search");
+              "parallel_neighborhood_search", parameter_values_adjust_functor);
   }
 #endif
 #ifdef DO_FULL_NEIGHBOR_SEARCH
@@ -930,7 +898,7 @@ int main(int argc, char **argv) {
                                                      parameters, search_steps);
     tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
     do_tuning(tuner, parameters, scenario_name + "_full_neighborhood_search",
-              "full_neighborhood_search");
+              "full_neighborhood_search", parameter_values_adjust_functor);
   }
 #endif
 #ifdef DO_MONTE_CARLO
@@ -945,7 +913,7 @@ int main(int argc, char **argv) {
     tuner.set_parameter_adjustment_functor(
         parameter_adjustment_functor_randomizable);
     do_tuning(tuner, randomizable_parameters, scenario_name + "_monte_carlo",
-              "monte_carlo");
+              "monte_carlo", parameter_values_adjust_functor);
   }
 #endif
 #ifdef DO_GREEDY_NEIGHBOR_SEARCH
@@ -961,7 +929,7 @@ int main(int argc, char **argv) {
         changes_per_step);
     tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
     do_tuning(tuner, parameters, scenario_name + "_greedy_neighborhood_search",
-              "greedy_neighborhood_search");
+              "greedy_neighborhood_search", parameter_values_adjust_functor);
   }
 #endif
 #ifdef DO_BRUTEFORCE
@@ -973,7 +941,8 @@ int main(int argc, char **argv) {
                                        detail::parameters);
     tuner.set_parameter_adjustment_functor(parameter_adjustment_functor);
     do_tuning<autotune::countable_set>(tuner, scenario_name + "bruteforce",
-                                       "bruteforce");
+                                       "bruteforce",
+                                       parameter_values_adjust_functor);
   }
 #endif
 #ifdef DO_PARALLEL_LINE_SEARCH_SPLIT
@@ -1098,7 +1067,8 @@ int main(int argc, char **argv) {
     std::cout << "optimal_parameter_values:" << std::endl;
     parameters.print_values();
 
-    pvn_compare(scenario_name + "_split_parallel_line_search", parameters);
+    pvn_compare(scenario_name + "_split_parallel_line_search", parameters,
+                parameter_values_adjust_functor);
 
     std::cout
         << "----------------------- end pvn compare -----------------------"
@@ -1218,7 +1188,7 @@ int main(int argc, char **argv) {
           optimal_parameter_values[parameters[i]->get_name()]);
     }
     pvn_compare(scenario_name + "_split_parallel_full_neighborhood_search",
-                parameters);
+                parameters, parameter_values_adjust_functor);
 
     std::cout
         << "----------------------- end pvn compare -----------------------"
