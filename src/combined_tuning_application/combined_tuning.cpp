@@ -53,8 +53,9 @@ std::ofstream tuner_duration_file;
 namespace detail {
 std::uint64_t N = 4096;  // cmd argument
 size_t repetitions = 10; // cmd argument
+size_t repetitions_pvn_compare = 10;
 size_t restarts = 1;
-bool use_pvn = false;
+bool use_pvn = true;
 std::vector<double> A;
 std::vector<double> B;
 std::vector<double> C_reference;
@@ -92,7 +93,7 @@ void evaluate_pvn(parameter_set_type &parameters, std::ofstream &pvn_csv_file,
   parameter_values_adjust_functor(adjusted);
   autotune::combined_kernel.set_parameter_values(adjusted);
   std::vector<double> C = autotune::combined_kernel(
-      detail::N, detail::A, detail::B, detail::repetitions,
+      detail::N, detail::A, detail::B, detail::repetitions_pvn_compare,
       detail::duration_kernel, detail::gflops_kernel);
   bool test_ok = detail::test_result(C);
   if (test_ok) {
@@ -135,7 +136,7 @@ void evaluate_pvn_group(parameter_set_type &parameters,
   parameter_values_adjust_functor(adjusted);
   autotune::combined_kernel.set_parameter_values(adjusted);
   std::vector<double> C = autotune::combined_kernel(
-      detail::N, detail::A, detail::B, detail::repetitions,
+      detail::N, detail::A, detail::B, detail::repetitions_pvn_compare,
       detail::duration_kernel, detail::gflops_kernel);
   bool test_ok = detail::test_result(C);
   if (test_ok) {
@@ -220,7 +221,7 @@ void do_tuning(tuner_t &tuner, parameter_set_type &ps,
             << scenario_name << " ------------ " << std::endl;
   for (size_t restart = 0; restart < detail::restarts; restart++) {
     std::cout << "restart: " << restart << std::endl;
-    if (detail::use_pvn) {
+    if (!detail::use_pvn) {
       bool valid_start_found = false;
       while (!valid_start_found) {
         for (size_t parameter_index = 0; parameter_index < ps.size();
