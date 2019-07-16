@@ -1068,8 +1068,9 @@ int main(int argc, char **argv) {
     std::cout << "optimal_parameter_values:" << std::endl;
     parameters.print_values();
 
-    pvn_compare(scenario_name + "_split_parallel_line_search", parameters,
-                parameter_values_adjust_functor);
+    pvn_compare(scenario_name + "_split_parallel_line_search" +
+                    std::string("_0"),
+                parameters, parameter_values_adjust_functor);
 
     std::cout
         << "----------------------- end pvn compare -----------------------"
@@ -1188,7 +1189,8 @@ int main(int argc, char **argv) {
       parameters[i]->set_value_unsafe(
           optimal_parameter_values[parameters[i]->get_name()]);
     }
-    pvn_compare(scenario_name + "_split_parallel_full_neighborhood_search",
+    pvn_compare(scenario_name + "_split_parallel_full_neighborhood_search" +
+                    std::string("_0"),
                 parameters, parameter_values_adjust_functor);
 
     std::cout
