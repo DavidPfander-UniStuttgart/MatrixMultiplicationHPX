@@ -31,7 +31,7 @@
 
 // #define WITH_LIBLIKWID // controlled by cmake
 
-// #define DO_LINE_SEARCH
+#define DO_LINE_SEARCH
 #define DO_PARALLEL_LINE_SEARCH
 // #define DO_NEIGHBOR_SEARCH
 #define DO_PARALLEL_NEIGHBOR_SEARCH
