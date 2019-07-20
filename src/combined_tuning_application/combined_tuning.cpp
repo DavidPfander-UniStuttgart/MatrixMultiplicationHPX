@@ -461,7 +461,7 @@ int main(int argc, char **argv) {
 #endif
 #ifdef DO_PARALLEL_NEIGHBOR_SEARCH
   {
-    std::cout << "----------------- starting tuning with neighborhood search "
+    std::cout << "----------------- starting tuning with parallel neighborhood search "
                  "----------------- "
               << std::endl;
     size_t search_steps = 50;
@@ -652,7 +652,7 @@ int main(int argc, char **argv) {
 #endif
 #ifdef DO_PARALLEL_FULL_NEIGHBOR_SEARCH_SPLIT
   {
-    std::cout << "------ starting tuning with split line search "
+    std::cout << "------ starting tuning with split full neighborhood search "
                  "------"
               << std::endl;
     size_t line_search_steps = 10;
